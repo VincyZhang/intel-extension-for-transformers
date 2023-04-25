@@ -1,0 +1,42 @@
+name: Pytest using Conda
+
+on:
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: [self-hosted, linux, x64]
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - name: Check Out Repo
+      uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+    
+    - name: Build Docker
+      run: |
+        docker build -f ${GITHUB_WORKSPACE}/docker/Dockerfile.devel -t ${{ github.repository }}:itrex .
+        docker images | grep -i ${{ github.repository }}
+    
+    - name: Install ITREX
+      run: |
+        pip install -r requirements.txt
+        git submodule sync
+        git submodule update --init --recursive
+        pip install cmake
+        python setup.py install
+        
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        echo "${GITHUB_WORKSPACE}"
+        pwd
+        cd ${GITHUB_WORKSPACE}/tests
+        pip install -r requirements.txt
+        find . -name "test*.py" | sed 's,\.\/,python ,g' | sed 's/$/ --verbose/'  > run.sh
+        echo "This step runs in bash"
+        chmod +x run.sh
+        ./run.sh
+      shell: bash
