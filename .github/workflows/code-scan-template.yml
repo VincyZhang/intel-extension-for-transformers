@@ -16,11 +16,6 @@ on:
         type: string
         default: "codeScan"
 
-# env:
-#   codeScanFileName: "codeScan"
-#   uploadPath: ""
-#   CONTAINER_NAME: "codeScan"
-
 env:
   DOCKER_CONFIG_NAME: "commonDockerConfig"
   REPO_NAME: "code-scan"
@@ -41,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        job_name: ["pylint"]
+        job_name: ["pylint", "bandit", "clangformat", "cloc", "cpplint", "pydocstyle", "pyspelling"]
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -55,6 +50,11 @@ jobs:
           docker run -dit --disable-content-trust --privileged --name=${{ inputs.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+      
+      - name: Env build
+        run: |
+          docker exec ${{ inputs.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/prepare_env.sh
 
       - name: Code scan check
         run: |
