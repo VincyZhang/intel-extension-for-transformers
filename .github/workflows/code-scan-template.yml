@@ -30,7 +30,7 @@ jobs:
       REPO_NAME: "code-scan"
       REPO_TAG: "1.0"
       DOCKER_FILE_NAME: "DockerfileCodeScan"
-      CONTAINER_NAME: ${{ env.codeScanContainerName }}
+      CONTAINER_NAME: ${{ inputs.codeScanContainerName }}
 
   build:
     runs-on: ubuntu-latest
@@ -42,21 +42,21 @@ jobs:
       - name: Docker clean up
         run: |
           docker ps -a
-          docker stop ${{ env.CONTAINER_NAME }} || true
-          docker rm -vf ${{ env.CONTAINER_NAME }} || true
+          docker stop ${{ inputs.CONTAINER_NAME }} || true
+          docker rm -vf ${{ inputs.CONTAINER_NAME }} || true
 
       - name: Code scan check
         run: |
           docker run -v ${{ github.workspace }}:/intel-extension-for-transformers -it --rm \
-              --name ${{ env.CONTAINER_NAME }} code-scan:1.0 \
-              /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ env.codeScanFileName }}.sh
+              --name ${{ inputs.CONTAINER_NAME }} code-scan:1.0 \
+              /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ inputs.codeScanFileName }}.sh
 
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.codeScanFileName }}
-          path: .github/workflows/script/formatScan/${{ env.uploadPath }}
+          name: ${{ inputs.codeScanFileName }}
+          path: .github/workflows/script/formatScan/${{ inputs.uploadPath }}
 
       - name: Docker clean up
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          docker exec ${{ inputs.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
