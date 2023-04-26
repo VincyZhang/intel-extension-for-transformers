@@ -31,19 +31,7 @@ jobs:
       DOCKER_FILE_NAME: "DockerfileCodeScan"
       CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
 
-  build:
-    runs-on: ubuntu-latest
-    container:
-      image: docker:20-git
-
     steps:
-      - uses: actions/checkout@v2
-      - name: Docker clean up
-        run: |
-          docker ps -a
-          docker stop ${{ inputs.CONTAINER_NAME }} || true
-          docker rm -vf ${{ inputs.CONTAINER_NAME }} || true
-
       - name: Code scan check
         run: |
           docker run -v ${{ github.workspace }}:/intel-extension-for-transformers -it --rm \
