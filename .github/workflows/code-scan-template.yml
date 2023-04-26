@@ -23,6 +23,15 @@ on:
 #   CONTAINER_NAME: "codeScan"
 
 jobs:
+  set_up_docker:
+    uses: VincyZhang/intel-extension-for-transformers/.github/workflows/docker-template.yml@xuehao/itrex_ci
+    with:
+      DOCKER_CONFIG_NAME: "commonDockerConfig"
+      REPO_NAME: "code-scan"
+      REPO_TAG: "1.0"
+      DOCKER_FILE_NAME: "DockerfileCodeScan"
+      CONTAINER_NAME: ${{ env.codeScanContainerName }}
+
   build:
     runs-on: ubuntu-latest
     container:
@@ -30,16 +39,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: Set up Docker
-        uses: VincyZhang/intel-extension-for-transformers/.github/workflows/docker-template.yml@xuehao/itrex_ci
-        with:
-          DOCKER_CONFIG_NAME: "commonDockerConfig"
-          REPO_NAME: "code-scan"
-          REPO_TAG: "1.0"
-          DOCKER_FILE_NAME: "DockerfileCodeScan"
-          CONTAINER_NAME: ${{ env.codeScanContainerName }}
-
       - name: Docker clean up
         run: |
           docker ps -a
