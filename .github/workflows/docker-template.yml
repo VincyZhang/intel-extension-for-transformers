@@ -11,10 +11,6 @@ on:
         type: string
         default: "intel-extension-for-transformers"
 
-      CONTAINER_NAME:
-        type: string
-        default: "py38"
-
       DOCKER_FILE_NAME:
         type: string
         default: "develop"
@@ -26,7 +22,7 @@ on:
       CONTAINER_NAME:
         required: true
         type: string
-
+        default: "py38"
 
 # env:
 #   DOCKER_CONFIG_NAME: "commonDockerConfig"
