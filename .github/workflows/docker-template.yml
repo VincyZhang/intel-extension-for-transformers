@@ -77,7 +77,7 @@ jobs:
       - name: Build develop docker image
         run: |
           if [[ ! $(docker images | grep -i ${{ inputs.REPO_NAME }}:${{ inputs.REPO_TAG }}) ]]; then
-            docker build -f ${{ github.workspace }}/.github/workflow/docker/${{ inputs.DOCKER_FILE_NAME }}.dockerfile -t ${{ inputs.REPO_NAME }}:${{ inputs.REPO_TAG }} .
+            docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ inputs.DOCKER_FILE_NAME }}.dockerfile -t ${{ inputs.REPO_NAME }}:${{ inputs.REPO_TAG }} .
           fi
           docker images | grep -i ${{ inputs.REPO_NAME }}
           if [[ $? -ne 0 ]]; then
