@@ -39,6 +39,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job_name: ["pylint"]
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -55,13 +58,13 @@ jobs:
 
       - name: Code scan check
         run: |
-          docker exec --name ${{ inputs.CONTAINER_NAME }} \
-          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ inputs.codeScanFileName }}.sh
+          docker exec ${{ inputs.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh
 
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ inputs.codeScanFileName }}
+          name: ${{ matrix.job_name }}
           path: .github/workflows/script/formatScan/${{ inputs.uploadPath }}
 
       - name: Docker clean up

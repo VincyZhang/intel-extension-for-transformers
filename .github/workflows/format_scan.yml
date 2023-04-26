@@ -12,14 +12,11 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  strategy:
-    matrix:
-      job_name: ["pylint"]
   code-scan:
     uses: VincyZhang/intel-extension-for-transformers/.github/workflows/code-scan-template.yml@xuehao/itrex_ci
     with:
-      codeScanFileName: ${{ matrix.job_name }}
-      uploadPath: "${{ matrix.job_name }}.json"
+      codeScanFileName: pylint
+      uploadPath: "pylint.json"
 
 # - run: |
 #     python -m pip install pylint==2.12.1
