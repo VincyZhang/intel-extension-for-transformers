@@ -26,7 +26,7 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run pylint code scan
-        uses: code-scan-template.yml
+        uses: VincyZhang/intel-extension-for-transformers/.github/workflows/code-scan-template.yml@xuehao/itrex_ci
         with:
           codeScanFileName: "pylint"
           uploadPath: "pylint.json"
