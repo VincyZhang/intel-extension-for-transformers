@@ -18,11 +18,12 @@ jobs:
   DocStyle:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
+    uses: actions/checkout@v2
+  
+  CodeScan:
     strategy:
       matrix:
         target: [pylint, stage, prod]
-    uses: actions/checkout@v2
-
     uses: VincyZhang/intel-extension-for-transformers/.github/workflows/code-scan-template.yml@xuehao/itrex_ci
     with:
       codeScanFileName: "pylint"
