@@ -43,15 +43,20 @@ jobs:
       - name: Checkout out Repo
         uses: actions/checkout@v3
 
-      - name: Build and push
+      - name: Docker Build
         run: |
           docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
 
+      - name: Docker Run
+        run: |
+          docker run -dit --disable-content-trust --privileged --name=${{ inputs.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers \
+          ${{ parameters.repoName }}:${{ parameters.repoTag }}
+
       - name: Code scan check
         run: |
-          docker run -v ${{ github.workspace }}:/intel-extension-for-transformers -i --rm \
-              --name ${{ inputs.CONTAINER_NAME }} code-scan:1.0 \
-              /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ inputs.codeScanFileName }}.sh
+          docker exec --name ${{ inputs.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ inputs.codeScanFileName }}.sh
 
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v2
