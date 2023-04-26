@@ -2,14 +2,37 @@ name: Docker Build and Run
 
 on:
   workflow_call:
+    inputs:
+      DOCKER_CONFIG_NAME:
+        type: string
+        default: "commonDockerConfig"
 
-env:
-  DOCKER_CONFIG_NAME: "commonDockerConfig"
-  REPO_NAME: "intel-extension-for-transformers"
-  REPO_TAG: "py38"
-  DOCKER_FILE_NAME: "develop"
-  REPO: "https://github.com/VincyZhang/intel-extension-for-transformers"
-  CONTAINER_NAME: ""
+      REPO_NAME:
+        type: string
+        default: "intel-extension-for-transformers"
+
+      CONTAINER_NAME:
+        type: string
+        default: "py38"
+
+      DOCKER_FILE_NAME:
+        type: string
+        default: "develop"
+      
+      REPO:
+        type: string
+        default: "https://github.com/VincyZhang/intel-extension-for-transformers"
+
+      CONTAINER_NAME:
+        required: true
+        type: string
+# env:
+#   DOCKER_CONFIG_NAME: "commonDockerConfig"
+#   REPO_NAME: "intel-extension-for-transformers"
+#   REPO_TAG: "py38"
+#   DOCKER_FILE_NAME: "develop"
+#   REPO: "https://github.com/VincyZhang/intel-extension-for-transformers"
+#   CONTAINER_NAME: ""
 
 jobs:
   build-and-run:
@@ -18,24 +41,24 @@ jobs:
       - name: Docker clean up
         run: |
           docker ps -a
-          if [[ $(docker ps -a | grep -i "${{ env.CONTAINER_NAME }}"$) ]]; then
+          if [[ $(docker ps -a | grep -i "${{ inputs.CONTAINER_NAME }}"$) ]]; then
             docker start $(docker ps -aq)
             echo "remove left files through container ..."
-            docker exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* && ls -a /intel-extension-for-transformers || true"
+            docker exec ${{ inputs.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* && ls -a /intel-extension-for-transformers || true"
           fi
 
       - name: Clean workspace
-        if: env.DOCKER_CONFIG_NAME == 'commonDockerConfig'
+        if: inputs.DOCKER_CONFIG_NAME == 'commonDockerConfig'
         run: |
           rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
           echo y | docker system prune
 
       - name: Checkout out Repo
-        if: env.DOCKER_CONFIG_NAME == 'commonDockerConfig'
+        if: inputs.DOCKER_CONFIG_NAME == 'commonDockerConfig'
         uses: actions/checkout@v2
 
       - name: Clean workspace
-        if: env.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
+        if: inputs.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
         run: |
           rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
           mkdir ${{ github.workspace }}
@@ -43,19 +66,19 @@ jobs:
           echo y | docker system prune
 
       - name: Checkout out master
-        if: env.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
+        if: inputs.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
         run: |
-          git clone ${{ env.REPO }} ${{ github.workspace }}
+          git clone ${{ inputs.REPO }} ${{ github.workspace }}
           git config --global --add safe.directory ${{ github.workspace }}
           cd ${{ github.workspace }}
           git checkout master
 
       - name: Build develop docker image
         run: |
-          if [[ ! $(docker images | grep -i ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}) ]]; then
-            docker build -f ${{ github.workspace }}/.github/workflow/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+          if [[ ! $(docker images | grep -i ${{ inputs.REPO_NAME }}:${{ inputs.REPO_TAG }}) ]]; then
+            docker build -f ${{ github.workspace }}/.github/workflow/docker/${{ inputs.DOCKER_FILE_NAME }}.dockerfile -t ${{ inputs.REPO_NAME }}:${{ inputs.REPO_TAG }} .
           fi
-          docker images | grep -i ${{ env.REPO_NAME }}
+          docker images | grep -i ${{ inputs.REPO_NAME }}
           if [[ $? -ne 0 ]]; then
             echo "NO Such Repo"
             exit 1
@@ -64,11 +87,10 @@ jobs:
       - name: Clean docker container
         run: |
           docker stop $(docker ps -aq)
-          docker rm -vf ${{ env.CONTAINER_NAME }} || true
-          env | sort
+          docker rm -vf ${{ inputs.CONTAINER_NAME }} || true
 
       - name: Docker run - Container
-        if: env.CONTAINER_NAME != ''
+        if: inputs.CONTAINER_NAME != ''
         run: |
-          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
-          -v ${{ github.workspace }}:/intel-extension-for-transformers ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+          docker run -dit --disable-content-trust --privileged --name=${{ inputs.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers ${{ inputs.REPO_NAME }}:${{ inputs.REPO_TAG }}
