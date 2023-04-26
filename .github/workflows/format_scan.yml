@@ -31,15 +31,27 @@ jobs:
       #     --tool=${TOOL} \
       #     --repo_dir=${WORKSPACE}/nlp_toolkit
       # - name: Run pylint code scan
+      # - run: |
+      #     python -m pip install pylint==2.12.1
+      #     python -m pip install --default-timeout=100 -r requirements.txt
+      #     python -m pip install intel-extension-for-transformers
+      #     python -m pip list
+      #     python -m pylint -f json --disable=R,C,W,E1129 \
+      #         --enable=line-too-long \
+      #         --max-line-length=120 \
+      #         --extension-pkg-whitelist=numpy \
+      #         --ignored-classes=TensorProto,NodeProto \
+      #         --ignored-modules=tensorflow,torch,torch.quantization,torch.tensor,torchvision,mxnet,onnx,onnxruntime,neural_compressor,engine_py,neural_engine_py \
+      #         ${GITHUB_WORKSPACE}/intel-extension-for-transformers
       - run: |
-          python -m pip install pylint==2.12.1
-          python -m pip install --default-timeout=100 -r requirements.txt
-          python -m pip install intel-extension-for-transformers
-          python -m pip list
-          python -m pylint -f json --disable=R,C,W,E1129 \
-              --enable=line-too-long \
-              --max-line-length=120 \
-              --extension-pkg-whitelist=numpy \
-              --ignored-classes=TensorProto,NodeProto \
-              --ignored-modules=tensorflow,torch,torch.quantization,torch.tensor,torchvision,mxnet,onnx,onnxruntime,neural_compressor,engine_py,neural_engine_py \
-              ${GITHUB_WORKSPACE}/intel-extension-for-transformers
+          ls
+          echo ------1-------
+          echo ${GITHUB_WORKSPACE}
+          echo ------2-------
+          cd ${GITHUB_WORKSPACE}
+          echo ------3-------
+          ls
+          echo ------4-------
+          cd ${GITHUB_WORKSPACE}/intel-extension-for-transformers
+          echo ------5-------
+          ls
