@@ -19,10 +19,13 @@ on:
         type: string
         default: "https://github.com/VincyZhang/intel-extension-for-transformers"
 
+      REPO_TAG:
+        type: string
+        default: "py38"
+
       CONTAINER_NAME:
         required: true
         type: string
-        default: "py38"
 
 # env:
 #   DOCKER_CONFIG_NAME: "commonDockerConfig"
