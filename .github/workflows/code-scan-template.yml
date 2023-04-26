@@ -13,7 +13,6 @@ on:
         type: string
 
       CONTAINER_NAME:
-        required: true
         type: string
         default: "codeScan"
 
