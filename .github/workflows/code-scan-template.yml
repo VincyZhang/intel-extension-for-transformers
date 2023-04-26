@@ -28,7 +28,7 @@ jobs:
       DOCKER_CONFIG_NAME: "commonDockerConfig"
       REPO_NAME: "code-scan"
       REPO_TAG: "1.0"
-      DOCKER_FILE_NAME: "DockerfileCodeScan"
+      DOCKER_FILE_NAME: "codeScan"
       CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
 
   build:
