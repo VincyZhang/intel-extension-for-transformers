@@ -23,7 +23,7 @@ env:
   DOCKER_FILE_NAME: "codeScan"
 
 jobs:
-  build:
+  format-scan:
     runs-on: ubuntu-latest
     strategy:
       matrix:

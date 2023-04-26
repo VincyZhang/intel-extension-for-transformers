@@ -1,6 +1,7 @@
 pip install clang-format
-log_path=${WORKSPACE}/kernels_format.log
-cd ${REPO_DIR}/intel_extension_for_transformers/backends/neural_engine/kernels
+log_dir=/intel-extension-for-transformers/.github/workflows/script/formatScan
+log_path=${log_dir}/kernels_format.log
+cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/kernels
 clang-format --style=file -i include/**/*.hpp
 clang-format --style=file -i src/**/*.hpp
 clang-format --style=file -i src/**/*.cpp
