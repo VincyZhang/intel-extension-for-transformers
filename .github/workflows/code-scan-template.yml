@@ -37,7 +37,7 @@ jobs:
     steps:
       - name: Code scan check
         run: |
-          docker run -v ${{ github.workspace }}:/intel-extension-for-transformers -it --rm \
+          docker run -v ${{ github.workspace }}:/intel-extension-for-transformers -i --rm \
               --name ${{ inputs.CONTAINER_NAME }} code-scan:1.0 \
               /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ inputs.codeScanFileName }}.sh
 
