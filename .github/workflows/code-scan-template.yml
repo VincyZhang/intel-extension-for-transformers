@@ -2,11 +2,25 @@ name: Code Scan
 
 on:
   workflow_call:
+    inputs:
+      codeScanFileName:
+        required: true
+        type: string
+        default: "codeScan"
 
-env:
-  codeScanFileName: "codeScan"
-  uploadPath: ""
-  CONTAINER_NAME: "codeScan"
+      uploadPath:
+        required: true
+        type: string
+
+      CONTAINER_NAME:
+        required: true
+        type: string
+        default: "codeScan"
+
+# env:
+#   codeScanFileName: "codeScan"
+#   uploadPath: ""
+#   CONTAINER_NAME: "codeScan"
 
 jobs:
   build:
