@@ -31,6 +31,8 @@ jobs:
       DOCKER_FILE_NAME: "DockerfileCodeScan"
       CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
 
+  build:
+    needs: set_up_docker
     steps:
       - name: Code scan check
         run: |
