@@ -32,7 +32,6 @@ jobs:
   #     CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
 
   build:
-    needs: set_up_docker
     runs-on: ubuntu-latest
     steps:
       - name: Checkout out Repo
