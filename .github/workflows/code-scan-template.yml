@@ -54,7 +54,7 @@ jobs:
         run: |
           docker run -dit --disable-content-trust --privileged --name=${{ inputs.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
-          ${{ parameters.repoName }}:${{ parameters.repoTag }}
+          ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
       - name: Code scan check
         run: |
