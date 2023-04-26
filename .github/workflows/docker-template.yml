@@ -48,11 +48,11 @@ jobs:
             docker exec ${{ inputs.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* && ls -a /intel-extension-for-transformers || true"
           fi
 
-      - name: Clean workspace
-        if: inputs.DOCKER_CONFIG_NAME == 'commonDockerConfig'
-        run: |
-          rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
-          echo y | docker system prune
+      # - name: Clean workspace
+      #   if: inputs.DOCKER_CONFIG_NAME == 'commonDockerConfig'
+      #   run: |
+      #     rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
+      #     echo y | docker system prune
 
       - name: Checkout out Repo
         if: inputs.DOCKER_CONFIG_NAME == 'commonDockerConfig'
@@ -66,13 +66,13 @@ jobs:
           chmod 777 ${{ github.workspace }}
           echo y | docker system prune
 
-      - name: Checkout out master
+      - name: Checkout out main
         if: inputs.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
         run: |
           git clone ${{ inputs.REPO }} ${{ github.workspace }}
           git config --global --add safe.directory ${{ github.workspace }}
           cd ${{ github.workspace }}
-          git checkout master
+          git checkout main
 
       - name: Build develop docker image
         run: |
