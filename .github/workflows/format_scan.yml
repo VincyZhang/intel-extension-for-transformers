@@ -26,8 +26,11 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Run pylint code scan
-        run: |
-          bash .github/workflows/script/formatScan/formatScan.sh \
-          --python_version=${python_version} \
-          --tool=${TOOL} \
-          --repo_dir=${WORKSPACE}/nlp_toolkit
+      # - run: |
+      #     bash .github/workflows/script/formatScan/formatScan.sh \
+      #     --python_version=${python_version} \
+      #     --tool=${TOOL} \
+      #     --repo_dir=${WORKSPACE}/nlp_toolkit
+      - run: |
+          pip install pylint==2.12.1
+          python -m pylint -f json --disable=R,C,W,E1129 --enable=line-too-long --max-line-length=120 --extension-pkg-whitelist=numpy --ignored-classes=TensorProto,NodeProto --ignored-modules=tensorflow,torch,torch.quantization,torch.tensor,torchvision,mxnet,onnx,onnxruntime,neural_compressor,engine_py,neural_engine_py ${REPO_DIR}/intel_extension_for_transformers 
