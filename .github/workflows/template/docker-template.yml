@@ -9,8 +9,9 @@ env:
   DOCKER_CONFIG_NAME: "commonDockerConfig"
   REPO_NAME: "intel-extension-for-transformers"
   REPO_TAG: "py38"
-  DOCKER_FILE_NAME: "Dockerfile"
+  DOCKER_FILE_NAME: "develop"
   REPO: "https://github.com/VincyZhang/intel-extension-for-transformers"
+  CONTAINER_NAME: ""
 
 jobs:
   build-and-run:
@@ -54,7 +55,7 @@ jobs:
       - name: Build develop docker image
         run: |
           if [[ ! $(docker images | grep -i ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}) ]]; then
-            docker build -f ${{ github.workspace }}/.azure-pipelines/docker/${{ env.DOCKER_FILE_NAME }}.devel -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+            docker build -f ${{ github.workspace }}/.github/workflow/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
           fi
           docker images | grep -i ${{ env.REPO_NAME }}
           if [[ $? -ne 0 ]]; then
