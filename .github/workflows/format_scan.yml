@@ -4,7 +4,7 @@ name: DocStyle Code Scan
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   pull_request:
-    branches: [master]
+    branches: [main]
     paths:
       - intel_extension_for_transformers
       - setup.py
