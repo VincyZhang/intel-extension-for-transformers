@@ -15,9 +15,6 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   CodeScan:
-    strategy:
-      matrix:
-        target: [pylint, stage, prod]
     uses: VincyZhang/intel-extension-for-transformers/.github/workflows/code-scan-template.yml@xuehao/itrex_ci
     with:
       codeScanFileName: "pylint"
