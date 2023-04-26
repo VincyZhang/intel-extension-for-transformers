@@ -23,20 +23,12 @@ env:
   DOCKER_FILE_NAME: "codeScan"
 
 jobs:
-  # set_up_docker:
-  #   uses: VincyZhang/intel-extension-for-transformers/.github/workflows/docker-template.yml@xuehao/itrex_ci
-  #   with:
-  #     DOCKER_CONFIG_NAME: "commonDockerConfig"
-  #     REPO_NAME: "code-scan"
-  #     REPO_TAG: "1.0"
-  #     DOCKER_FILE_NAME: "codeScan"
-  #     CONTAINER_NAME: ${{ inputs.CONTAINER_NAME }}
-
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         job_name: ["pylint", "bandit", "clangformat", "cloc", "cpplint", "pydocstyle", "pyspelling"]
+      fail-fast: false
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
