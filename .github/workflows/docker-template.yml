@@ -85,10 +85,10 @@ jobs:
             exit 1
           fi
 
-      - name: Clean docker container
-        run: |
-          docker stop $(docker ps -aq)
-          docker rm -vf ${{ inputs.CONTAINER_NAME }} || true
+      # - name: Clean docker container
+      #   run: |
+      #     docker stop $(docker ps -aq)
+      #     docker rm -vf ${{ inputs.CONTAINER_NAME }} || true
 
       - name: Docker run - Container
         if: inputs.CONTAINER_NAME != ''
