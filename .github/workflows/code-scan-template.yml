@@ -33,6 +33,7 @@ jobs:
 
   build:
     needs: set_up_docker
+    runs-on: ubuntu-latest
     steps:
       - name: Code scan check
         run: |
