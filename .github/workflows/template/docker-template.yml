@@ -1,0 +1,75 @@
+name: Docker Build and Run
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_CONFIG_NAME: "commonDockerConfig"
+  REPO_NAME: "intel-extension-for-transformers"
+  REPO_TAG: "py38"
+  DOCKER_FILE_NAME: "Dockerfile"
+  REPO: "https://github.com/VincyZhang/intel-extension-for-transformers"
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker clean up
+        run: |
+          docker ps -a
+          if [[ $(docker ps -a | grep -i "${{ env.CONTAINER_NAME }}"$) ]]; then
+            docker start $(docker ps -aq)
+            echo "remove left files through container ..."
+            docker exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* && ls -a /intel-extension-for-transformers || true"
+          fi
+
+      - name: Clean workspace
+        if: env.DOCKER_CONFIG_NAME == 'commonDockerConfig'
+        run: |
+          rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
+          echo y | docker system prune
+
+      - name: Checkout out Repo
+        if: env.DOCKER_CONFIG_NAME == 'commonDockerConfig'
+        uses: actions/checkout@v2
+
+      - name: Clean workspace
+        if: env.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
+        run: |
+          rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
+          mkdir ${{ github.workspace }}
+          chmod 777 ${{ github.workspace }}
+          echo y | docker system prune
+
+      - name: Checkout out master
+        if: env.DOCKER_CONFIG_NAME == 'gitCloneDockerConfig'
+        run: |
+          git clone ${{ env.REPO }} ${{ github.workspace }}
+          git config --global --add safe.directory ${{ github.workspace }}
+          cd ${{ github.workspace }}
+          git checkout master
+
+      - name: Build develop docker image
+        run: |
+          if [[ ! $(docker images | grep -i ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}) ]]; then
+            docker build -f ${{ github.workspace }}/.azure-pipelines/docker/${{ env.DOCKER_FILE_NAME }}.devel -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+          fi
+          docker images | grep -i ${{ env.REPO_NAME }}
+          if [[ $? -ne 0 ]]; then
+            echo "NO Such Repo"
+            exit 1
+          fi
+
+      - name: Clean docker container
+        run: |
+          docker stop $(docker ps -aq)
+          docker rm -vf ${{ env.CONTAINER_NAME }} || true
+          env | sort
+
+      - name: Docker run - Container
+        if: env.CONTAINER_NAME != ''
+        run: |
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}

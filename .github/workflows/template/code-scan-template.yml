@@ -1,0 +1,50 @@
+name: Code Scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: docker:20-git
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Docker
+        uses: .github/workflows/template/docker-template.yml
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: .github/workflows/docker/codeScan.dockerfile
+          push: false
+          tags: code-scan:1.0
+
+      - name: Docker clean up
+        run: |
+          docker ps -a
+          docker stop ${{ env.DOCKER_CONTAINER_NAME }} || true
+          docker rm -vf ${{ env.DOCKER_CONTAINER_NAME }} || true
+
+      - name: Code scan check
+        run: |
+          docker run -v ${{ github.workspace }}:/neural-compressor -it --rm --name ${{ env.DOCKER_CONTAINER_NAME }} code-scan:1.0 /neural-compressor/.azure-pipelines/scripts/codeScan/${{ parameters.codeScanFileName }}/${{ parameters.codeScanFileName }}.sh
+
+      - name: Publish pipeline artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ parameters.codeScanFileName }}
+          path: .azure-pipelines/scripts/codeScan/scanLog/${{ parameters.uploadPath }}
+
+      - name: Docker clean up
+        run: |
+          docker exec ${{ env.DOCKER_CONTAINER_NAME }} bash -c "rm -fr /neural-compressor/* && rm -fr /neural-compressor/.* || true"

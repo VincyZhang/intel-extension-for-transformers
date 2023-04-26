@@ -1,0 +1,33 @@
+name: DocStyle Code Scan
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  pull_request:
+    branches: [master]
+    paths:
+      - intel_extension_for_transformers
+      - setup.py
+      - .github/workflows/format_scan.yml
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This job runs the pydocstyle code scan
+  DocStyle:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Runs a single command using the runners shell
+      - name: Run pylint code scan
+        run: |
+          bash .github/workflows/script/formatScan/formatScan.sh \
+          --python_version=${python_version} \
+          --tool=${TOOL} \
+          --repo_dir=${WORKSPACE}/nlp_toolkit
