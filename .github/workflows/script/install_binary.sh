@@ -2,6 +2,8 @@
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 cd /intel-extension-for-transformers
+$BOLD_YELLOW && echo "---------------- git submodule update --init --recursive -------------" && $RESET
+git submodule update --init --recursive
 
 $BOLD_YELLOW && echo "---------------- run python setup.py sdist bdist_wheel -------------" && $RESET
 python setup.py sdist bdist_wheel
