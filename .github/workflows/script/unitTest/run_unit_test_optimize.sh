@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /intel-extension-for-transformers/test || exit 1
+cd /intel-extension-for-transformers/tests || exit 1
 find ./ -name "test*.py" | sed 's,\.\/,python ,g' | sed 's/$/ --verbose/' >run.sh
 
 LOG_DIR=/intel-extension-for-transformers/log_dir
