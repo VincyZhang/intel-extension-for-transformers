@@ -52,4 +52,4 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
-          && bash run_unit_test.sh"
+          && bash run_unit_test_optimize.sh"
