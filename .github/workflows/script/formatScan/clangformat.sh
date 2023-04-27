@@ -1,4 +1,4 @@
-source /intel-extension-for-transformers/.github/workflows/scripts/change_color.sh
+source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 pip install clang-format
 log_dir=/intel-extension-for-transformers/.github/workflows/script/formatScan
