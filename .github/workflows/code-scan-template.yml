@@ -46,7 +46,7 @@ jobs:
       - name: Env build
         run: |
           docker exec ${{ inputs.CONTAINER_NAME }} \
-          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/prepare_env.sh
+          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
 
       - name: Code scan check
         run: |
