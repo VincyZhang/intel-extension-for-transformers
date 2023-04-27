@@ -33,23 +33,23 @@ jobs:
 
       - name: Docker Run
         run: |
-          docker run -dit --disable-content-trust --privileged --name=${{ inputs.CONTAINER_NAME }} --shm-size="2g" \
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
       - name: Env build
         run: |
-          docker exec ${{ inputs.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
 
       - name: Binary build
         run: |
-          docker exec ${{ inputs.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
           && bash install_binary.sh
 
       - name: Run UT
         run: |
-          docker exec ${{ inputs.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test.sh"
