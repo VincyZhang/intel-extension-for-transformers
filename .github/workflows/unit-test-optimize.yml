@@ -49,7 +49,7 @@ jobs:
           && bash install_binary.sh
 
       - name: Run UT
-      - run: |
+        run: |
           docker exec ${{ inputs.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test.sh"
