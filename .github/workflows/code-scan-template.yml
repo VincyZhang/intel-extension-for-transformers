@@ -54,7 +54,8 @@ jobs:
           bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh
 
       - name: Publish pipeline artifact
-        uses: actions/upload-artifact@v2
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.job_name }}
           path: ${{ github.workspace }}/.github/workflows/script/formatScan/${{ matrix.job_name }}.*

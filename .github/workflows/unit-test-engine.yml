@@ -56,7 +56,8 @@ jobs:
           && bash run_unit_test_engine.sh"
 
       - name: Publish pipeline artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
         with:
           name: Kernel Unit Test
           path: ${{ github.workspace }}/log_dir/unit_test*.*
