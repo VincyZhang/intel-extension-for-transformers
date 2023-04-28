@@ -27,7 +27,7 @@ jobs:
       - name: Checkout out Repo
         uses: actions/checkout@v3
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Docker Build
         run: |
@@ -55,3 +55,13 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test_optimize.sh"
+
+      - name: Publish pipeline artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Optimize Unit Test
+          path: ${{ github.workspace }}/log_dir/unit_test*.*
+
+      - name: Docker clean up
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"

@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.job_name }}
-          path: .github/workflows/script/formatScan/${{ inputs.uploadPath }}
+          path: ${{ github.workspace }}/.github/workflows/script/formatScan/${{ matrix.job_name }}.*
 
       - name: Docker clean up
         run: |

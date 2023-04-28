@@ -54,3 +54,14 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test_engine.sh"
+
+      - name: Publish pipeline artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Kernel Unit Test
+          path: ${{ github.workspace }}/log_dir/unit_test*.*
+  
+      - name: Docker clean up
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+  

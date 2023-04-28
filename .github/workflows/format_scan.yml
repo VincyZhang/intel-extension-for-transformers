@@ -14,7 +14,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   code-scan:
-    uses: VincyZhang/intel-extension-for-transformers/.github/workflows/code-scan-template.yml@xuehao/itrex_ci
+    uses: ./.github/workflows/code-scan-template.yml
     with:
       codeScanFileName: pylint
       uploadPath: "pylint.json"
