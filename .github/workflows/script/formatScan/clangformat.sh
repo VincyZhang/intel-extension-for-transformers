@@ -13,8 +13,10 @@ cd /intel-extension-for-transformers
 git config --global --add safe.directory "*"
 
 TARGET_BRANCH=$(echo ${GITHUB_REF} | sed 's/refs\/heads\///')
+echo "git diff --no-index $(git show-ref -s remotes/origin/${TARGET_BRANCH}) /intel-extension-for-transformers"
 git diff --no-index $(git show-ref -s remotes/origin/${TARGET_BRANCH}) /intel-extension-for-transformers  2>&1 | tee -a ${log_path}
 
+git diff --no-index $(git show-ref -s remotes/origin/main) /intel-extension-for-transformers  2>&1 | tee -a ${log_path}
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
     exit 1
 fi
