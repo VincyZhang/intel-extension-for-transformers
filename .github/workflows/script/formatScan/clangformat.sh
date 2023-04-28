@@ -1,4 +1,5 @@
 #!/bin/bash
+PATTERN='[-a-zA-Z0-9_]*='
 for i in "$@"
 do
     case $i in
