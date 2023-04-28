@@ -61,7 +61,8 @@ jobs:
       - name: Code scan check
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
-          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh
+          bash -c "/intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh \
+          --target_branch=${{github.base_ref}}"
 
       - name: Publish pipeline artifact
         if: ${{ !cancelled() }}
@@ -72,4 +73,4 @@ jobs:
 
       - name: Docker clean up
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} \bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"

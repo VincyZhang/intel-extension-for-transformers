@@ -1,4 +1,14 @@
 #!/bin/bash
+for i in "$@"
+do
+    case $i in
+        --target_branch=*)
+            target_branch=`echo $i | sed "s/${PATTERN}//"`;;
+        *)
+            echo "Parameter $i not recognized."; exit 1;;
+    esac
+done
+
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 pip install clang-format
@@ -13,9 +23,9 @@ clang-format --style=file -i src/**/*.cpp
 cd /intel-extension-for-transformers
 git config --global --add safe.directory "*"
 
-echo $GITHUB_BASE_REF
-echo "git diff --no-index $(git show-ref -s remotes/origin/$GITHUB_BASE_REF) /intel-extension-for-transformers"
-git diff --no-index $(git show-ref -s remotes/origin/$GITHUB_BASE_REF) /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
+echo $target_branch
+echo "git diff --no-index $(git show-ref -s remotes/origin/$target_branch) /intel-extension-for-transformers"
+git diff --no-index $(git show-ref -s remotes/origin/$target_branch) /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
 
 git diff $(git show-ref -s remotes/origin/main) /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
