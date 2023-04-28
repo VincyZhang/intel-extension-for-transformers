@@ -26,6 +26,7 @@ git config --global --add safe.directory "*"
 
 echo $target_branch
 target_branch="$(git show-ref -s "remotes/origin/$target_branch")"
+git show-ref -s remotes/origin/$target_branch
 echo $target_branch
 echo "git diff $target_branch /intel-extension-for-transformers"
 git diff $target_branch /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
