@@ -60,9 +60,16 @@ jobs:
 
       - name: Code scan check
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} \
-          bash -c "bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh \
-          --target_branch=${{github.base_ref}}"
+          if [[ "${{ matrix.job_name }}" == "clangformat" ]]; then
+            target_branch="$(git show-ref -s "remotes/origin/${{github.base_ref}}")"
+            echo $target_branch
+            docker exec ${{ env.CONTAINER_NAME }} \
+            bash -c "bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh \
+            --target_branch=${target_branch}"
+          else
+            docker exec ${{ env.CONTAINER_NAME }} \
+            bash -c "bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh"
+          fi
 
       - name: Publish pipeline artifact
         if: ${{ !cancelled() }}
