@@ -67,6 +67,7 @@ jobs:
           path: ${{ github.workspace }}/log_dir/unit_test*.*
   
       - name: Docker clean up
+        if: ${{ always() }}
         run: |
           docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
   
