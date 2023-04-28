@@ -16,4 +16,5 @@ if [ ${exit_code} -ne 0 ]; then
     echo "Pyspelling exited with non-zero exit code."
     exit 1
 fi
+$BOLD_PURPLE && echo "Congratulations, check passed!" && $LIGHT_PURPLE && echo "You can click on the artifact button to see the log details." && $RESET
 exit 0

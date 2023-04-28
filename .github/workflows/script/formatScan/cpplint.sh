@@ -12,4 +12,5 @@ cpplint --filter=-build/include_subdir,-build/header_guard --recursive --quiet -
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "Total errors found:" ${log_path}) != 0 ]]; then
     exit 1
 fi
+$BOLD_PURPLE && echo "Congratulations, check passed!" && $LIGHT_PURPLE && echo "You can click on the artifact button to see the log details." && $RESET
 exit 0
