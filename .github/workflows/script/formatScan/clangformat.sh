@@ -8,7 +8,10 @@ cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/n
 clang-format --style=file -i include/**/*.hpp
 clang-format --style=file -i src/**/*.hpp
 clang-format --style=file -i src/**/*.cpp
-git diff --no-index 2>&1 | tee -a ${log_path}
+
+cd /intel-extension-for-transformers
+TARGET_BRANCH=$(echo ${GITHUB_REF} | sed 's/refs\/heads\///')
+git diff --no-index ${git show-ref -s remotes/origin/$(System.PullRequest.TargetBranch)} /intel-extension-for-transformers  2>&1 | tee -a ${log_path}
 
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
     exit 1
