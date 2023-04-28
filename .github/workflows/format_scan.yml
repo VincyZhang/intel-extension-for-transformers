@@ -61,7 +61,7 @@ jobs:
       - name: Code scan check
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
-          bash -c "/intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh \
+          bash -c "bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh \
           --target_branch=${{github.base_ref}}"
 
       - name: Publish pipeline artifact
