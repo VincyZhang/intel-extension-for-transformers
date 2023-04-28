@@ -1,3 +1,4 @@
+#!/bin/bash
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 pip install clang-format

@@ -1,7 +1,7 @@
+#!/bin/bash
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 log_dir=/intel-extension-for-transformers/.github/workflows/script/formatScan
-pip install bandit
 python -m bandit -r -lll -iii /intel-extension-for-transformers >${log_dir}/bandit.log
 exit_code=$?
 

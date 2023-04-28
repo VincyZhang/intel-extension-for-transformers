@@ -1,9 +1,10 @@
+#!/bin/bash
+
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 cd /intel-extension-for-transformers
 log_dir=/intel-extension-for-transformers/.github/workflows/script/formatScan
 
-python -m pip install pylint==2.12.1
 python -m pylint -f json --disable=R,C,W,E1129 \
     --enable=line-too-long \
     --max-line-length=120 \
