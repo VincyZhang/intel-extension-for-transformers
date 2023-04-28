@@ -24,7 +24,8 @@ clang-format --style=file -i src/**/*.cpp
 cd /intel-extension-for-transformers
 git config --global --add safe.directory "*"
 
-target_branch=$(echo $(git show-ref -s remotes/origin/${target_branch}))
+echo $target_branch
+target_branch=$(echo $(git show-ref -s remotes/origin/$target_branch))
 echo $target_branch
 echo "git diff $target_branch /intel-extension-for-transformers"
 git diff $target_branch /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
