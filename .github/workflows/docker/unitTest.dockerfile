@@ -32,7 +32,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     time \
     wget \
     bc \
-    cloc \
     vim
 
 RUN ln -sf $(which python3) /usr/bin/python

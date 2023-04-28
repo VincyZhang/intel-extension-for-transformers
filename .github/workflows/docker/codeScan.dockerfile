@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     python3-dev \
     python3-distutils \
     build-essential \
+    cloc \
     git
 
 RUN ln -sf $(which python3) /usr/bin/python
