@@ -7,8 +7,7 @@ cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/n
 clang-format --style=file -i include/**/*.hpp
 clang-format --style=file -i src/**/*.hpp
 clang-format --style=file -i src/**/*.cpp
-git diff 2>&1 | tee -a ${log_path}
-
+git diff --no-index 2>&1 | tee -a ${log_path}
 
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
     exit 1
