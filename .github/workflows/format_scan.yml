@@ -1,4 +1,4 @@
-name: DocStyle Code Scan
+name: Format Scan
 
 on:
   pull_request:
@@ -11,10 +11,60 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+env:
+  DOCKER_CONFIG_NAME: "commonDockerConfig"
+  REPO_NAME: "code-scan"
+  REPO_TAG: "1.0"
+  DOCKER_FILE_NAME: "codeScan"
+  CONTAINER_NAME: "codeScan"
+
 jobs:
-  code-scan:
-    uses: ./.github/workflows/code-scan-template.yml
-    with:
-      codeScanFileName: pylint
-      uploadPath: "pylint.json"
+  format-scan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job_name:
+          [
+            "pylint",
+            "bandit",
+            "clangformat",
+            "cloc",
+            "cpplint",
+            "pydocstyle",
+            "pyspelling",
+          ]
+      fail-fast: false
+    steps:
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+
+      - name: Docker Build
+        run: |
+          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+
+      - name: Docker Run
+        run: |
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers \
+          ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+
+      - name: Env build
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
+
+      - name: Code scan check
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh
+
+      - name: Publish pipeline artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.job_name }}
+          path: ${{ github.workspace }}/.github/workflows/script/formatScan/${{ matrix.job_name }}.*
+
+      - name: Docker clean up
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
