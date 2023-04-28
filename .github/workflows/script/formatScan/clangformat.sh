@@ -10,6 +10,8 @@ clang-format --style=file -i src/**/*.hpp
 clang-format --style=file -i src/**/*.cpp
 
 cd /intel-extension-for-transformers
+git config --global --add safe.directory "*"
+
 TARGET_BRANCH=$(echo ${GITHUB_REF} | sed 's/refs\/heads\///')
 git diff --no-index $(git show-ref -s remotes/origin/${TARGET_BRANCH}) /intel-extension-for-transformers  2>&1 | tee -a ${log_path}
 
