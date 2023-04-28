@@ -13,10 +13,9 @@ clang-format --style=file -i src/**/*.cpp
 cd /intel-extension-for-transformers
 git config --global --add safe.directory "*"
 
-TARGET_BRANCH=$(echo ${GITHUB_REF} | sed 's/refs\/heads\///')
-echo ${GITHUB_REF}
-echo "git diff --no-index $(git show-ref -s remotes/origin/${TARGET_BRANCH}) /intel-extension-for-transformers"
-git diff --no-index $(git show-ref -s remotes/origin/${TARGET_BRANCH}) /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
+echo $GITHUB_BASE_REF
+echo "git diff --no-index $(git show-ref -s remotes/origin/$GITHUB_BASE_REF) /intel-extension-for-transformers"
+git diff --no-index $(git show-ref -s remotes/origin/$GITHUB_BASE_REF) /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
 
 git diff $(git show-ref -s remotes/origin/main) /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
