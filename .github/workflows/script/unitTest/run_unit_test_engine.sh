@@ -1,8 +1,8 @@
 #!/bin/bash
 cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/test/pytest || exit 1
-find ./ -name "test*.py" | sed 's,\.\/,python ,g' | sed 's/$/ --verbose/' >run.sh
 
 # -------------------pytest------------------------
+find ./ -name "test*.py" | sed 's,\.\/,python ,g' | sed 's/$/ --verbose/' >run.sh
 LOG_DIR=/intel-extension-for-transformers/log_dir
 JOB_NAME=unit_test
 mkdir -p ${LOG_DIR}
@@ -25,8 +25,10 @@ pip install cmake
 cmake_path=$(which cmake)
 ln -s ${cmake_path} ${cmake_path}3 || true
 cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine
+
 mkdir build && cd build && cmake .. -DNE_WITH_SPARSELIB=ON -DNE_WITH_TESTS=ON -DPYTHON_EXECUTABLE=$(which python) && make -j 2>&1 |
     tee -a ${LOG_DIR}/gtest_cmake_build.log
+
 if [[ ${test_install_backend} == "true" ]]; then
     ut_log_name=${LOG_DIR}/unit_test_gtest_backend_only.log
 else

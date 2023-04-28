@@ -1,0 +1,67 @@
+name: Kernel Unit Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - intel_extension_for_transformers/backends/neural_engine/kernels
+      - intel_extension_for_transformers/backends/neural_engine/test/kernels/benchmark
+      - .github/workflows/unit-test-kernel.yml
+      - .github/workflows/script/unitTest
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  DOCKER_CONFIG_NAME: "commonDockerConfig"
+  REPO_NAME: "intel-extension-for-transformers"
+  REPO_TAG: "py38"
+  DOCKER_FILE_NAME: "unitTest"
+  CONTAINER_NAME: "utTest"
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      - name: Docker Build
+        run: |
+          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+
+      - name: Docker Run
+        run: |
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers \
+          ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+
+      - name: Env build
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
+
+      - name: Binary build
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
+          && bash install_binary.sh"
+
+      - name: Run UT
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
+          && bash run_unit_test_kernel.sh"
+
+      - name: Publish pipeline artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: Kernel Unit Test
+          path: ${{ github.workspace }}/log_dir/unit_test*.*
+
+      - name: Docker clean up
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
