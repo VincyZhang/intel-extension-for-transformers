@@ -9,7 +9,7 @@ sed -i "s|\${SCAN_REPO}|$REPO_DIR|g" ${VAL_REPO}/pyspelling_conf.yaml
 echo "Modified config:"
 cat ${VAL_REPO}/pyspelling_conf.yaml
 
-pyspelling -c ${VAL_REPO}/pyspelling_conf.yaml >${log_dir}/pyspelling_output.log
+pyspelling -c ${VAL_REPO}/pyspelling_conf.yaml >${log_dir}/pyspelling.log
 
 exit_code=$?
 if [ ${exit_code} -ne 0 ]; then

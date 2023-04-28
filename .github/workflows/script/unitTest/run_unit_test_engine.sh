@@ -6,7 +6,7 @@ find ./ -name "test*.py" | sed 's,\.\/,python ,g' | sed 's/$/ --verbose/' >run.s
 LOG_DIR=/intel-extension-for-transformers/log_dir
 JOB_NAME=unit_test
 mkdir -p ${LOG_DIR}
-ut_log_name=${LOG_DIR}/ut_${JOB_NAME}.log
+ut_log_name=${LOG_DIR}/${JOB_NAME}_pytest.log
 
 echo "cat run.sh..."
 cat run.sh | tee ${ut_log_name}

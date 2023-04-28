@@ -12,9 +12,9 @@ mkdir build && cd build && cmake .. -DNE_WITH_SPARSELIB=ON -DNE_WITH_TESTS=ON -D
 
 # -------------------engine test-------------------
 if [[ ${test_install_backend} == "true" ]]; then
-    ut_log_name=${LOG_DIR}/engine_unit_test_gtest_backend_only.log
+    ut_log_name=${LOG_DIR}/unit_test_engine_gtest_backend_only.log
 else
-    ut_log_name=${LOG_DIR}/engine_unit_test_gtest.log
+    ut_log_name=${LOG_DIR}/unit_test_engine_gtest.log
 fi
 ctest -V -L "engine_test" 2>&1 | tee ${ut_log_name}
 if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] ||
@@ -27,9 +27,9 @@ fi
 
 # ------------------kernel test--------------------
 if [[ ${test_install_backend} == "true" ]]; then
-    ut_log_name=${LOG_DIR}/kernel_unit_test_gtest_backend_only.log
+    ut_log_name=${LOG_DIR}/unit_test_kernel_gtest_backend_only.log
 else
-    ut_log_name=${LOG_DIR}/kernel_unit_test_gtest.log
+    ut_log_name=${LOG_DIR}/unit_test_kernel_gtest.log
 fi
 
 ctest -V -L "kernel_test" 2>&1 | tee ${ut_log_name}
