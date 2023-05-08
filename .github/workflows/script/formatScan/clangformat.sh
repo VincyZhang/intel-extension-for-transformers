@@ -24,6 +24,7 @@ clang-format --style=file -i src/**/*.cpp
 cd /intel-extension-for-transformers
 git config --global --add safe.directory "*"
 
+git fetch
 echo "git diff $target_branch /intel-extension-for-transformers"
 git diff $target_branch /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
 
