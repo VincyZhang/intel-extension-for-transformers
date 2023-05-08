@@ -38,7 +38,7 @@ jobs:
           supported_extensions=(py, sh, yaml)
           git --no-pager diff --name-only $(git show-ref -s remotes/origin/${{ github.event.pull_request.base.ref }}) ${{ github.workspace }}/intel_extension_for_transformers> ${{ env.CODE_SCAN_LOG_PATH }}/diff.log
           files=$(cat ${{ env.CODE_SCAN_LOG_PATH }}/diff.log | awk '!a[$0]++')
-          $BOLD_YELLOW && echo " ----------------- checking ... --------------------------" && $RESET
+          $LIGHT_PURPLE && echo " ----------------- checking ... --------------------------" && $RESET
           for file in ${files}
           do
               if [[ "${supported_extensions[@]}" =~ "${file##*.}" ]]; then
