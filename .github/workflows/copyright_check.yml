@@ -7,7 +7,6 @@ on:
       - intel_extension_for_transformers
       - setup.py
       - .github/workflows/format_scan.yml
-      - .github/workflows/script/formatScan
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -33,20 +32,20 @@ jobs:
         run: |
           source ${{ github.workspace }}/.github/workflows/script/change_color.sh
           set -e
-          mkdir -p ${{ github.workspace }}/${{ env.CODE_SCAN_LOG_PATH }}
+          mkdir -p ${{ env.CODE_SCAN_LOG_PATH }}
           RESET="echo -en \\E[0m \\n"  # close 
 
           supported_extensions=(py, sh, yaml)
-          git --no-pager diff --name-only $(git show-ref -s remotes/origin/${{ github.event.pull_request.base.ref }}) ${{ github.workspace }}/neural_compressor > ${{ github.workspace }}/${{ env.CODE_SCAN_LOG_PATH }}/diff.log
-          files=$(cat ${{ github.workspace }}/${{ env.CODE_SCAN_LOG_PATH }}/diff.log | awk '!a[$0]++')
+          git --no-pager diff --name-only $(git show-ref -s remotes/origin/${{ github.event.pull_request.base.ref }}) ${{ github.workspace }}/intel_extension_for_transformers> ${{ env.CODE_SCAN_LOG_PATH }}/diff.log
+          files=$(cat ${{ env.CODE_SCAN_LOG_PATH }}/diff.log | awk '!a[$0]++')
 
           for file in ${files}
           do
               if [[ "${supported_extensions[@]}" =~ "${file##*.}" ]]; then
                   if [ $(grep -E -c "Copyright \\(c\\) ([0-9]{4})(-[0-9]{4})? Intel Corporation" ${file}) = 0 ]; then
-                      echo ${file} >> ${{ github.workspace }}/${{ env.CODE_SCAN_LOG_PATH }}/copyright_issue_summary.log
+                      echo ${file} >> ${{ env.CODE_SCAN_LOG_PATH }}/copyright_issue_summary.log
                       $BOLD_YELLOW && echo " -----------------  Current log file output start --------------------------"
-                      cat   ${{ github.workspace }}/${{ env.CODE_SCAN_LOG_PATH }}/copyright_issue_summary.log
+                      cat ${{ env.CODE_SCAN_LOG_PATH }}/copyright_issue_summary.log
                       $BOLD_YELLOW && echo " -----------------  Current log file output end --------------------------" && $RESET
                       $BOLD_RED && echo "CopyRight has something wrong! Please click on the artifact button to download and view the error log!" && $RESET; exit 1
                   fi
