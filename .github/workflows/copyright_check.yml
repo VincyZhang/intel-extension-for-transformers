@@ -33,9 +33,8 @@ jobs:
           source ${{ github.workspace }}/.github/workflows/script/change_color.sh
           set -e
           mkdir -p ${{ env.CODE_SCAN_LOG_PATH }}
-          RESET="echo -en \\E[0m \\n"  # close 
-
           supported_extensions=(py, sh, yaml)
+          git fetch
           git --no-pager diff --name-only remotes/origin/${{github.base_ref}} ${{ github.workspace }}/intel_extension_for_transformers> ${{ env.CODE_SCAN_LOG_PATH }}/diff.log
           files=$(cat ${{ env.CODE_SCAN_LOG_PATH }}/diff.log | awk '!a[$0]++')
           $LIGHT_PURPLE && echo " ----------------- checking ... --------------------------" && $RESET
