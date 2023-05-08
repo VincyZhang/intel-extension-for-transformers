@@ -60,10 +60,9 @@ jobs:
 
       - name: Code scan check
         run: |
-          # echo "target_branch=$(git show-ref -s "remotes/origin/${{github.base_ref}}")" >> $GITHUB_ENV
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "bash /intel-extension-for-transformers/.github/workflows/script/formatScan/${{ matrix.job_name }}.sh \
-          --target_branch=${{ github.event.pull_request.base.sha }}"
+          --target_branch=remotes/origin/${{github.base_ref}}"
 
       - name: Publish pipeline artifact
         if: ${{ !cancelled() }}
