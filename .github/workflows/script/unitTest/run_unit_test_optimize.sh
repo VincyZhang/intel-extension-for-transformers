@@ -13,6 +13,7 @@ $BOLD_YELLOW && echo "cat run.sh..." && $RESET
 cat run.sh | tee ${ut_log_name}
 $BOLD_YELLOW && echo "------UT start-------" && $RESET
 bash run.sh 2>&1 | tee -a ${ut_log_name}
+cp .coverage /intel-extension-for-transformers/.coverage
 $BOLD_YELLOW && echo "------UT end -------" && $RESET
 
 if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then

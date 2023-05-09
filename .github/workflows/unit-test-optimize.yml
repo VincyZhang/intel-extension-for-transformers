@@ -9,9 +9,9 @@ on:
       - intel_extension_for_transformers/preprocessing
       - .github/workflows/unit-test-optimize.yml
       - .github/workflows/script/unitTest
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# If there is a new commit, the previous jobs will be canceled
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -23,7 +23,6 @@ env:
   DOCKER_FILE_NAME: "unitTest"
   CONTAINER_NAME: "utTest"
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   unit-test:
     runs-on: ubuntu-latest

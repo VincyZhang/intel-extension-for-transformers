@@ -1,12 +1,14 @@
 #!/bin/bash
 PATTERN='[-a-zA-Z0-9_]*='
-for i in "$@"
-do
+for i in "$@"; do
     case $i in
-        --target_branch=*)
-            target_branch=`echo $i | sed "s/${PATTERN}//"`;;
-        *)
-            echo "Parameter $i not recognized."; exit 1;;
+    --target_branch=*)
+        target_branch=$(echo $i | sed "s/${PATTERN}//")
+        ;;
+    *)
+        echo "Parameter $i not recognized."
+        exit 1
+        ;;
     esac
 done
 

@@ -7,9 +7,9 @@ on:
       - intel_extension_for_transformers
       - setup.py
       - .github/workflows/format_scan.yml
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# If there is a new commit, the previous jobs will be canceled
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -35,7 +35,7 @@ jobs:
           mkdir -p ${{ env.CODE_SCAN_LOG_PATH }}
           supported_extensions=(py, sh, yaml)
           git fetch
-          git --no-pager diff --name-only remotes/origin/${{github.base_ref}} ${{ github.workspace }}/intel_extension_for_transformers> ${{ env.CODE_SCAN_LOG_PATH }}/diff.log
+          git --no-pager diff --name-only remotes/origin/${{ github.base_ref }} ${{ github.workspace }}/intel_extension_for_transformers> ${{ env.CODE_SCAN_LOG_PATH }}/diff.log
           files=$(cat ${{ env.CODE_SCAN_LOG_PATH }}/diff.log | awk '!a[$0]++')
           $LIGHT_PURPLE && echo " ----------------- checking ... --------------------------" && $RESET
           for file in ${files}

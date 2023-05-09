@@ -8,9 +8,9 @@ on:
       - setup.py
       - .github/workflows/format_scan.yml
       - .github/workflows/script/formatScan
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# If there is a new commit, the previous jobs will be canceled
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -70,7 +70,3 @@ jobs:
         with:
           name: ${{ matrix.job_name }}
           path: ${{ github.workspace }}/.github/workflows/script/formatScan/${{ matrix.job_name }}.*
-
-      - name: Docker clean up
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"

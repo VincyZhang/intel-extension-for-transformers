@@ -24,4 +24,3 @@ if [ ${exit_code} -ne 0 ]; then
 fi
 $BOLD_PURPLE && echo "Congratulations, Pylint check passed!" && $LIGHT_PURPLE && echo " You can click on the artifact button to see the log details." && $RESET
 exit 0
-
