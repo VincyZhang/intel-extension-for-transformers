@@ -63,7 +63,8 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: Kernel Unit Test
-          path: ${{ github.workspace }}/log_dir/unit_test*.*
+          path: ${{ github.workspace }}/log_dir
+          retention-days: 5
   
       - name: Docker clean up
         if: ${{ always() }}

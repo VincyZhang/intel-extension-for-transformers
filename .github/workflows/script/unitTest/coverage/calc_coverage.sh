@@ -2,16 +2,11 @@
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 WORKSPACE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage"
 export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.coveragerc"
+LOG_DIR=/log_dir
+coverage_compare="${LOG_DIR}/coverage_compare.html"
 cat ${COVERAGE_RCFILE}
 
-# mute engine log
-cd /intel-extension-for-transformers
-coverage report -m --rcfile=${COVERAGE_RCFILE}
-coverage html -d ${WORKSPACE}/coverage_base/htmlcov --rcfile=${COVERAGE_RCFILE}
-coverage xml -o ${WORKSPACE}/coverage_base/coverage.xml --rcfile=${COVERAGE_RCFILE}
-
-
-get_coverage_data() {
+function get_coverage_data() {
     # Input argument
     local coverage_xml="$1"
 
@@ -44,25 +39,73 @@ get_coverage_data() {
     echo "$lines_covered $lines_valid $lines_coverage $branches_covered $branches_valid $branches_coverage"
 }
 
-$BOLD_YELLOW && echo "compare coverage" && $RESET
+function compare_coverage() {
+    $BOLD_YELLOW && echo "compare coverage" && $RESET
 
-coverage_PR_xml="log_dir/coverage_PR/coverage.xml"
-coverage_PR_data=$(get_coverage_data $coverage_PR_xml)
-read lines_PR_covered lines_PR_valid coverage_PR_lines_rate branches_PR_covered branches_PR_valid coverage_PR_branches_rate <<<"$coverage_PR_data"
+    coverage_PR_xml="${LOG_DIR}/coverage_pr/coverage.xml"
+    coverage_PR_data=$(get_coverage_data $coverage_PR_xml)
+    read lines_PR_covered lines_PR_valid coverage_PR_lines_rate branches_PR_covered branches_PR_valid coverage_PR_branches_rate <<<"$coverage_PR_data"
 
-coverage_base_xml="log_dir/coverage_base/coverage.xml"
-coverage_base_data=$(get_coverage_data $coverage_base_xml)
-read lines_base_covered lines_base_valid coverage_base_lines_rate branches_base_covered branches_base_valid coverage_base_branches_rate <<<"$coverage_base_data"
+    coverage_base_xml="${LOG_DIR}/coverage_base/coverage.xml"
+    coverage_base_data=$(get_coverage_data $coverage_base_xml)
+    read lines_base_covered lines_base_valid coverage_base_lines_rate branches_base_covered branches_base_valid coverage_base_branches_rate <<<"$coverage_base_data"
 
-$BOLD_BLUE && echo "PR lines coverage: $lines_PR_covered/$lines_PR_valid ($coverage_PR_lines_rate%)" && $RESET
-$BOLD_BLUE && echo "PR branches coverage: $branches_PR_covered/$branches_PR_valid ($coverage_PR_branches_rate%)" && $RESET
-$BOLD_BLUE && echo "BASE lines coverage: $lines_base_covered/$lines_base_valid ($coverage_base_lines_rate%)" && $RESET
-$BOLD_BLUE && echo "BASE branches coverage: $branches_base_covered/$branches_base_valid ($coverage_base_branches_rate%)" && $RESET
+    $BOLD_BLUE && echo "PR lines coverage: $lines_PR_covered/$lines_PR_valid ($coverage_PR_lines_rate%)" && $RESET
+    $BOLD_BLUE && echo "PR branches coverage: $branches_PR_covered/$branches_PR_valid ($coverage_PR_branches_rate%)" && $RESET
+    $BOLD_BLUE && echo "BASE lines coverage: $lines_base_covered/$lines_base_valid ($coverage_base_lines_rate%)" && $RESET
+    $BOLD_BLUE && echo "BASE branches coverage: $branches_base_covered/$branches_base_valid ($coverage_base_branches_rate%)" && $RESET
 
+    if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then
+        exit 1
+    fi
+    if [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] || [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ]; then
+        exit 1
+    fi
+}
 
-if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then
-    exit 1
-fi
-if [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] || [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ]; then
-    exit 1
-fi
+function check_coverage_status() {
+    # Declare an array to hold failed items
+    declare -a fail_items=()
+
+    if (($(bc -l <<<"${coverage_PR_lines_rate} < ${coverage_base_lines_rate}"))); then
+        fail_items+=("lines")
+    fi
+    if (($(bc -l <<<"${coverage_PR_branches_rate} < ${coverage_base_branches_rate}"))); then
+        fail_items+=("branches")
+    fi
+
+    if [[ ${#fail_items[@]} -ne 0 ]]; then
+        fail_items_str=$(
+            IFS=', '
+            echo "${fail_items[*]}"
+        )
+        for item in "${fail_items[@]}"; do
+            case "$item" in
+            lines)
+                decrease=$(echo "$coverage_PR_lines_rate - $coverage_base_lines_rate" | bc -l)
+                ;;
+            branches)
+                decrease=$(echo "$coverage_PR_branches_rate - $coverage_base_branches_rate" | bc -l)
+                ;;
+            *)
+                echo "Unknown item: $item"
+                continue
+                ;;
+            esac
+            $BOLD_RED && echo "Unit Test failed with ${item} coverage decrease ${decrease}%" && $RESET
+        done
+        $BOLD_RED && echo "compare coverage to give detail info" && $RESET
+        bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log} ${coverage_log_base} "FAILED" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
+        exit 1
+    else
+        $BOLD_GREEN && echo "Unit Test success with coverage lines: ${coverage_PR_lines_rate}%, branches: ${coverage_PR_branches_rate}%" && $RESET
+        $BOLD_GREEN && echo "compare coverage to give detail info" && $RESET
+        bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log} ${coverage_log_base} "SUCCESS" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
+    fi
+
+}
+
+function main() {
+    compare_coverage
+    check_coverage_status
+}

@@ -64,7 +64,7 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: Optimize Unit Test
-          path: ${{ github.workspace }}/log_dir/unit_test*.*
+          path: ${{ github.workspace }}/log_dir
 
       - name: Docker clean up
         if: ${{ always() }}

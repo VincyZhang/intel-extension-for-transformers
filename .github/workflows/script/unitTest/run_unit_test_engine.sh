@@ -1,30 +1,42 @@
 #!/bin/bash
+export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.coveragerc"
+LOG_DIR=/log_dir
+mkdir -p ${LOG_DIR}
 
 # -------------------pytest------------------------
 function pytest() {
     local coverage_log_dir=$1
+    JOB_NAME=unit_test
 
     cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/test/pytest || exit 1
-    find ./ -name "test*.py" | sed 's,\.\/,python ,g' | sed 's/$/ --verbose/' >run.sh
-    LOG_DIR=/intel-extension-for-transformers/log_dir
-    JOB_NAME=unit_test
-    mkdir -p ${LOG_DIR}
+
+    engine_path=$(python -c 'import intel_extension_for_transformers; import os; print(os.path.dirname(intel_extension_for_transformers.__file__))')
+    engine_path="${engine_path}/backends/neural_engine"
+    echo "engine path is ${engine_path}"
+    find . -name "test*.py" | sed 's,\\.\\/,coverage run --source='"${engine_path}"' --append ,g' | sed 's/$/ --verbose/' >run.sh
+    coverage erase
+
     mkdir -p ${coverage_log_dir}
     ut_log_name=${LOG_DIR}/${JOB_NAME}_pytest.log
 
-    echo "cat run.sh..."
+    # run UT
+    $BOLD_YELLOW && echo "cat run.sh..." && $RESET
     cat run.sh | tee ${ut_log_name}
-    echo "------UT start-------"
+    $BOLD_YELLOW && echo "------UT start-------" && $RESET
     bash run.sh 2>&1 | tee -a ${ut_log_name}
-    cp .coverage /${coverage_log_dir}/.coverage
-    echo "------UT end -------"
+    $BOLD_YELLOW && echo "------UT end -------" && $RESET
 
+    # run coverage report
+    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage_log
+    coverage html -d ${coverage_log_dir}/htmlcov --rcfile=${COVERAGE_RCFILE}
+    coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}
+
+    # check UT status
     if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then
-        echo "Find errors in UT test, please check the output..."
+        $BOLD_RED && echo "Find errors in UT test, please check the output..." && $RESET
         exit 1
     fi
-
-    echo "UT finished successfully! "
+    $BOLD_GREEN && echo "UT finished successfully! " && $RESET
 }
 
 # -------------------gtest------------------------
@@ -55,18 +67,20 @@ function gtest() {
 
 function install_itrex_base() {
     pip uninstall intel_extension_for_transformers -y
-    pip install intel_extension_for_transformers
+
     cd /intel-extension-for-transformers
     git config --global --add safe.directory "*"
     git fetch
     git checkout master
+
+    bash /intel-extension-for-transformers/.github/workflows/script/install_binary.sh
 }
 
 function main() {
-    pytest "coverage_pr"
+    pytest "${LOG_DIR}/coverage_pr"
     gtest
     install_itrex_base
-    pytest "coverage_base"
+    pytest "${LOG_DIR}/coverage_base"
 }
 
 main
