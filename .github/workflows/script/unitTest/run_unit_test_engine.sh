@@ -13,7 +13,7 @@ function pytest() {
     engine_path=$(python -c 'import intel_extension_for_transformers; import os; print(os.path.dirname(intel_extension_for_transformers.__file__))')
     engine_path="${engine_path}/backends/neural_engine"
     echo "engine path is ${engine_path}"
-    find . -name "test*.py" | sed 's,\\.\\/,coverage run --source='"${engine_path}"' --append ,g' | sed 's/$/ --verbose/' >run.sh
+    find . -name "test*.py" | sed 's,\.\/,coverage run --source='"${engine_path}"' --append ,g' | sed 's/$/ --verbose/' >run.sh
     coverage erase
 
     mkdir -p ${coverage_log_dir}
