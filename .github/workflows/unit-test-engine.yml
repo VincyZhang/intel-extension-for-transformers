@@ -29,7 +29,7 @@ jobs:
       - name: Checkout out Repo
         uses: actions/checkout@v3
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
 
       - name: Docker Build
         run: |
@@ -58,6 +58,12 @@ jobs:
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test_engine.sh"
 
+      - name: Calculte coverage
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage \
+          && bash calc_coverage.sh"
+
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
@@ -65,9 +71,8 @@ jobs:
           name: Kernel Unit Test
           path: ${{ github.workspace }}/log_dir
           retention-days: 5
-  
+
       - name: Docker clean up
         if: ${{ always() }}
         run: |
           docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
-  

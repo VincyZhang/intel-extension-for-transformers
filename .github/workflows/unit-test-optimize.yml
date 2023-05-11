@@ -59,6 +59,12 @@ jobs:
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test_optimize.sh"
 
+      - name: Calculte coverage
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage \
+          && bash calc_coverage.sh"
+  
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
