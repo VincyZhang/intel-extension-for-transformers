@@ -27,7 +27,7 @@ function pytest() {
     $BOLD_YELLOW && echo "------UT end -------" && $RESET
 
     # run coverage report
-    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage_log
+    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage.log
     coverage html -d ${coverage_log_dir}/htmlcov --rcfile=${COVERAGE_RCFILE}
     coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}
 
