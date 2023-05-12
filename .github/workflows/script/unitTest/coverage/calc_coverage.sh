@@ -5,6 +5,8 @@ export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/scri
 LOG_DIR=/log_dir
 coverage_compare="${LOG_DIR}/coverage_compare.html"
 cat ${COVERAGE_RCFILE}
+coverage_log_pr="${LOG_DIR}/coverage_pr"
+coverage_log_base="${LOG_DIR}/coverage_base"
 
 function get_coverage_data() {
     # Input argument
@@ -42,11 +44,11 @@ function get_coverage_data() {
 function compare_coverage() {
     $BOLD_YELLOW && echo "compare coverage" && $RESET
 
-    coverage_PR_xml="${LOG_DIR}/coverage_pr/coverage.xml"
+    coverage_PR_xml="${coverage_log_pr}/coverage.xml"
     coverage_PR_data=$(get_coverage_data $coverage_PR_xml)
     read lines_PR_covered lines_PR_valid coverage_PR_lines_rate branches_PR_covered branches_PR_valid coverage_PR_branches_rate <<<"$coverage_PR_data"
 
-    coverage_base_xml="${LOG_DIR}/coverage_base/coverage.xml"
+    coverage_base_xml="${coverage_log_base}/coverage.xml"
     coverage_base_data=$(get_coverage_data $coverage_base_xml)
     read lines_base_covered lines_base_valid coverage_base_lines_rate branches_base_covered branches_base_valid coverage_base_branches_rate <<<"$coverage_base_data"
 
@@ -75,10 +77,10 @@ function check_coverage_status() {
         for item in "${fail_items[@]}"; do
             case "$item" in
             lines)
-                decrease=$(echo "$coverage_PR_lines_rate - $coverage_base_lines_rate" | bc -l)
+                decrease=$(echo $(printf "%.3f" $(echo "$coverage_PR_lines_rate - $coverage_base_lines_rate" | bc -l)))
                 ;;
             branches)
-                decrease=$(echo "$coverage_PR_branches_rate - $coverage_base_branches_rate" | bc -l)
+                decrease=$(echo $(printf "%.3f" $(echo "$coverage_PR_branches_rate - $coverage_base_branches_rate" | bc -l)))
                 ;;
             *)
                 echo "Unknown item: $item"
@@ -88,12 +90,12 @@ function check_coverage_status() {
             $BOLD_RED && echo "Unit Test failed with ${item} coverage decrease ${decrease}%" && $RESET
         done
         $BOLD_RED && echo "compare coverage to give detail info" && $RESET
-        bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log} ${coverage_log_base} "FAILED" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
+        bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log_pr} ${coverage_log_base} "FAILED" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
         exit 1
     else
         $BOLD_GREEN && echo "Unit Test success with coverage lines: ${coverage_PR_lines_rate}%, branches: ${coverage_PR_branches_rate}%" && $RESET
         $BOLD_GREEN && echo "compare coverage to give detail info" && $RESET
-        bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log} ${coverage_log_base} "SUCCESS" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
+        bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log_pr} ${coverage_log_base} "SUCCESS" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
     fi
 }
 
