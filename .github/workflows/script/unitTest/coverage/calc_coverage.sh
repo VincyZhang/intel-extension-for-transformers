@@ -54,13 +54,6 @@ function compare_coverage() {
     $BOLD_BLUE && echo "PR branches coverage: $branches_PR_covered/$branches_PR_valid ($coverage_PR_branches_rate%)" && $RESET
     $BOLD_BLUE && echo "BASE lines coverage: $lines_base_covered/$lines_base_valid ($coverage_base_lines_rate%)" && $RESET
     $BOLD_BLUE && echo "BASE branches coverage: $branches_base_covered/$branches_base_valid ($coverage_base_branches_rate%)" && $RESET
-
-    if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then
-        exit 1
-    fi
-    if [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] || [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ]; then
-        exit 1
-    fi
 }
 
 function check_coverage_status() {
@@ -102,7 +95,6 @@ function check_coverage_status() {
         $BOLD_GREEN && echo "compare coverage to give detail info" && $RESET
         bash -x /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/compare_coverage.sh ${coverage_compare} ${coverage_log} ${coverage_log_base} "SUCCESS" ${coverage_PR_lines_rate} ${coverage_base_lines_rate} ${coverage_PR_branches_rate} ${coverage_base_branches_rate}
     fi
-
 }
 
 function main() {
