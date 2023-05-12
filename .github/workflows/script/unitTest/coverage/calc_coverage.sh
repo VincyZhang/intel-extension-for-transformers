@@ -109,3 +109,5 @@ function main() {
     compare_coverage
     check_coverage_status
 }
+
+main
