@@ -6,7 +6,7 @@ on:
     paths:
       - intel_extension_for_transformers
       - setup.py
-      - .github/workflows/format_scan.yml
+      #- .github/workflows/format_scan.yml
   workflow_dispatch:
 
 # If there is a new commit, the previous jobs will be canceled
