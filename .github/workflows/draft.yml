@@ -1,0 +1,165 @@
+name: Model Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - examples
+      - workflows
+      - intel_extension_for_transformers
+      - .github/workflows/model-test.yml
+      - .github/workflows/script/models
+  workflow_dispatch:
+
+# If there is a new commit, the previous jobs will be canceled
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_CONFIG_NAME: "commonDockerConfig"
+  REPO_NAME: "intel-extension-for-transformers"
+  REPO_TAG: "py38"
+  DOCKER_FILE_NAME: "devel"
+  CONTAINER_NAME: "modelTest"
+
+parameters:
+  - name: modelName
+    type: string
+    default: "resnet50v1.5"
+  - name: framework
+    type: string
+    default: "tensorflow"
+
+  - name: modelContainerName
+    type: string
+    default: "model"
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      - name: Docker Build
+        run: |
+          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+
+      - name: Docker Run
+        run: |
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers \
+          ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+
+      - name: Env build
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
+
+      - name: Binary build
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
+          && bash install_binary.sh"
+
+    - steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ parameters.framework }}_${{ parameters.modelName }}
+          path: path/to/artifact
+
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: path/to/artifact
+
+    - steps:
+      - name: Calculte coverage
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage \
+          && bash calc_coverage.sh"
+  
+      - name: Publish pipeline artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: Optimize Unit Test
+          path: ${{ github.workspace }}/log_dir
+
+      - name: Docker clean up
+        if: ${{ always() }}
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+
+
+
+
+
+
+steps:
+  - template: docker-template.yml
+    parameters:
+      dockerConfigName: "commonDockerConfig"
+      repoName: "neural-compressor"
+      repoTag: "py38"
+      dockerFileName: "Dockerfile"
+      containerName: ${{ parameters.modelContainerName }}
+
+  - script: |
+      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='env_setup'"
+    displayName: Env setup
+
+  - task: DownloadPipelineArtifact@2
+    continueOnError: true
+    inputs:
+      source: "specific"
+      artifact: ${{ parameters.framework }}_${{ parameters.modelName }}
+      patterns: "**_summary.log"
+      path: $(Build.SourcesDirectory)/.azure-pipelines/scripts/models/${{ parameters.modelName }}_refer_log
+      project: $(System.TeamProject)
+      pipeline: "Model-Test"
+      runVersion: "specific"
+      runId: $(refer_buildId)
+      retryDownloadCount: 3
+    displayName: "Download refer logs"
+
+  - script: |
+      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='tuning'"
+    displayName: Tuning
+
+  - script: |
+      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='int8_benchmark' --USE_TUNE_ACC=$(USE_TUNE_ACC) --PERF_STABLE_CHECK=$(PERF_STABLE_CHECK)"
+    displayName: INT8 Benchmark
+
+  - script: |
+      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='fp32_benchmark' --USE_TUNE_ACC=$(USE_TUNE_ACC) --PERF_STABLE_CHECK=$(PERF_STABLE_CHECK)"
+    displayName: FP32 Benchmark
+
+  - task: Bash@3
+    inputs:
+      targetType: "inline"
+      script: |
+        docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+        && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='collect_log' --BUILD_BUILDID=$(Build.BuildId)"
+    displayName: Collect log
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/models/${{ parameters.modelName }}/
+      artifact: ${{ parameters.framework }}_${{ parameters.modelName }}
+      publishLocation: "pipeline"
+
+  - task: Bash@3
+    condition: always()
+    inputs:
+      targetType: "inline"
+      script: |
+        docker exec ${{ parameters.modelContainerName }} bash -c "rm -fr /neural-compressor/* && rm -fr /neural-compressor/.* || true"
+    displayName: "Docker clean up"
