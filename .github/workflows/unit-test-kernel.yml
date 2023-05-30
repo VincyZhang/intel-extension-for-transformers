@@ -75,6 +75,6 @@ jobs:
         if: ${{ always() }}
         run: |
           docker stop $(docker ps -aq)
-          docker rm -vf ${{ parameters.containerName }} || true
+          docker rm -vf ${{ env.CONTAINER_NAME }} || true
           env | sort
           echo y | docker system prune
