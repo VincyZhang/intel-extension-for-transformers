@@ -70,3 +70,11 @@ jobs:
         if: ${{ always() }}
         run: |
           docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+
+      - name: Clean docker container
+        if: ${{ always() }}
+        run: |
+          docker stop $(docker ps -aq)
+          docker rm -vf ${{ parameters.containerName }} || true
+          env | sort
+          echo y | docker system prune
