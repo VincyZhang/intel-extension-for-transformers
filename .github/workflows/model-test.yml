@@ -1,0 +1,105 @@
+name: Model Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - examples
+      - workflows
+      - intel_extension_for_transformers
+      - template/model
+      - .github/workflows/model-test.yml
+      - .github/workflows/script/models
+  workflow_dispatch:
+
+# If there is a new commit, the previous jobs will be canceled
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  OUT_SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/scripts/models
+  SCRIPT_PATH: /intel-extension-for-transformers/.github/workflows/scripts
+
+
+jobs:
+  Optmize-Workflow:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - modelName: "bert_base_mrpc"
+            framework: "pytorch"
+            ref_id: 1
+          - modelName: "bert_base_sst2"
+            framework: "pytorch"
+            ref_id: 1"
+          - modelName: "bert_base_mrpc"
+            framework: "tensorflow"
+            ref_id: 1"
+    steps:
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+    # We need this because GitHub needs to clone the branch to pipeline
+      - name: Model Template
+        uses: ../template/model #Just need to pass the path from action
+       # Defining the variables required in our action
+        with:
+          modelName: ${{ matrix.modelName }}
+          framework: ${{ matrix.framework }}
+          ref_id: ${{ matrix.ref_id }}
+    
+    #Genreate Report:
+    #  runs-on: ubuntu-latest
+    #  - task: DownloadPipelineArtifact@2
+    #    continueOnError: true
+    #    inputs:
+    #      source: "specific"
+    #      artifact: ${{ parameters.framework }}_${{ parameters.modelName }}
+    #      patterns: "**_summary.log"
+    #      path: $(Build.SourcesDirectory)/.azure-pipelines/scripts/models/${{ parameters.modelName }}_refer_log
+    #      project: $(System.TeamProject)
+    #      pipeline: "Model-Test"
+    #      runVersion: "specific"
+    #      runId: $(refer_buildId)
+    #      retryDownloadCount: 3
+    #    displayName: "Download refer logs"
+    #
+    #  - script: |
+    #      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+    #      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='tuning'"
+    #    displayName: Tuning
+    #
+    #  - script: |
+    #      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+    #      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='int8_benchmark' --USE_TUNE_ACC=$(USE_TUNE_ACC) --PERF_STABLE_CHECK=$(PERF_STABLE_CHECK)"
+    #    displayName: INT8 Benchmark
+    #
+    #  - script: |
+    #      docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+    #      && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='fp32_benchmark' --USE_TUNE_ACC=$(USE_TUNE_ACC) --PERF_STABLE_CHECK=$(PERF_STABLE_CHECK)"
+    #    displayName: FP32 Benchmark
+    #
+    #  - task: Bash@3
+    #    inputs:
+    #      targetType: "inline"
+    #      script: |
+    #        docker exec ${{ parameters.modelContainerName }} bash -c "cd /neural-compressor/.azure-pipelines/scripts/models \
+    #        && bash run_${{ parameters.framework }}_models_trigger.sh --model=${{ parameters.modelName }} --mode='collect_log' --BUILD_BUILDID=$(Build.BuildId)"
+    #    displayName: Collect log
+    #
+    #  - task: PublishPipelineArtifact@1
+    #    inputs:
+    #      targetPath: $(Build.SourcesDirectory)/.azure-pipelines/scripts/models/${{ parameters.modelName }}/
+    #      artifact: ${{ parameters.framework }}_${{ parameters.modelName }}
+    #      publishLocation: "pipeline"
+    #
+    #  - task: Bash@3
+    #    condition: always()
+    #    inputs:
+    #      targetType: "inline"
+    #      script: |
+    #        docker exec ${{ parameters.modelContainerName }} bash -c "rm -fr /neural-compressor/* && rm -fr /neural-compressor/.* || true"
+    #    displayName: "Docker clean up"
