@@ -27,6 +27,11 @@ jobs:
   unit-test:
     runs-on: [self-hosted, linux, X64, spr itrex]
     steps:
+      - name: Clean workspace     
+        run: |
+          rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
+          echo y | docker system prune
+      
       - name: Checkout out Repo
         uses: actions/checkout@v3
         with:
