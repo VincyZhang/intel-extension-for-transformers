@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "param_types.hpp"
-#include "utils.hpp"
 
 namespace jd {
 namespace ssd {
@@ -32,7 +31,8 @@ enum io {
   SRC2,
   SCALE0,
   ZP0,
-  matmul_io_MAX = ZP0,
+  APPEND_SUM,
+  matmul_io_MAX = APPEND_SUM,
 };
 }  // namespace matmul_io
 
@@ -49,16 +49,19 @@ struct matmul_fp8_param_t {
   dim_t M;
   dim_t N;
   dim_t K;
-  float alpha = 1.f, beta = 1.f;  // alpha * (src0 * src1) + beta * src_binary_add = dst
+  float alpha = 1.f, beta = 0.f;  // alpha * (src0 * src1) + beta * src_binary_add = dst
   bfloat16_t* weight_bf16 = nullptr;
   union {
     int8_t* weight_int8;
-    float8_t* weight_fp8;
+    float8_e4m3_t* weight_f8_e4m3;
+    float8_e5m2_t* weight_f8_e5m2;
+    uint8_t* weight_8bit;
   };
   data_type weight_type = data_type::undef;
+  bool has_scale0 = false;
+  bool has_append_sum = false;
   std::vector<postop_attr> postop_attrs;
-  bool has_gelu;
-  int thread_num;
+  int thread_num = 0;
 };
 
 struct matmul_data_t {
@@ -78,7 +81,8 @@ struct matmul_u8_data_t {
 struct matmul_fp8_data_t {
   bfloat16_t* matA;
   uint8_t* matB;
-  bfloat16_t *matC, *matD;
+  bfloat16_t *matC, *matD, *matE;
+  float* scale;
   int k, n, astep, bstep, cstep, dstep;
   int kpos;
   float alpha, beta;

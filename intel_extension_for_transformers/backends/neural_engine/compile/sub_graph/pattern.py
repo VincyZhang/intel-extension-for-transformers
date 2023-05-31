@@ -60,9 +60,9 @@ supported_patterns = [
     'TextEncoder_AttentionReshape',
     'TextEncoder_CasualAttentionMask',
 
-    #vae decoder & Transformer2Dmodel
-    'AttentionBlock_Resize2Gather',
+    #Vae decoder & Transformer2Dmodel
     'GroupNorm',
+    'GroupNormSwish',
     'AttentionBlock_QKVPreReshape',
     'AttentionBlock_AttentionMaskAddReshape',
     'AttentionBlock_ConstantOfShapeWithMul',
@@ -78,20 +78,23 @@ supported_patterns = [
     'Transformer2Dmodel_AttentionMaskAddReshape',
     'Transformer2Dmodel_FFNInputSlice',
     'Transformer2Dmodel_FFNInputSlice_1',
-    'Transformer2DModel_UpBlockResize',
 
+    # General
     'QKVReshape',
     'DecoderAttnReshape',
     'ConvReshape',
     'AddClsToken',
     'TransposeBatchMatMul',
     'Gelu',
+
     'MatMulWithBiasGelu',
     'MatMulWithBiasAdd',
     'AddEmbeddings',
     'MatMulWithBiasTanh',
     'MatMulWithBiasRelu',
     'MatMulWithBiasSigmoid',
+    'MatMulWithBiasUnsqueeze',
+
     "RestoreHiddenStatesInLengthAdaptiveUpdateIndices",
     "AttentionOutputLayerNormLengthAdaptiveExpandIndices",
     "ReshapeBeforeAndAfterAttentionOutLayerNormGatherElements",
@@ -105,9 +108,13 @@ supported_patterns = [
     # GPT-J
     'LowerAllTuples',
     'TorchEmbedding',
+    'RmsNorm',
+    'LlamaEmbeddings',
     'InnerproductReshapeFusion',
     'MatMulWithTranspose',
+    'LlamaMatMulWithTranspose',
     'InnerproductWithBiasGelu',
+    'InnerproductWithSwish',
     'SliceMask',
     'ArangewithReciprocal',
     'InnerproductwithSlice',
@@ -116,22 +123,30 @@ supported_patterns = [
     'RemoveSlice',
     'RemoveRange',
     'RemoveLastView',
-    # 'RemoveDuplicatedQuantNode',
-    
+
+    'MatMulWithTransposeScaleAdd',
     'InsertQuantNode',
     'InsertBF16Node',
     'TorchInsertBF16Node',
     'QunatizeFusion',
+    'LlamaRoraryPosEmb',
     'QKVMerge',
     'ReshapeFusion',
     'StableDiffusion_bf16Convert',
     'StableDiffusion_ReshapeFusion',
-    'OperatorAdaptor',
+    'StableDiffusion_MHAReshape',
+    'StableDiffusion_MHA',
 
+    'OperatorAdaptor',
+    'EmbeddingsTo2DBeforeInnerProduct',
+    'QuantGatherToBF16',
     'MultiHeadAttention',
     'OutputData',
     'QuantizedGraphDtypeRefactor',
+    'ExplicitNHWCTransposeForConv',
+
     'Int8BF16MixedPrecisionChecker',
+    'LlamaPostprocess',
 ]
 
 # for superbert, superbert patterns are huge patterns based on supported patterns

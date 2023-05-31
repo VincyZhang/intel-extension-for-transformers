@@ -170,6 +170,7 @@ void Model::Init(const ModelConfig& conf) {
       SetOutput(op_conf, operator_id, output_id, &tensor_name_index_);
     }
   }
+  weight_root_ = "None";
   ConstructLLGA(op_configs);
   input_vecs_.resize(operators_.size());
   output_vecs_.resize(operators_.size());
@@ -404,7 +405,7 @@ void Model::SetDispatchKernel(const bool& reshape_model) {
                                       reshape_model, has_dispatch_table_file_);
     }
   } else {
-    if (reshape_model && has_dispatch_table_file_) {
+    if (reshape_model) {
       for (int i = 0; i < operators_.size(); ++i) {
         operators_[i]->GetExecuteKernel(input_vecs_[i], output_vecs_[i],
                                         reshape_model,

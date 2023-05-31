@@ -116,6 +116,29 @@ def get_quant_info():
     return _quant_info
 
 
+def environ_info_init():
+    """Initialize the environ info."""
+    global _environ_info
+    _environ_info = {}
+
+def insert_environ_info(key, value):
+    """Modify the environ info."""
+    _environ_info[key] = value
+
+def remove_environ_info_item(key):
+    """Remove an item in environ info."""
+    _environ_info.pop(key, None)
+
+def remove_environ_info_items(keys):
+    """Remove a list of items in environ info."""
+    for key in keys:
+        remove_environ_info_item(key)
+
+def get_environ_info():
+    """Get the environ info."""
+    return _environ_info
+
+
 def search_straight_pattern(input_pattern, graph):
     """Search user specified patterns on internal grpah structure.
 
@@ -539,7 +562,7 @@ def search_pattern(pattern_list, graph):
         return m_main_chain
 
 
-def construct_node(node_name, op_type, input_tensors=[], output_tensors=[], attr=OrderedDict()):
+def construct_node(node_name, op_type, input_tensors=None, output_tensors=None, attr=None):
     """Construct node with engine op_type.
 
     Args:
@@ -557,6 +580,12 @@ def construct_node(node_name, op_type, input_tensors=[], output_tensors=[], attr
         new_node = OPERATORS["OpAny"]()
     else:
         new_node = OPERATORS[op_type]()
+    if input_tensors == None:
+        input_tensors = []
+    if output_tensors == None:
+        output_tensors = []
+    if attr == None:
+        attr = OrderedDict()
     new_node.construct(node_name,
                        op_type,
                        input_tensors=input_tensors,
@@ -1076,15 +1105,15 @@ def get_model_fwk_name(model):
 
     def _is_onnxruntime(model):
         """Check if the model is onnxruntime."""
-        try:
-            if isinstance(model, str):
+        if isinstance(model, str):
+            try:
                 graph = onnx.load(model)
                 assert (len(graph.graph.node) != 0)
+            except:
+                return 'NA'
             else:
-                graph = model.graph
-        except:
-            pass
-        else:
+                return 'onnxruntime'
+        elif 'onnx' in str(type(model)):
             return 'onnxruntime'
         return 'NA'
 
@@ -1105,18 +1134,20 @@ def get_model_fwk_name(model):
 
     def _is_torch(model):
         """Check if the model is torch."""
-        try:
-            if isinstance(model, str):
+        if isinstance(model, str):
+            try:
                 torch.jit.load(model)
-        except:
-            pass
-        else:
+            except:
+                return 'NA'
+            else:
+                return 'torch'
+        elif 'torch' in str(type(model)):
             return 'torch'
         return 'NA'
 
     def _is_neural_engine(model):
         """Check if the model is neural engine."""
-        if model and os.path.isdir(model):
+        if model and isinstance(model, str) and os.path.isdir(model):
             file_list = os.listdir(model)
             is_engine = True
             if len(file_list) == 2:
@@ -1151,3 +1182,23 @@ def get_model_fwk_name(model):
     assert fwk_name != 'NA', 'Framework is not detected correctly from model format.'
 
     return fwk_name
+
+def set_environ_var(key, val='1'):
+    """Set an env var."""
+    assert type(val) == str, 'Environment variable must be string!'
+    os.environ[key] = val
+
+def set_environ_vars(kvs):
+    """Set a list of env vars."""
+    for key, val in kvs.items():
+        set_environ_var(key, val)
+
+def del_environ_var(key):
+    """Delete an env var."""
+    if key in os.environ:
+        del os.environ[key]
+
+def del_environ_vars(keys):
+    """Delete a list of env vars."""
+    for key in keys:
+        del_environ_var(key)

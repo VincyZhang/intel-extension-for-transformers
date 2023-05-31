@@ -26,6 +26,7 @@ from .graph import Graph
 import numpy as np
 from . import graph_utils as util
 from copy import deepcopy
+from .optimizer import Optimizer
 
 COMPILES = OrderedDict({
     'loader': Loader,
@@ -36,35 +37,41 @@ COMPILES = OrderedDict({
 
 class autocast:
 
-    def __init__(self, cast_type: str) -> None:
+    def __init__(self, cast_type: str, *args, **kwargs) -> None:
         util.autocast_init()
         self.prev_cast_type = util.get_autocast_info()['cast_type']
         self.cast_type = cast_type
+        self.weight_dtype = None
+        if 'weight_dtype' in kwargs:
+            self.weight_dtype = kwargs['weight_dtype']
 
     def __enter__(self) -> None:
         self.prev_cast_type = util.get_autocast_info()['cast_type']
         util.set_autocast("cast_type", self.cast_type)
+        if self.weight_dtype:
+            util.set_autocast("weight_dtype", self.weight_dtype)
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         util.set_autocast("cast_type", self.prev_cast_type)
 
 
 def _config_validation(config):
-    """The validation of the input config."""
+    """The validation of the pattern config."""
     if config == None:
         return None
 
-    import yaml
+    # the config is a dict or text file.
+    if isinstance(config, dict) != True:
+        with open(config, 'r') as conf_file:
+            import yaml
+            config = yaml.safe_load(conf_file)
+
     from schema import Schema
-
-    with open(config, 'r') as conf_file:
-        conf = yaml.safe_load(conf_file)
-
     conf_schema = Schema({
-        'pattern_switch': Schema({str: bool}, error='You should provide correct fused_patterns.')
+        'pattern_switch': Schema({str: bool}, error='The format of the pattern config is wrong.')
     })
 
-    return conf_schema.validate(conf)
+    return conf_schema.validate(config)
 
 
 def start_pipeline(model, config=None):
@@ -105,6 +112,8 @@ def compile(model, config=None) -> Graph:
         else:
             config = _config_validation(config)
             model = start_pipeline(model, config=config)
+        optimizer = Optimizer(model)
+        optimizer.optimize()
     if util.get_autocast_info()['cast_type'] == "dynamic_int8":
         model = _dynamic_quantization(model)
     return model

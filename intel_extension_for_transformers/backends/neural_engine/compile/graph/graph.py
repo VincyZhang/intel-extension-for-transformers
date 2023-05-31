@@ -340,18 +340,32 @@ class Graph(object):
             else:
                 non_consts_len += 1
         self._nodes[0].output_tensors = self._nodes[0].output_tensors[:non_consts_len]
+        const_idx = non_consts_len - 1
+        const_info = {}
         for i in range(len(self._nodes)):
             for j in range(len(self._nodes[i].input_tensors)):
                 t = self._nodes[i].input_tensors[j]
                 if (t.source_op == [] or self._node_id.get(t.source_op[-1], None) == 0) \
                                       and isinstance(t.data, np.ndarray):
-                    data = t.data
-                    start = len(weight_bytes)
-                    data_bytes = data.tobytes()
-                    weight_bytes.extend(data_bytes)
-                    offset = len(data_bytes)
-                    self._nodes[i].input_tensors[j].location = [start, offset]
-                    self._nodes[0].output_tensors.append(self._nodes[i].input_tensors[j])
+                    if t.name not in const_info:
+                        const_idx += 1
+                        const_info[t.name] = const_idx
+                        data = t.data
+                        start = len(weight_bytes)
+                        data_bytes = data.tobytes()
+                        weight_bytes.extend(data_bytes)
+                        offset = len(data_bytes)
+                        self._nodes[i].input_tensors[j].location = [start, offset]
+                        self._nodes[0].output_tensors.append(self._nodes[i].input_tensors[j])
+                    else:
+                        if self._nodes[0].output_tensors[const_info[t.name]].data.dtype != \
+                           self._nodes[i].input_tensors[j].data.dtype:
+                            logger.error("tensor {} has different dtypes in multi-nodes!".
+                                         format(t.name))
+                            import sys; sys.exit(1)
+                        dest_op = set(self._nodes[0].output_tensors[const_info[t.name]].dest_op +
+                                      self._nodes[i].input_tensors[j].dest_op)
+                        self._nodes[0].output_tensors[const_info[t.name]].dest_op = list(dest_op)
         weight_bytes = bytes(weight_bytes)
         return weight_bytes
 
@@ -469,7 +483,7 @@ class Graph(object):
 
         return output_dict
 
-    def graph_init(self, config, weight_data=None):
+    def graph_init(self, config, weight_data=None, load_weight=False):
         """The initialization of the neural engine graph.
 
         Example::
@@ -492,9 +506,9 @@ class Graph(object):
             cfg = f.read()
         d = yaml.load(cfg, Loader=yaml.FullLoader)
         bin_file = None
-        if weight_data != None:
+        if load_weight and weight_data != None:
             bin_file = open(weight_data, 'rb')
-
+        output_list = []
         tensor_name_2_class = OrderedDict()
         for node in d['model']['operator']:
             op = None
@@ -513,7 +527,7 @@ class Graph(object):
                         tensor_dtype = attrs["dtype"]
                     tensor_location = None
                     tensor_data = None
-                    if 'location' in attrs.keys():
+                    if load_weight and 'location' in attrs.keys():
                         tensor_location = attrs['location']
                         bin_file.seek(tensor_location[0], 0)
                         tensor_data = copy.deepcopy(bin_file.read(tensor_location[1]))
@@ -542,6 +556,8 @@ class Graph(object):
             elif optype == 'Output':
                 input_tensors = []
                 for tensor_name in d['model']['operator'][node]['input']:
+                    if not load_weight:
+                        output_list.append(tensor_name)
                     tensor = tensor_name_2_class[tensor_name]
                     input_tensors.append(tensor)
                 op = util.construct_node(node, 'Output', copy.deepcopy(input_tensors))
@@ -567,7 +583,10 @@ class Graph(object):
                 op = util.construct_node(node, optype, copy.deepcopy(input_tensors),
                                          copy.deepcopy(output_tensors), attr)
             self.insert_nodes(len(self.nodes), [op])
-
+        if not load_weight and weight_data:
+            import neural_engine_py as dp
+            model = dp.Model(config, weight_data)
+            self._engine = [model, output_list]
         if bin_file:
             bin_file.close()
 
@@ -604,6 +623,7 @@ class Graph(object):
 
             yaml.add_representer(list, list_representer)
             yaml.add_representer(OrderedDict, dict_representer)
+            yaml.Dumper.ignore_aliases = lambda *args: True
             yaml.dump(net_info, f, default_flow_style=False, sort_keys=False)
 
         logger.info("Emit done...")

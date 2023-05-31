@@ -30,6 +30,7 @@ class StableDiffusion_ReshapeFusion(Pattern):
     Fuse the original sub-graph into the custom acceleration 'StableDiffusion_ReshapeFusion' graph.
     The search strategy is based on the following pattern mapping configs for different models.
     """
+
     def __call__(self, model):
         """The __call__ function of this pattern class."""
         pattern_mapping_config = {
@@ -73,17 +74,22 @@ class StableDiffusion_ReshapeFusion(Pattern):
                 if pre_node.op_type in EXECUTOR_TYPE \
                    and (EXECUTOR_TYPE[pre_node.op_type] == "InnerProduct" or \
                         EXECUTOR_TYPE[pre_node.op_type] == "Matmul"):
+                    # Multiple dest_ops will cause node.input_tensors[1] left in the output.
+                    if len(node.input_tensors[1].dest_op) != 1:
+                        continue
+
                     pre_node.attr['reshape'] = node.attr['dst_shape']
                     pre_node.output_tensors[0] = node.output_tensors[0]
                     pre_node.output_tensors[0].source_op = [pre_node.name]
+                    if 'dims' in node.attr:
+                        pre_node.attr['reshape_dims'] = str(node.attr['dims'])
+                        pre_node.input_tensors.append(node.input_tensors[1])
+
                     if node.output_tensors[0].dest_op != []:
                         next_node = model.get_node_by_name(node.output_tensors[0].dest_op[0])
                         for input_tensor in next_node.input_tensors:
                             if input_tensor.name == node.output_tensors[0].name:
                                 input_tensor.source_op = [pre_node.name]
-                    if 'dims' in node.attr:
-                        pre_node.attr['reshape_dims'] = str(node.attr['dims'])
-                        pre_node.input_tensors.append(node.input_tensors[1])
 
                     remove_node_name.append(node.name)
 
