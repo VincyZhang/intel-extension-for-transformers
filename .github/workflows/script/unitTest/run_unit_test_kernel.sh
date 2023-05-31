@@ -57,8 +57,8 @@ function kernel_test() {
 
 function main() {
     gtest
-    engine_test
     kernel_test
+    engine_test
 }
 
 main
