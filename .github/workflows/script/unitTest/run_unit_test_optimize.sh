@@ -37,6 +37,13 @@ function pytest() {
     $BOLD_GREEN && echo "UT finished successfully! " && $RESET
 }
 
+function re_install_packages() {
+    package_name=$1
+    echo "re-install ${package_name} resolve the issue..."
+    pip uninstall ${package_name} -y
+    pip install --no-cache-dir ${package_name}
+}
+
 function install_itrex_base() {
     pip uninstall intel_extension_for_transformers -y
 
@@ -46,6 +53,7 @@ function install_itrex_base() {
     git checkout master
 
     bash /intel-extension-for-transformers/.github/workflows/script/install_binary.sh
+    re_install_packages "protobuf"
 }
 
 function main() {
