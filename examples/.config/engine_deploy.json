@@ -6,7 +6,7 @@
     "benchmark": {
       "cmd": "bash run_bert_mini.sh",
       "params": {
-         "model": "/tf_dataset2/models/nlp_toolkit/bert_base_mrpc",
+         "model": "/tf_dataset2/models/nlp_toolkit/bert_mini_mrpc",
          "dataset": "mrpc",
          "precision": "int8/fp32",
          "cache_dir": "/home/tensorflow/.cache/nlp_toolkit/bert_mini_mrpc",
@@ -18,7 +18,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -50,7 +50,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
          "max_throughput": {
           "mode": "max_throughput",
@@ -82,7 +82,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -114,7 +114,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -146,7 +146,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -178,7 +178,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -210,7 +210,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -242,7 +242,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -274,7 +274,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -306,7 +306,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -320,7 +320,7 @@
     }
   },
   "bert_mini_sparse": {
-    "working_dir": "huggingface/pytorch/text-classification/deployment/sst2/bert_mini",
+    "working_dir": "huggingface/pytorch/text-classification/deployment/sparse/bert_mini",
     "data_dir": "/tf_dataset2/datasets/sst2_data",
     "hf_model_name": "Intel/bert-mini-sst2-distilled-sparse-90-1X4-block",
     "benchmark": {
@@ -338,7 +338,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -370,7 +370,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -402,7 +402,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -432,7 +432,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -463,7 +463,7 @@
       }
     },
     "launcher": {
-      "cmd": "huggingface/pytorch/text-classification/deployment/launcher.py",
+      "cmd": "huggingface/pytorch/neural_engine_utils/launcher.py",
       "params": {
         "max_throughput": {
           "mode": "max_throughput",
@@ -502,7 +502,7 @@
     "data_dir": "",
     "hf_model_name": "EleutherAI/gpt-j-6B",
     "prepare": {
-      "cmd": "python gen_ir.py",
+      "cmd": "python optimize_llm.py",
       "params": {
          "model": "/tf_dataset2/models/pytorch/gpt-j-6B",
          "dtype": "fp32/bf16/int8",
@@ -511,10 +511,114 @@
       }
     },
     "benchmark": {
-      "cmd": "python run_gptj.py",
+      "cmd": "python run_llm.py",
       "params": {
         "max-new-tokens": "32",
-        "ir_path": "ir"        
+        "model_path": "ir"
+      }
+    },
+    "launcher": {
+    }
+  },
+  "gpt-j-6b-pruned": {
+    "working_dir": "huggingface/pytorch/text-generation/deployment",
+    "data_dir": "",
+    "hf_model_name": "EleutherAI/gpt-j-6B",
+    "prepare": {
+      "cmd": "python optimize_llm.py",
+      "params": {
+         "model": "/tf_dataset2/models/pytorch/gpt-j-6B",
+         "dtype": "fp32/bf16/int8",
+         "output_model": "ir",
+         "pt_file": "pt"
+      }
+    },
+    "benchmark": {
+      "cmd": "python run_llm.py",
+      "params": {
+        "max-new-tokens": "32",
+        "model_path": "ir"
+      }
+    },
+    "launcher": {
+    }
+  },
+  "llama-7b-hf": {
+    "working_dir": "huggingface/pytorch/text-generation/deployment",
+    "data_dir": "",
+    "hf_model_name": "decapoda-research/llama-7b-hf",
+    "prepare": {
+      "cmd": "python optimize_llm.py",
+      "params": {
+         "model": "/tf_dataset2/models/nlp_toolkit/llama-7b-hf",
+         "dtype": "fp32/bf16/int8",
+         "output_model": "ir",
+         "pt_file": "pt",
+         "model_type": "llama_7b"
+      }
+    },
+    "benchmark": {
+      "cmd": "python run_llm.py",
+      "params": {
+        "max-new-tokens": "32",
+        "model_path": "ir",
+        "model_type": "llama_7b"
+      }
+    },
+    "launcher": {
+    }
+  },
+  "electra_base_chinese_generator": {
+    "working_dir": "huggingface/pytorch/language-modeling/deployment/fill-mask/electra_base_chinese",
+    "data_dir": "",
+    "hf_model_name": "hfl/chinese-legal-electra-base-generator",
+    "prepare": {
+      "cmd": "python export_ir.py",
+      "params": {
+         "model_name": "/tf_dataset2/models/nlp_toolkit/chinese-legal-electra-base-generator",
+         "dtype": "fp32/bf16",
+         "output_model": "gen_ir",
+         "pt_file": "gen_model.pt"
+      }
+    },
+    "benchmark": {
+      "cmd": "python run_electra.py",
+      "params": {
+        "generator_model_name": "/tf_dataset2/models/nlp_toolkit/chinese-legal-electra-base-generator",
+        "generator_ir_path": "gen_ir",
+        "generator_or_discriminator": "generator",
+        "mode": "accuracy/performance",
+        "seq_len": 16,
+        "warm_up": 100,
+        "iterations": 1000
+      }
+    },
+    "launcher": {
+    }
+  },
+  "electra_base_chinese_discriminator": {
+    "working_dir": "huggingface/pytorch/language-modeling/deployment/fill-mask/electra_base_chinese",
+    "data_dir": "",
+    "hf_model_name": "hfl/chinese-electra-base-discriminator",
+    "prepare": {
+      "cmd": "python export_ir.py",
+      "params": {
+         "model_name": "/tf_dataset2/models/nlp_toolkit/chinese-electra-base-discriminator",
+         "dtype": "fp32/bf16",
+         "output_model": "dis_ir",
+         "pt_file": "dis_model.pt"
+      }
+    },
+    "benchmark": {
+      "cmd": "python run_electra.py",
+      "params": {
+        "discriminator_model_name": "/tf_dataset2/models/nlp_toolkit/chinese-electra-base-discriminator",
+        "discriminator_ir_path": "dis_ir",
+        "generator_or_discriminator": "discriminator",
+        "mode": "accuracy/performance",
+        "seq_len": 16,
+        "warm_up": 100,
+        "iterations": 1000
       }
     },
     "launcher": {

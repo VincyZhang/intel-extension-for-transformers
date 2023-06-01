@@ -30,21 +30,21 @@ python setup.py install
 ```
 Install required dependencies for examples
 ```shell
-cd <intel_extension_for_transformers_folder>/examples/deployment/neural_engine/stable_diffusion
+cd <intel_extension_for_transformers_folder>/examples/huggingface/pytorch/text-to-image/deployment/stable_diffusion
 pip install -r requirements.txt
 ```
 >**Note**: Recommend install protobuf <= 3.20.0 if use onnxruntime <= 1.11
 
 
-## Environment Variables
+## Environment Variables (optional)
 ```
 export LD_PRELOAD=<intel_extension_for_transformers_folder>/intel_extension_for_transformers/backends/neural_engine/executor/third_party/jemalloc/lib/libjemalloc.so
-```
-Using weight sharing can save memory and improve the performance when multi instances.
-```
+
+# Using weight sharing can save memory and improve the performance when multi instances.
 export WEIGHT_SHARING=1
 export INST_NUM=<inst num>
 ```
+>**Note**: This step is optional.
 # End-to-End Workflow
 ## 1. Prepare Models
 
@@ -110,10 +110,10 @@ python export_ir.py --onnx_model=./model/vae_decoder_bf16/bf16-model.onnx --patt
 Python API command as follows:
 ```python
 # FP32 IR
-GLOG_minloglevel=2 python run_executor.py --ir_path=./fp32_ir --mode=performance
+python run_executor.py --ir_path=./fp32_ir --mode=latency
 
 # BF16 IR
-GLOG_minloglevel=2 python run_executor.py --ir_path=./bf16_ir --mode=performance
+python run_executor.py --ir_path=./bf16_ir --mode=latency
 ```
 
 ## 3. Accuracy
@@ -123,10 +123,10 @@ By setting --accuracy to check FID socre.
 Python API command as follows:
 ```python
 # FP32 IR
-GLOG_minloglevel=2 python run_executor.py --ir_path=./fp32_ir --mode=accuracy
+python run_executor.py --ir_path=./fp32_ir --mode=accuracy
 
 # BF16 IR
-GLOG_minloglevel=2 python run_executor.py --ir_path=./bf16_ir --mode=accuracy
+python run_executor.py --ir_path=./bf16_ir --mode=accuracy
 ```
 
 ## 4. Try Text to Image
@@ -136,13 +136,13 @@ Try using one sentence to create a picture!
 ```python
 # Running FP32 models or BF16 models, just import differnt IRs.
 # FP32 models
-GLOG_minloglevel=2 python run_executor.py --ir_path=./fp32_ir
+python run_executor.py --ir_path=./fp32_ir
 ```
 ![picture1](./images/astronaut_rides_horse.png)
 
 ```python
 # BF16 models
-GLOG_minloglevel=2 python run_executor.py --ir_path=./bf16_ir
+python run_executor.py --ir_path=./bf16_ir
 ```
 ![picture2](./images/astronaut_rides_horse_from_engine_1.png)
 

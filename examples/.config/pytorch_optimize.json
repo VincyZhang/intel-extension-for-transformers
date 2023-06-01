@@ -4,14 +4,20 @@
     "tune":{
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gpt_neo_clm_static",
+        "topology": "gpt_neo",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gpt_neo_clm_static",
+        "topology": "gpt_neo",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -20,20 +26,26 @@
       }
     }
   },
-  "bloom_text_static": {
-    "working_dir": "huggingface/pytorch/text-generation/quantization",
+  "gpt_neo_clm_qat": {
+    "working_dir": "huggingface/pytorch/language-modeling/quantization",
     "tune":{
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "bloom_text_static",
+        "topology": "gpt_neo",
+        "task": "clm",
+        "approach": "qat",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "bloom_text_static",
-        "mode": "benchmark",
+        "topology": "gpt_neo",
+        "task": "clm",
+        "approach": "qat",
+        "backend": "",
+        "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
         "int8": "false",
@@ -41,21 +53,108 @@
       }
     }
   },
-  "bloom_text_dynamic": {
+  "gpt_j_6b_gen_ipex_static": {
     "working_dir": "huggingface/pytorch/text-generation/quantization",
     "tune":{
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "bloom_text_dynamic",
+        "topology": "gpt_j",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "bloom_text_dynamic",
+        "topology": "gpt_j",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
         "mode": "benchmark",
-        "batch_size": "8",
+        "batch_size": "1",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "llama_7b_gen_ipex_static": {
+    "working_dir": "huggingface/pytorch/text-generation/quantization",
+    "tune":{
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "llama_7b",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "llama_7b",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
+        "mode": "benchmark",
+        "batch_size": "1",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "llama_13b_gen_ipex_static": {
+    "working_dir": "huggingface/pytorch/text-generation/quantization",
+    "tune":{
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "llama_13b",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "llama_13b",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
+        "mode": "benchmark",
+        "batch_size": "1",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "dolly_v2_3b_gen_ipex_static": {
+    "working_dir": "huggingface/pytorch/text-generation/quantization",
+    "tune":{
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "dolly_v2_3b",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "dolly_v2_3b",
+        "task": "generation",
+        "approach": "static",
+        "backend": "ipex",
+        "mode": "benchmark",
+        "batch_size": "1",
         "iters": "100",
         "int8": "false",
         "config": "saved_results"
@@ -67,14 +166,20 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gpt_neo_clm_dynamic",
+        "topology": "gpt_neo",
+        "task": "clm",
+        "approach": "dynamic",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gpt_neo_clm_dynamic",
+        "topology": "gpt_neo",
+        "task": "clm",
+        "approach": "dynamic",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -88,14 +193,20 @@
     "tune":{
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gptj_clm_static",
+        "topology": "gpt_j",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gptj_clm_static",
+        "topology": "gpt_j",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -109,14 +220,20 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gptj_clm_dynamic",
+        "topology": "gpt_j",
+        "task": "clm",
+        "approach": "dynamic",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gptj_clm_dynamic",
+        "topology": "gpt_j",
+        "task": "clm",
+        "approach": "dynamic",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -130,14 +247,47 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "bert_mlm_static",
+        "topology": "bert",
+        "task": "mlm",
+        "approach": "static",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "bert_mlm_static",
+        "topology": "bert",
+        "task": "mlm",
+        "approach": "static",
+        "backend": "",
+        "mode": "accuracy",
+        "batch_size": "8",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "bert_mlm_qat": {
+    "working_dir": "huggingface/pytorch/language-modeling/quantization",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "bert",
+        "task": "mlm",
+        "approach": "qat",
+        "backend": "",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "bert",
+        "task": "mlm",
+        "approach": "qat",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -151,14 +301,20 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "bert_mlm_dynamic",
+        "topology": "bert",
+        "task": "mlm",
+        "approach": "dynamic",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "bert_mlm_dynamic",
+        "topology": "bert",
+        "task": "mlm",
+        "approach": "dynamic",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -172,14 +328,47 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "xlnet_plm_static",
+        "topology": "xlnet",
+        "task": "plm",
+        "approach": "static",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "xlnet_plm_static",
+        "topology": "xlnet",
+        "task": "plm",
+        "approach": "static",
+        "backend": "",
+        "mode": "accuracy",
+        "batch_size": "8",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "xlnet_plm_qat": {
+    "working_dir": "huggingface/pytorch/language-modeling/quantization/",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "xlnet",
+        "task": "plm",
+        "approach": "qat",
+        "backend": "",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "xlnet",
+        "task": "plm",
+        "approach": "qat",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -193,14 +382,20 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "xlnet_plm_dynamic",
+        "topology": "xlnet",
+        "task": "plm",
+        "approach": "dynamic",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "xlnet_plm_dynamic",
+        "topology": "xlnet",
+        "task": "plm",
+        "approach": "dynamic",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -214,7 +409,10 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gpt_neox_clm_static",
+        "topology": "gpt_neox",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "output_model": "saved_results"
         
       }
@@ -222,7 +420,10 @@
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gpt_neox_clm_static",
+        "topology": "gpt_neox",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -236,14 +437,20 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gpt_neox_clm_dynamic",
+        "topology": "gpt_neox",
+        "task": "clm",
+        "approach": "dynamic",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gpt_neox_clm_dynamic",
+        "topology": "gpt_neox",
+        "task": "clm",
+        "approach": "dynamic",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -257,14 +464,20 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "bloom_clm_static",
+        "topology": "bloom",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "bloom_clm_static",
+        "topology": "bloom",
+        "task": "clm",
+        "approach": "static",
+        "backend": "",
         "mode": "accuracy",
         "batch_size": "8",
         "iters": "100",
@@ -286,6 +499,27 @@
       "cmd": "bash run_benchmark.sh",
       "params": {
         "topology": "bert_base_swag_static",
+        "mode": "accuracy",
+        "batch_size": "64",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "bert_base_swag_qat": {
+    "working_dir": "huggingface/pytorch/multiple-choice/quantization/",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "bert_base_swag_qat",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "bert_base_swag_qat",
         "mode": "accuracy",
         "batch_size": "64",
         "iters": "100",
@@ -328,6 +562,27 @@
       "cmd": "bash run_benchmark.sh",
       "params": {
         "topology": "distilbert_base_squad_static",
+        "mode": "accuracy",
+        "batch_size": "64",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "distilbert_base_squad_qat": {
+    "working_dir": "huggingface/pytorch/question-answering/quantization/",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "distilbert_base_squad_qat",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "distilbert_base_squad_qat",
         "mode": "accuracy",
         "batch_size": "64",
         "iters": "100",
@@ -819,6 +1074,27 @@
       }
     }
   },
+  "distilbert_base_ner_qat": {
+    "working_dir": "huggingface/pytorch/token-classification/quantization/",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "distilbert_base_ner_qat",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "distilbert_base_ner_qat",
+        "mode": "accuracy",
+        "batch_size": "64",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
   "distilbert_base_ner_dynamic": {
     "working_dir": "huggingface/pytorch/token-classification/quantization/",
     "tune": {
@@ -1140,20 +1416,130 @@
     "tune": {
       "cmd": "bash run_tuning.sh",
       "params": {
-        "topology": "gpt_j_6b_clm_ipex",
+        "topology": "gpt_j",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
         "output_model": "saved_results"
       }
     },
     "benchmark": {
       "cmd": "bash run_benchmark.sh",
       "params": {
-        "topology": "gpt_j_6b_ipex",
+        "topology": "gpt_j",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
         "mode": "accuracy",
-        "batch_size": "64",
+        "batch_size": "112",
         "iters": "100",
         "int8": "false",
         "config": "saved_results"
       }
     }
   },
+  "opt_2.7b_clm_ipex": {
+    "working_dir": "huggingface/pytorch/language-modeling/quantization",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "opt_2.7b",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "opt_2.7b",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
+        "mode": "accuracy",
+        "batch_size": "112",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "opt_6.7b_clm_ipex": {
+    "working_dir": "huggingface/pytorch/language-modeling/quantization",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "opt_6.7b",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "opt_6.7b",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
+        "mode": "accuracy",
+        "batch_size": "112",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "llama_7b_clm_ipex": {
+    "working_dir": "huggingface/pytorch/language-modeling/quantization",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "llama_7b",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
+        "output_model": "saved_results"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "llama_7b",
+        "task": "clm",
+        "approach": "static",
+        "backend": "ipex",
+        "mode": "accuracy",
+        "batch_size": "112",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  },
+  "bloom_7b1": {
+    "working_dir": "huggingface/pytorch/text-generation/quantization",
+    "tune": {
+      "cmd": "bash run_tuning.sh",
+      "params": {
+        "topology": "bloom_7b1",
+        "output_model": "saved_results",
+        "backend": "ipex"
+      }
+    },
+    "benchmark": {
+      "cmd": "bash run_benchmark.sh",
+      "params": {
+        "topology": "bloom_7b1",
+        "backend": "ipex",
+        "mode": "accuracy",
+        "batch_size": "112",
+        "iters": "100",
+        "int8": "false",
+        "config": "saved_results"
+      }
+    }
+  }
 }

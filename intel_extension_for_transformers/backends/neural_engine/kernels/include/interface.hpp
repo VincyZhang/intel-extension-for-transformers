@@ -21,16 +21,14 @@
 #include "param_types.hpp"
 #include "operator_desc.hpp"
 #include "engine.hpp"
-#include "cpu_engine.hpp"
-#include "engine_factory.hpp"
 #include "kernel_desc.hpp"
 #include "kernel.hpp"
 #include "kernel_cache.hpp"
-#include "utils.hpp"
-#include "vtune_wrapper.hpp"
-#include "kernels/sparse_data.hpp"
+#include "common.h"
+#include "src/vtune_wrapper.hpp"
 
 namespace jd {
+
 /**
  * @brief Proxy pattern. The proxy could interface to anything.
  *  Similar to onednn's "struct handle". oneapi/dnnl/dnnl.hpp:136.
@@ -128,6 +126,13 @@ class SPARSE_API_ eltwiseop_desc : public kernel_desc_proxy {
   eltwiseop_desc() {}
   explicit eltwiseop_desc(const operator_desc& op_desc) : kernel_desc_proxy(op_desc) {}
   virtual ~eltwiseop_desc() {}
+};
+
+class SPARSE_API_ groupnorm_desc : public kernel_desc_proxy {
+ public:
+  groupnorm_desc() {}
+  explicit groupnorm_desc(const operator_desc& op_desc) : kernel_desc_proxy(op_desc) {}
+  virtual ~groupnorm_desc() {}
 };
 
 class SPARSE_API_ layernorm_ba_desc : public kernel_desc_proxy {
@@ -228,6 +233,13 @@ class SPARSE_API_ eltwiseop : public kernel_proxy {
   eltwiseop() {}
   explicit eltwiseop(const kernel_desc_proxy& kdp) : kernel_proxy(kdp) {}
   virtual ~eltwiseop() {}
+};
+
+class SPARSE_API_ groupnorm : public kernel_proxy {
+ public:
+  groupnorm() {}
+  explicit groupnorm(const kernel_desc_proxy& kdp) : kernel_proxy(kdp) {}
+  virtual ~groupnorm() {}
 };
 
 class SPARSE_API_ layernorm_ba : public kernel_proxy {

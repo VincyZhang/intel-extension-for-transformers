@@ -275,6 +275,8 @@ void ConvolutionOperator::Prepare(const vector<Tensor*>& input, const vector<Ten
     po.append_eltwise(dst_scales[0], algorithm::eltwise_linear, 1., zero_point);
   }
   if (append_eltwise_ || append_sum_) attr.set_post_ops(po);
+
+  // set conv attr to scratchpad_mode
   attr.set_scratchpad_mode(dnnl::scratchpad_mode::user);
   attr_ = attr;
 
@@ -391,7 +393,8 @@ void ConvolutionOperator::Reshape(const vector<Tensor*>& input, const vector<Ten
       // need zero point when src0 is u8
       if (src_->dtype() == "u8") {
         mask = src_min_->size() > 1 ? 2 : 0;
-        zp_src0_mem_ = memory({{src_min_->size()}, memory::data_type::s32, GetStrides(scale_shape)}, eng_);
+        zp_src0_mem_ = memory(
+            {{static_cast<dnnl_dim_t>(src_min_->size())}, memory::data_type::s32, GetStrides(scale_shape)}, eng_);
         attr_.set_zero_points(DNNL_ARG_SRC, mask, {DNNL_RUNTIME_S32_VAL});
       }
     }
@@ -543,7 +546,13 @@ void ConvolutionOperator::Reshape(const vector<Tensor*>& input, const vector<Ten
 
   convolution_pd_ = dnnl::convolution_forward::primitive_desc(convolution_d, attr_, eng_);
   memory::desc scratchpad_md = convolution_pd_.scratchpad_desc();
-  scratchpad_ = MemoryAllocator::get().GetMemory(scratchpad_md.get_size(), 1);
+  if (scratchpad_) {
+    aligned_free(scratchpad_);
+    scratchpad_ = nullptr;
+  }
+
+  scratchpad_ =
+      reinterpret_cast<void*>(aligned_alloc(ALIGNMENT, (scratchpad_md.get_size() / ALIGNMENT + 1) * ALIGNMENT));
   memory scratchpad_m = memory(scratchpad_md, eng_, scratchpad_);
   memory_args_[DNNL_ARG_SCRATCHPAD] = scratchpad_m;
 

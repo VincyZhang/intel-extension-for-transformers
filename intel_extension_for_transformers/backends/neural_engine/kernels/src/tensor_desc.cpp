@@ -20,8 +20,8 @@ namespace jd {
 tensor_desc::tensor_desc(const std::vector<int64_t>& shape, const data_type& dtype, const format_type& ftype)
     : shape_(shape), dtype_(dtype), ftype_(ftype) {
   if (shape_.size() != 0) {
-    SPARSE_LOG_IF(WARNING, dtype_ == data_type::undef) << "Non-empty tensor with undefined data type";
-    SPARSE_LOG_IF(WARNING, ftype_ == format_type::undef) << "Non-empty tensor with undefined format type";
+    SPARSE_DLOG_IF(WARNING, dtype_ == data_type::undef) << "Non-empty tensor with undefined data type";
+    SPARSE_DLOG_IF(WARNING, ftype_ == format_type::undef) << "Non-empty tensor with undefined format type";
   }
 }
 
@@ -31,7 +31,7 @@ std::ostream& operator<<(std::ostream& os, const tensor_desc& td) {
     if (i != 0) os << ' ';
     os << td.shape()[i];
   }
-  os << ", dt=";
+  os << ", data_type=";
   os << data_type_name.at(td.dtype());
   os << ", ft=";
   os << format_type_name.at(td.ftype());
