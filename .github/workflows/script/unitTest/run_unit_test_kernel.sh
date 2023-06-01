@@ -31,7 +31,10 @@ function engine_test() {
         [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "==ERROR:" ${ut_log_name}) != 0 ]; then
+        $BOLD_RED && echo "Find errors in engine test, please check the output..." && $RESET
         exit 1
+    else
+        $BOLD_GREEN && echo "engine test finished successfully!" && $RESET
     fi
 }
 
@@ -51,7 +54,10 @@ function kernel_test() {
         [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "==ERROR:" ${ut_log_name}) != 0 ]; then
+        $BOLD_RED && echo "Find errors in kernel test, please check the output..." && $RESET
         exit 1
+    else
+        $BOLD_GREEN && echo "kernel test finished successfully!" && $RESET
     fi
 }
 
