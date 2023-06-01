@@ -17,7 +17,7 @@ function gtest() {
 
 # -------------------engine test-------------------
 function engine_test() {
-    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/
+    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/build
 
     if [[ ${test_install_backend} == "true" ]]; then
         local ut_log_name=${LOG_DIR}/unit_test_engine_gtest_backend_only.log
@@ -37,7 +37,7 @@ function engine_test() {
 
 # ------------------kernel test--------------------
 function kernel_test() {
-    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/
+    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/build
 
     if [[ ${test_install_backend} == "true" ]]; then
         local ut_log_name=${LOG_DIR}/unit_test_kernel_gtest_backend_only.log

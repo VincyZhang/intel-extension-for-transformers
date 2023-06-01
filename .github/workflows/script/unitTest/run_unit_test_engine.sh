@@ -55,6 +55,7 @@ function gtest() {
         ut_log_name=${LOG_DIR}/unit_test_gtest.log
     fi
 
+    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/build
     ctest -V -L "engine_test" 2>&1 | tee ${ut_log_name}
     if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "PASSED" ${ut_log_name}) == 0 ] ||
