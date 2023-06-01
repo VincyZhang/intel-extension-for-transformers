@@ -7,6 +7,7 @@ mkdir -p ${LOG_DIR}
 function pytest() {
     local coverage_log_dir=$1
     mkdir -p ${coverage_log_dir}
+    pip install --no-cache-dir protobuf==3.20.0
 
     cd /intel-extension-for-transformers/tests || exit 1
     JOB_NAME=unit_test
