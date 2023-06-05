@@ -44,7 +44,8 @@ jobs:
 
       - name: sparse lib test
         run: |
-          bash -x ${WORKSPACE}/lpot-validation/sparse_lib/run_ci_trigger.sh
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "bash -x /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/run_sparse_lib.sh"
 
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
