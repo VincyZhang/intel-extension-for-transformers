@@ -55,7 +55,7 @@ jobs:
           qtools_commit: ${{github.event.pull_request._links.commits.href}}
           summary_dir: "/intel-extension-for-transformers/benchmark_log/sparse_test"
           device_list: spr-itrex
-          overview_log: "/intel-extension-for-transformers/benchmark_log/summary_overview.log"
+          overview_log: /intel-extension-for-transformers/benchmark_log/summary_overview.log
           github_actions_job_status: ${{ steps.SparseLib-Test.outcome }}
           ghprbActualCommit: ${{github.event.pull_request._links.commits.href}}
           ghprbPullLink: ${{github.event.pull_request._links.html.href}}
