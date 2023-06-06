@@ -24,10 +24,6 @@ env:
 jobs:
   sparselib:
     runs-on: [self-hosted, linux, X64, spr itrex]
-    strategy:
-      matrix:
-        job_name: ["sparselib"]
-      fail-fast: false
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
