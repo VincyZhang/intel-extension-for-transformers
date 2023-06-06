@@ -3,18 +3,18 @@
 # -------------- general approach start----------------
 
 # 1. import this file: 
-    # source path/change_color.sh
+#     source path/change_color.sh
 # 2. use COLOR/BG: 
-    # $VARIABLE_NAME && out_put_content && $RESET
+#     $VARIABLE_NAME && out_put_content && $RESET
 # 3. COLOR + BG:
-    # $COLOR/BG_VARIABLE_NAME && $BG/COLOR_VARIABLE_NAME && out_put_content && $RESET
+#     $COLOR/BG_VARIABLE_NAME && $BG/COLOR_VARIABLE_NAME && out_put_content && $RESET
 # 4. custom
-    # abbreviation(change number)
-        # txt number range (30, 37)
-        # bg number range (40, 47)
-        # special effects number range (1, 7)
-        # echo -en \\E[number1 + ; + number2 + ; + number3 + m"
-        # e.g - BG_GRAY+LIGHT_RED = "echo -en \\E[47;31m"
+#     abbreviation(change number)
+#         txt number range (30, 37)
+#         bg number range (40, 47)
+#         special effects number range (1, 7)
+#         echo -en \\E[number1 + ; + number2 + ; + number3 + m"
+#         e.g - BG_GRAY+LIGHT_RED = "echo -en \\E[47;31m"
 
 # -------------- general approach end----------------==
 

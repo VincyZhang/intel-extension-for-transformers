@@ -23,7 +23,7 @@ env:
 
 jobs:
   sparselib:
-    runs-on: [self-hosted, linux, X64, itrex-node]
+    runs-on: [self-hosted, linux, X64, spr itrex]
     strategy:
       matrix:
         job_name: ["sparselib"]

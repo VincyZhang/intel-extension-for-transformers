@@ -28,7 +28,7 @@ function pytest() {
     # run coverage report
     coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage.log
     coverage html -d ${coverage_log_dir}/htmlcov --rcfile=${COVERAGE_RCFILE}
-    coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}s
+    coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}
 
     # check UT status
     if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then
