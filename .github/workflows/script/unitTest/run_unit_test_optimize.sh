@@ -1,6 +1,6 @@
 #!/bin/bash
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
-export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.coveragerc"
+export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.optimize-coveragerc"
 LOG_DIR=/log_dir
 mkdir -p ${LOG_DIR}
 
@@ -26,9 +26,9 @@ function pytest() {
     $BOLD_YELLOW && echo "------UT end -------" && $RESET
 
     # run coverage report
-    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage_log
+    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage.log
     coverage html -d ${coverage_log_dir}/htmlcov --rcfile=${COVERAGE_RCFILE}
-    coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}
+    coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}s
 
     # check UT status
     if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then

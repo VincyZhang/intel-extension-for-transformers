@@ -1,8 +1,6 @@
 #!/bin/bash
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
-# pip install intel-extension-for-transformers
-
 cd /intel-extension-for-transformers
 $BOLD_YELLOW && echo "---------------- git submodule update --init --recursive -------------" && $RESET
 git config --global --add safe.directory "*"

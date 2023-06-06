@@ -42,7 +42,7 @@ jobs:
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
-      - name: sparse lib test
+      - name: SparseLib Test
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "bash -x /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/run_sparse_lib.sh"
