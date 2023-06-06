@@ -64,7 +64,9 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage \
-          && bash calc_coverage.sh"
+          && bash calc_coverage.sh \ 
+          && cd /intel-extension-for-transformers \
+          && mv /log_dir ."
 
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
