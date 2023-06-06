@@ -1,17 +1,5 @@
 #!/bin/bash
 PATTERN='[-a-zA-Z0-9_]*='
-for i in "$@"; do
-    case $i in
-    --target_branch=*)
-        target_branch=$(echo $i | sed "s/${PATTERN}//")
-        ;;
-    *)
-        echo "Parameter $i not recognized."
-        exit 1
-        ;;
-    esac
-done
-
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 pip install clang-format
