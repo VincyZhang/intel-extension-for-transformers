@@ -1,7 +1,8 @@
 import sys
+
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 new_summary_file = sys.argv[1]
 last_summary_file = sys.argv[2]
@@ -9,6 +10,7 @@ PCT_COL_NAME = r"(new/last)%"
 THRESHOLD_REGRESSION = 80
 RdYlGn = plt.cm.get_cmap('RdYlGn')
 name_no_ext = new_summary_file.split('/')[-1][:-4]
+xlsx_path = "/intel-extension-for-transformers/benchmark_log"
 
 
 def to_df(fname):
@@ -81,7 +83,7 @@ df_comp_styler = df_comp.style \
     .background_gradient(RdYlGn.reversed(), subset=idx_pct_time, vmin=80, vmax=120)\
     .background_gradient(RdYlGn, subset=idx_pct_gflops, vmin=80, vmax=120)\
     .set_table_attributes('class="features-table"')
-df_comp_styler.to_excel(f"{name_no_ext}.xlsx")
+df_comp_styler.to_excel(f"{xlsx_path}/{name_no_ext}.xlsx")
 
 # output report via stdout
 table_repr = df_comp_styler.to_html()

@@ -53,7 +53,7 @@ jobs:
           job_params: pre-CI
           qtools_branch: ${{github.event.pull_request._links.html.href}}
           qtools_commit: ${{github.event.pull_request._links.commits.href}}
-          summary_dir: "/intel-extension-for-transformers/benchmark_log/sparse_test"
+          summary_dir: "/intel-extension-for-transformers"
           device_list: spr-itrex
           overview_log: /intel-extension-for-transformers/benchmark_log/summary_overview.log
           github_actions_job_status: ${{ steps.SparseLib-Test.outcome }}
@@ -67,7 +67,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
         with:
-          name: Engine Unit Test
+          name: SparseLib Test
           path: ${{ github.workspace }}/benchmark_log
           retention-days: 5
 

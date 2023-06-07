@@ -1,18 +1,6 @@
 #!/bin/bash
 PATTERN='[-a-zA-Z0-9_]*='
-WORKSPACE="/intel-extension-for-transformers"
-
-for i in "$@"; do
-    case $i in
-    --device=*)
-        device=$(echo $i | sed "s/${PATTERN}//")
-        ;;
-    *)
-        echo "Parameter $i not recognized."
-        exit 1
-        ;;
-    esac
-done
+WORKSPACE="/intel-extension-for-transformers/benchmark_log"
 
 function main {
     script_dir=$(dirname "${BASH_SOURCE[0]}")
@@ -21,19 +9,18 @@ function main {
     echo "summary_dir_ref: ${summary_dir_last}"
     echo "overview_log: ${overview_log}"
     echo "script_dir: ${script_dir}"
-    echo "device: ${device}"
     pip install --upgrade pip
     pip install pandas==1.4.4 Jinja2==3.1.2 openpyxl==3.0.10 matplotlib==3.5.3
     pip freeze
 
     generate_html_head
 
-    for caselog in $(find $summary_dir/${device}/benchmark_log/cur/*_summary.log); do
-        summary_dir_last="$summary_dir/${device}/benchmark_log/ref"
+    for caselog in $(find $summary_dir/benchmark_log/cur/*_summary.log); do
+        summary_dir_last="$summary_dir/benchmark_log/ref"
         local name=$(basename $caselog | sed 's/_summary.log//')
-        echo "<h2>$name <a href=\"${name}_summary.xlsx\" style=\"font-size: initial\">${name}_summary.xlsx</a> </h2>" >>${WORKSPACE}/report_${device}.html
+        echo "<h2>$name <a href=\"${name}_summary.xlsx\" style=\"font-size: initial\">${name}_summary.xlsx</a> </h2>" >>${WORKSPACE}/SparseLibReport.html
         python "$script_dir/generate_sparse_lib.py" $caselog ${summary_dir_last}/$(basename $caselog) \
-            >>${WORKSPACE}/report_${device}.html \
+            >>${WORKSPACE}/SparseLibReport.html \
             2>>${WORKSPACE}/perf_regression.log
     done
     generate_html_footer
@@ -57,7 +44,7 @@ function generate_html_overview {
         pr_comment_opt="<div class='job-params'><pre>PR comment options=${job_params}</pre></div>"
     fi
 
-    cat >>${WORKSPACE}/report_${device}.html <<eof
+    cat >>${WORKSPACE}/SparseLibReport.html <<eof
 
 <body>
     <div id="main">
@@ -87,7 +74,7 @@ function generate_html_head {
     if [[ -n $ghprbPullId ]]; then pr_title=" PR-$ghprbPullId"; fi
     local title_html="${report_title} ${JOB_NAME}-${BUILD_NUMBER}${pr_title}"
 
-    cat >${WORKSPACE}/report_${device}.html <<eof
+    cat >${WORKSPACE}/SparseLibReport.html <<eof
 
 <!DOCTYPE html>
 <html lang="en">
@@ -201,11 +188,11 @@ eof
 
 function generate_html_footer {
     if [[ -s ${WORKSPACE}/perf_regression.log ]]; then
-        echo "<h2>Regression Details</h2><div class='regression-deatils-wrapper'><pre>" >>${WORKSPACE}/report_${device}.html
-        cat ${WORKSPACE}/perf_regression.log >>${WORKSPACE}/report_${device}.html
-        echo "</pre></div>" >>${WORKSPACE}/report_${device}.html
+        echo "<h2>Regression Details</h2><div class='regression-deatils-wrapper'><pre>" >>${WORKSPACE}/SparseLibReport.html
+        cat ${WORKSPACE}/perf_regression.log >>${WORKSPACE}/SparseLibReport.html
+        echo "</pre></div>" >>${WORKSPACE}/SparseLibReport.html
     fi
-    cat >>${WORKSPACE}/report_${device}.html <<eof
+    cat >>${WORKSPACE}/SparseLibReport.html <<eof
     </div>
 </body>
 </html>
