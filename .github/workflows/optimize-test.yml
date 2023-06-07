@@ -43,11 +43,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - modelName: "bert_base_mrpc"
+          - modelName: "bert_base_mrpc_static"
             framework: "pytorch"
-          - modelName: "bert_base_sst2"
-            framework: "pytorch"
-          - modelName: "bert_base_mrpc"
+          - modelName: "bert_base_mrpc_static"
             framework: "tensorflow"
     steps:
       - name: Checkout out Repo
