@@ -26,7 +26,7 @@ bash /intel-extension-for-transformers/intel_extension_for_transformers/backends
 for caselog in $(find $cur_dir/*); do
     case_name=$(echo $caselog | sed -e 's/\.log$//')
     $BOLD_YELLOW && echo "[VAL INFO] write summary, case_name=$case_name" && $RESET
-    bash $/intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/test/kernels/benchmark/ci/to_summary.sh $caselog | tee -a "${case_name}_summary.log"
+    bash /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/test/kernels/benchmark/ci/to_summary.sh $caselog | tee -a "${case_name}_summary.log"
 done
 
 cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine
