@@ -19,7 +19,7 @@ function main {
         summary_dir_last="$summary_dir/benchmark_log/ref"
         local name=$(basename $caselog | sed 's/_summary.log//')
         echo "<h2>$name <a href=\"${name}_summary.xlsx\" style=\"font-size: initial\">${name}_summary.xlsx</a> </h2>" >>${WORKSPACE}/SparseLibReport.html
-        python "$script_dir/generate_sparse_lib.py" $caselog ${summary_dir_last}/$(basename $caselog) \
+        python "/generate_sparse_lib.py" $caselog ${summary_dir_last}/$(basename $caselog) \
             >>${WORKSPACE}/SparseLibReport.html \
             2>>${WORKSPACE}/perf_regression.log
     done

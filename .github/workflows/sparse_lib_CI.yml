@@ -47,7 +47,7 @@ jobs:
       - name: Generate Report
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
-          bash -c "bash /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/generate_sparse_lib.sh"
+          bash -c "bash /generate_sparse_lib.sh"
         env:
           report_title: SparseLib Test
           job_params: pre-CI

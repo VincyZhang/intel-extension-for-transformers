@@ -7,11 +7,13 @@ mkdir ${output_log_dir}/cur
 mkdir ${output_log_dir}/ref
 cur_dir=${output_log_dir}/cur
 ref_dir=${output_log_dir}/ref
-
+cp /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/generate_sparse_lib.sh /generate_sparse_lib.sh
+cp /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/generate_sparse_lib.py /generate_sparse_lib.py
 pip install cmake
 
 rm -rf /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/build
 cd /intel-extension-for-transformers
+
 git config --global --add safe.directory "*"
 git fetch
 git submodule update --init --recursive
