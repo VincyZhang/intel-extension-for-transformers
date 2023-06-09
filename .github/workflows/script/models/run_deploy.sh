@@ -38,6 +38,11 @@ main() {
         run_accuracy
     fi
 
+    ## run accuracy
+    if [[ echo "${stage}" | grep "latency" ]]; then
+        run_latency
+    fi
+
     # run performance
     if [[ echo "${stage}" | grep "performance" ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
         run_performance
