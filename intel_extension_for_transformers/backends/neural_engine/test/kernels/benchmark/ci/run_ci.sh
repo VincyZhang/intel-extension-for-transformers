@@ -17,56 +17,57 @@
 
 script_dir=$(dirname "${BASH_SOURCE[0]}")
 log_dir=$1
+socket_id=$2
 rm -rf $log_dir
 mkdir -p $log_dir
 
 medium_n=5
 
 source $script_dir/benchmark.sh --modes=acc,perf --op=sparse_matmul --medium_n=$medium_n --it_per_core=500 \
-    --batch="$script_dir/inputs/ci_vnni_input" |
+    --batch="$script_dir/inputs/ci_vnni_input" --socket=${socket_id} |
     tee "$log_dir/vnni.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=sparse_matmul --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_amx_bf16_x16_input" |
+    --batch="$script_dir/inputs/ci_amx_bf16_x16_input" --socket=${socket_id} |
     tee "$log_dir/amx_bf16_x16.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=layernorm_ba --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_layernorm_ba_input" |
+    --batch="$script_dir/inputs/ci_layernorm_ba_input" --socket=${socket_id} |
     tee "$log_dir/layernorm_ba.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=eltwiseop --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_eltwiseop_input" |
+    --batch="$script_dir/inputs/ci_eltwiseop_input" --socket=${socket_id} |
     tee "$log_dir/eltwiseop.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=transpose_matmul --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_matmul_avx512f_8bit_input" |
+    --batch="$script_dir/inputs/ci_matmul_avx512f_8bit_input" --socket=${socket_id} |
     tee "$log_dir/matmul_avx512f_8bit.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=transpose_matmul --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_matmul_avx512f_p2031_p2013_input" |
+    --batch="$script_dir/inputs/ci_matmul_avx512f_p2031_p2013_input" --socket=${socket_id} |
     tee "$log_dir/matmul_avx512f_p2031_p2013.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=transpose_matmul --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_matmul_vnni_p2031_p2013_input" |
+    --batch="$script_dir/inputs/ci_matmul_vnni_p2031_p2013_input" --socket=${socket_id} |
     tee "$log_dir/matmul_vnni_p2031_p2013.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=transpose_matmul --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_matmul_vnni_noperm_p2031_p1302_input" |
+    --batch="$script_dir/inputs/ci_matmul_vnni_noperm_p2031_p1302_input" --socket=${socket_id} |
     tee "$log_dir/matmul_vnni_noperm_p2031_p1302.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=softmax --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_softmax_input" |
+    --batch="$script_dir/inputs/ci_softmax_input" --socket=${socket_id} |
     tee "$log_dir/softmax.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=attention --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_attention_input" |
+    --batch="$script_dir/inputs/ci_attention_input" --socket=${socket_id} |
     tee "$log_dir/attention.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=transpose_mha --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_transpose_mha_input" |
+    --batch="$script_dir/inputs/ci_transpose_mha_input" --socket=${socket_id} |
     tee "$log_dir/transpose_mha.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=mha_dense --medium_n=$medium_n --it_per_core=100 \
-    --batch="$script_dir/inputs/ci_mha_dense_input" |
+    --batch="$script_dir/inputs/ci_mha_dense_input" --socket=${socket_id} |
     tee "$log_dir/mha_dense.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=dynamic_quant_matmul --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_dynamic_quant_matmul_input" |
+    --batch="$script_dir/inputs/ci_dynamic_quant_matmul_input" --socket=${socket_id} |
     tee "$log_dir/dynamic_quant_matmul.log"
 source $script_dir/benchmark.sh --modes=acc --op=dynamic_quant --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_dynamic_quant_input" |
+    --batch="$script_dir/inputs/ci_dynamic_quant_input" --socket=${socket_id} |
     tee "$log_dir/dynamic_quant.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=mha_dense --medium_n=$medium_n --it_per_core=300 \
-    --batch="$script_dir/inputs/ci_mha_dense_dynamic_input" |
+    --batch="$script_dir/inputs/ci_mha_dense_dynamic_input" --socket=${socket_id} |
     tee "$log_dir/mha_dense_dynamic.log"
 source $script_dir/benchmark.sh --modes=acc,perf --op=mha_dense --medium_n=$medium_n --it_per_core=100 \
-    --batch="$script_dir/inputs/ci_mha_dense_bf16_input" |
+    --batch="$script_dir/inputs/ci_mha_dense_bf16_input" --socket=${socket_id} |
     tee "$log_dir/mha_dense_bf16.log"

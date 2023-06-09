@@ -24,7 +24,12 @@ function run_multi_inst {
     local unified_log=$3
 
     echo -e ">>> run run_multi_inst $ncores_per_inst $cmd" >>"$unified_log"
-    for ((j = 0; $(($j + $ncores_per_inst)) <= $ncores_per_socket; j = $(($j + ${ncores_per_inst})))); do
+    if [[ "${socket_id}" == "0" ]]; then
+        start_cpu=0
+    else
+        start_cpu=${ncores_per_socket}
+    fi
+    for ((j = $start_cpu; $(($j + $ncores_per_inst)) <= $ncores_per_socket; j = $(($j + ${ncores_per_inst})))); do
         local numa_prefix="numactl -m 0 -C $j-$((j + ncores_per_inst - 1)) "
         # Make it works on machines with no numa support
         if [[ -n $no_numa_support ]]; then
@@ -118,6 +123,9 @@ while [ $# -gt 0 ]; do
         ;;
     --raw_log=*)
         raw_log="${1#*=}"
+        ;;
+    --socket_id=*)
+        socket_id="${1#*=}"
         ;;
     *)
         printf "*************************************\n"
