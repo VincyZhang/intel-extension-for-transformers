@@ -1,12 +1,13 @@
 #!/bin/bash
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
-export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.coveragerc"
+export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.optimize-coveragerc"
 LOG_DIR=/log_dir
 mkdir -p ${LOG_DIR}
 
 function pytest() {
     local coverage_log_dir=$1
     mkdir -p ${coverage_log_dir}
+    pip install --no-cache-dir protobuf==3.20.0
 
     cd /intel-extension-for-transformers/tests || exit 1
     JOB_NAME=unit_test
@@ -25,7 +26,7 @@ function pytest() {
     $BOLD_YELLOW && echo "------UT end -------" && $RESET
 
     # run coverage report
-    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage_log
+    coverage report -m --rcfile=${COVERAGE_RCFILE} | tee ${coverage_log_dir}/coverage.log
     coverage html -d ${coverage_log_dir}/htmlcov --rcfile=${COVERAGE_RCFILE}
     coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}
 
@@ -37,6 +38,13 @@ function pytest() {
     $BOLD_GREEN && echo "UT finished successfully! " && $RESET
 }
 
+function re_install_packages() {
+    local package_name=$1
+    echo "re-install ${package_name} resolve the issue..."
+    pip uninstall ${package_name} -y
+    pip install --no-cache-dir ${package_name}
+}
+
 function install_itrex_base() {
     pip uninstall intel_extension_for_transformers -y
 
@@ -46,6 +54,7 @@ function install_itrex_base() {
     git checkout master
 
     bash /intel-extension-for-transformers/.github/workflows/script/install_binary.sh
+    pip install --no-cache-dir protobuf==3.20.0
 }
 
 function main() {

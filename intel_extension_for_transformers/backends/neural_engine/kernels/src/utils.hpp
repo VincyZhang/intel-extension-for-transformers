@@ -12,8 +12,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
-#ifndef ENGINE_SPARSELIB_INCLUDE_UTILS_HPP_
-#define ENGINE_SPARSELIB_INCLUDE_UTILS_HPP_
+#ifndef ENGINE_SPARSELIB_SRC_UTILS_HPP_
+#define ENGINE_SPARSELIB_SRC_UTILS_HPP_
 #include <glog/logging.h>
 #include <omp.h>
 #include <stdlib.h>
@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "param_types.hpp"
+#include "data_type/data_types.hpp"
 
 #ifdef SPARSE_LIB_USE_VTUNE
 #include <ittnotify.h>
@@ -36,23 +37,6 @@
 #if __GNUC__ >= 4 || defined(__clang__)
 #define WITH_GCC_FLAGS
 #endif
-
-#ifndef SPARSE_API_
-#ifdef _MSC_VER
-#if SPARSE_KERNEL_BUILD
-#define SPARSE_API_ __declspec(dllexport)
-#else
-#define SPARSE_API_ __declspec(dllimport)
-#endif
-#elif __GNUC__ >= 4 || defined(__clang__)
-#define SPARSE_API_ __attribute__((visibility("default")))
-#endif  // _MSC_VER
-
-#endif  // SPARSE_API_
-
-#ifndef SPARSE_API_
-#define SPARSE_API_
-#endif  // SPARSE_API_
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -77,54 +61,13 @@
 #define SPARSE_DLOG(level) DLOG(level) << "Sparselib] "
 #define SPARSE_DLOG_IF(level, f) DLOG_IF(level, f) << "Sparselib] "
 namespace jd {
-
-typedef uint16_t bfloat16_t;  // NOLINT
-typedef uint8_t float8_t;     // NOLINT
-typedef int64_t dim_t;
-
-SPARSE_API_ int8_t fp32_to_int8(const float fp32, const float scale = 1.f, const float zp = 0.f);
-SPARSE_API_ uint16_t fp32_to_fp16(const float x);
-SPARSE_API_ float fp16_to_fp32(const uint16_t x);
-SPARSE_API_ bfloat16_t fp32_to_bf16(const float fp32);
-SPARSE_API_ float bf16_to_fp32(const bfloat16_t bf16);
+int8_t fp32_to_int8(const float fp32, const float scale = 1.f, const float zp = 0.f);
+float int8_to_fp32(const int8_t int8, const float scale = 1.f, const float zp = 0.f);
 
 template <typename dst_t, typename src_t>
-dst_t cast_to(src_t x);
-
-template <typename T>
-SPARSE_API_ void init_vector(T* v, int num_size, float bound1 = -10, float bound2 = 10, int seed = 5489u);
-
-#ifdef _WIN32
-#define DECLARE_INIT_VECTOR(type) \
-  template SPARSE_API_ void init_vector<type>(type * v, int num_size, float bound1, float bound2, int seed);
-
-DECLARE_INIT_VECTOR(float)
-DECLARE_INIT_VECTOR(int)
-DECLARE_INIT_VECTOR(uint8_t)
-DECLARE_INIT_VECTOR(int8_t)
-
-#undef DECLARE_INIT_VECTOR
-#endif
-
-template <>
-SPARSE_API_ void init_vector<bfloat16_t>(bfloat16_t* v, int num_size, float range1, float range2, int seed);
-
-template <typename T>
-bool SPARSE_API_ compare_data(const void* buf1, int64_t size1, const void* buf2, int64_t size2, float eps = 1e-6);
-
-#ifdef _WIN32
-#define DECLARE_COMPARE_DATA(type)                                                                               \
-  template SPARSE_API_ bool compare_data<type>(const void* buf1, int64_t size1, const void* buf2, int64_t size2, \
-                                               float eps);
-
-DECLARE_COMPARE_DATA(float)
-DECLARE_COMPARE_DATA(int)
-DECLARE_COMPARE_DATA(uint8_t)
-DECLARE_COMPARE_DATA(int8_t)
-DECLARE_COMPARE_DATA(uint16_t)
-
-#undef DECLARE_COMPARE_DATA
-#endif
+dst_t cast_to(const src_t x) {
+  return static_cast<dst_t>(x);
+}
 
 template <typename T2, typename T1>
 inline const T2 bit_cast(T1 i) {
@@ -152,10 +95,10 @@ inline bool is_all_of(std::initializer_list<value_type> il, predicate_type pred)
 #define is_nonzero(x) (fabs((x)) > (1e-3))
 #define remainsize(x, size, n) (((x) + (n)) <= (size) ? (n) : ((size) - (x)))
 template <typename T>
-SPARSE_API_ T str_to_num(const std::string& s);
+T str_to_num(const std::string& s);
 
 #ifdef _WIN32
-#define DECLARE_STR_TO_NUM(type) template SPARSE_API_ type str_to_num<type>(const std::string& s);
+#define DECLARE_STR_TO_NUM(type) template type str_to_num<type>(const std::string& s);
 
 DECLARE_STR_TO_NUM(uint64_t)
 DECLARE_STR_TO_NUM(int64_t)
@@ -166,19 +109,15 @@ DECLARE_STR_TO_NUM(float)
 #endif
 
 template <typename T>
-SPARSE_API_ std::vector<T> split_str(const std::string& s, const char& delim = ',');
+std::vector<T> split_str(const std::string& s, const char& delim = ',');
 
 #ifdef _WIN32
-#define DECLARE_SPLIT_STR(type) \
-  template SPARSE_API_ std::vector<type> split_str<type>(const std::string& s, const char& delim);
+#define DECLARE_SPLIT_STR(type) template std::vector<type> split_str<type>(const std::string& s, const char& delim);
 
 DECLARE_SPLIT_STR(int)
-// DECLARE_SPLIT_STR(std::string)
 
 #undef DECLARE_SPLIT_STR
 #endif
-
-SPARSE_API_ std::string join_str(const std::vector<std::string>& ss, const std::string& delim = ",");
 
 /**
  * @brief Check if every element in a sub matrix is zero
@@ -192,15 +131,15 @@ SPARSE_API_ std::string join_str(const std::vector<std::string>& ss, const std::
 template <typename T>
 bool all_zeros(const T* data, dim_t ld, dim_t nd1, dim_t nd2);
 
-int SPARSE_API_ get_data_size(data_type dt);
+int get_data_size(data_type dt);
 
-float SPARSE_API_ get_exp(float x);
-float SPARSE_API_ get_linear(float x);
-float SPARSE_API_ get_gelu(float x);
-float SPARSE_API_ get_relu(float x, float alpha);
-int SPARSE_API_ get_quantize(float x, float alpha, float scale, data_type dt);
-float SPARSE_API_ get_dequantize(float x, float alpha, float scale);
-float SPARSE_API_ apply_postop_list(float value, const std::vector<jd::postop_attr>& attrs);
+float get_exp(float x);
+float get_linear(float x);
+float get_gelu(float x);
+float get_relu(float x, float alpha);
+int get_quantize(float x, float alpha, float scale, data_type dt);
+float get_dequantize(float x, float alpha, float scale);
+float apply_postop_list(float value, const std::vector<postop_attr>& attrs);
 
 // A setting (basically a value) that can be set() multiple times until the
 // time first time the get() method is called. The set() method is expected to
@@ -233,10 +172,10 @@ struct set_once_before_first_get_setting_t {
 };
 
 template <typename T>
-void SPARSE_API_ cast_to_float_array(const void* src, std::vector<float>* dst, int size);
+void cast_to_float_array(const void* src, std::vector<float>* dst, int size);
 
 template <typename T>
-void SPARSE_API_ cast_from_float_array(const std::vector<float>& src, void* dst, int size);
+void cast_from_float_array(const std::vector<float>& src, void* dst, int size);
 
 template <class T>
 inline void safe_delete(T*& ptr) {  // NOLINT(runtime/references)
@@ -366,4 +305,4 @@ class n_thread_t {
   int prev_nthr;
 };
 }  // namespace jd
-#endif  // ENGINE_SPARSELIB_INCLUDE_UTILS_HPP_
+#endif  // ENGINE_SPARSELIB_SRC_UTILS_HPP_

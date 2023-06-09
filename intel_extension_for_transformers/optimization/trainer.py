@@ -273,10 +273,8 @@ class BaseTrainer():
         self._provider = Provider[provider.upper()].value
 
         if self.quant_config.framework == "pytorch":
-            if self.quant_config.approach == \
-              QuantizationMode.POSTTRAININGDYNAMIC.value:
-                self.quant_config.framework = "pytorch"
-            else:
+            if self.quant_config.approach != QuantizationMode.POSTTRAININGDYNAMIC.value \
+              or self.quant_config.strategy == 'mse_v2':
                 self.quant_config.framework = "pytorch_fx"
 
         quantizer = Quantization(self.quant_config.inc_config)
@@ -306,7 +304,8 @@ class BaseTrainer():
 
         if self.quant_config.framework == "pytorch_ipex":
             self.model_config = self.model.config # jit model will loss config
-        if self.quant_config.approach != QuantizationMode.POSTTRAININGDYNAMIC.value:
+        if self.quant_config.approach != QuantizationMode.POSTTRAININGDYNAMIC.value \
+          or self.quant_config.strategy == 'mse_v2':
             # pylint: disable=E1101
             self.quantizer.calib_dataloader = self.get_train_dataloader() \
                 if self._calib_dataloader is None else self._calib_dataloader
@@ -1023,7 +1022,7 @@ class BaseTrainer():
         )
         if args.load_best_model_at_end and self.state.best_model_checkpoint is not None:
             # Wait for everyone to get here so we are sur the model has been saved by process 0.
-            if args.local_rank != -1:
+            if args.local_rank != -1 and self.n_gpu > 1:
                 torch.distributed.barrier()
 
             if version.parse(__version__) < version.parse("4.19"):
@@ -2472,6 +2471,7 @@ class BaseTrainer():
         self,
         model_name_or_path=None,
         backend: str = "torch",  # select from ["torch", "ipex", "neural_engine"]
+        batch_size: int = 8,
         cores_per_instance: int = 4,
         num_of_instance: int = -1,
         torchscript: bool = False,
@@ -2490,7 +2490,7 @@ class BaseTrainer():
         eval_dataloader = self.get_eval_dataloader()
         config = BenchmarkConfig(
             backend=backend,
-            batch_size=eval_dataloader.batch_size,
+            batch_size=batch_size,
             cores_per_instance=cores_per_instance,
             num_of_instance=num_of_instance,
             torchscript=torchscript,

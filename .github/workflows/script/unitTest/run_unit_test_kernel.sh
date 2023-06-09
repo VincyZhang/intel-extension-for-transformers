@@ -17,7 +17,7 @@ function gtest() {
 
 # -------------------engine test-------------------
 function engine_test() {
-    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/
+    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/build
 
     if [[ ${test_install_backend} == "true" ]]; then
         local ut_log_name=${LOG_DIR}/unit_test_engine_gtest_backend_only.log
@@ -31,13 +31,16 @@ function engine_test() {
         [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "==ERROR:" ${ut_log_name}) != 0 ]; then
+        $BOLD_RED && echo "Find errors in engine test, please check the output..." && $RESET
         exit 1
+    else
+        $BOLD_GREEN && echo "engine test finished successfully!" && $RESET
     fi
 }
 
 # ------------------kernel test--------------------
 function kernel_test() {
-    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/
+    cd /intel-extension-for-transformers/intel_extension_for_transformers/backends/neural_engine/build
 
     if [[ ${test_install_backend} == "true" ]]; then
         local ut_log_name=${LOG_DIR}/unit_test_kernel_gtest_backend_only.log
@@ -51,14 +54,17 @@ function kernel_test() {
         [ $(grep -c "Segmentation fault" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "core dumped" ${ut_log_name}) != 0 ] ||
         [ $(grep -c "==ERROR:" ${ut_log_name}) != 0 ]; then
+        $BOLD_RED && echo "Find errors in kernel test, please check the output..." && $RESET
         exit 1
+    else
+        $BOLD_GREEN && echo "kernel test finished successfully!" && $RESET
     fi
 }
 
 function main() {
     gtest
-    engine_test
     kernel_test
+    engine_test
 }
 
 main

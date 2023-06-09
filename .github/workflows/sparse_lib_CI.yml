@@ -1,0 +1,87 @@
+name: SparseLib
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - intel_extension_for_transformers
+      - .github/workflows/sparse_lib_CI.yml
+      - .github/workflows/script/SparseLibCI
+  workflow_dispatch:
+
+# If there is a new commit, the previous jobs will be canceled
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_CONFIG_NAME: "commonDockerConfig"
+  REPO_NAME: "intel-extension-for-transformers"
+  REPO_TAG: "py38"
+  DOCKER_FILE_NAME: "unitTest"
+  CONTAINER_NAME: "utTest"
+
+jobs:
+  sparselib:
+    runs-on: [self-hosted, linux, X64, spr itrex]
+    steps:
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+
+      - name: Docker Build
+        run: |
+          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+
+      - name: Docker Run
+        run: |
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          -v ${{ github.workspace }}:/intel-extension-for-transformers \
+          ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+
+      - name: SparseLib Test
+        id: SparseLib-Test
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "bash /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/run_sparse_lib.sh"
+
+      - name: Generate Report
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} \
+          bash -c "bash /generate_sparse_lib.sh"
+        env:
+          report_title: SparseLib Test
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ID: ${{ github.run_id }}
+          job_params: pre-CI
+          qtools_branch: ${{ github.event.pull_request._links.html.href }}
+          qtools_commit: ${{ github.event.pull_request._links.commits.href }}
+          summary_dir: "/intel-extension-for-transformers"
+          device_list: spr-itrex
+          overview_log: /intel-extension-for-transformers/benchmark_log/summary_overview.log
+          github_actions_job_status: ${{ steps.SparseLib-Test.outcome }}
+          ghprbActualCommit: ${{ github.event.pull_request.head.sha }}
+          ghprbHeadLink: ${{ github.event.pull_request.head.repo.html_url }}
+          ghprbPullLink: ${{ github.event.pull_request._links.html.href }}
+          ghprbPullId: ${{ github.event.number }}
+          MR_source_branch: ${{ github.head_ref }}
+          MR_target_branch: ${{ github.base_ref }}
+
+      - name: Publish pipeline artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: SparseLib Test
+          path: ${{ github.workspace }}/benchmark_log
+          retention-days: 5
+
+      - name: Docker clean up
+        if: ${{ always() }}
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+
+      - name: Clean docker container
+        if: ${{ always() }}
+        run: |
+          docker stop $(docker ps -aq)
+          docker rm -vf ${{ env.CONTAINER_NAME }} || true
+          echo y | docker system prune

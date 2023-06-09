@@ -31,6 +31,7 @@ EXECUTOR_TYPE = {
     "MatMulWithBiasTanh": "InnerProduct",
     "MatMulWithBiasRelu": "InnerProduct",
     "MatMulWithBiasSigmoid": "InnerProduct",
+    "MatMulWithBiasSwish": "InnerProduct",
     "Matmul": "Matmul",
     "Einsum": "Matmul",
     "MatMul": "InnerProduct",
@@ -70,6 +71,7 @@ EXECUTOR_TYPE = {
     'Neg': "BinaryOp",
     "Sin": "CosSin",
     "Cos": "CosSin",
+    "Resize": "Resampling",
 }
 
 pattern_default_setting = {
@@ -80,11 +82,12 @@ pattern_default_setting = {
     'ReshapeFusion': True,
     'InsertBF16Node': True,
     'OperatorAdaptor': True,
+    'ConvReshape': True,
 
     'GroupNorm': True,
 
     # transpose_mode_int8
-     'QKVMerge': False,
+    'QKVMerge': False,
 
     # 'TextEncoder
     'TextEncoder_WordEmbedding': False,
@@ -97,7 +100,6 @@ pattern_default_setting = {
     'TextEncoder_CasualAttentionMask': False,
 
     # vae deocder & Transformer2Dmodel
-    'AttentionBlock_Resize2Gather': False,
     'AttentionBlock_QKVPreReshape': False,
     'AttentionBlock_AttentionMaskAddReshape': False,
     'AttentionBlock_ConstantOfShapeWithMul': False,
@@ -113,11 +115,15 @@ pattern_default_setting = {
     'Transformer2Dmodel_AttentionMaskAddReshape': False,
     'Transformer2Dmodel_FFNInputSlice': False,
     'Transformer2Dmodel_FFNInputSlice_1': False,
-    'Transformer2DModel_UpBlockResize': False,
 
     # for all stable diffusion models
     'StableDiffusion_bf16Convert': False,
     'StableDiffusion_ReshapeFusion': False,
+
+    # MHA for the stable diffusion
+    'StableDiffusion_MHAReshape': False,
+    'StableDiffusion_MHA': False,
+    'ExplicitNHWCTransposeForConv': False,
     
     #GPT-J
     'TorchEmbedding': True,
@@ -133,11 +139,19 @@ pattern_default_setting = {
     'RemoveRange': True,
     'RemoveLastView': True,
     
-    
+    'MatMulWithTransposeScaleAdd': True,
+    'EmbeddingsTo2DBeforeInnerProduct': True,
+    'QuantGatherToBF16': False,
     'TorchInsertBF16Node': True,
-    'MultiHeadAttention': False,
+    'MultiHeadAttention': True,
     'Int8BF16MixedPrecisionChecker': False,
     'QuantizedGraphDtypeRefactor': True,
+    
+    #LLAMA
+    'LlamaEmbeddings': False,
+    'LlamaMatMulWithTranspose': False,
+    'LlamaRoraryPosEmb': False,
+    'LlamaPostprocess': False,
 }
 
 class SubGraphMatcher(object):

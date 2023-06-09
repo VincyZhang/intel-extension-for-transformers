@@ -13,6 +13,7 @@ function init_params {
   iters=100
   batch_size=16
   tuned_checkpoint=saved_results
+  lm_eval_tasks="lambada_openai  piqa"
   for var in "$@"
   do
     case $var in
@@ -37,12 +38,18 @@ function init_params {
       --int8=*)
           int8=$(echo ${var} |cut -f2 -d=)
       ;;
-      --bf16=*)
-          int8=$(echo ${var} |cut -f2 -d=)
-      ;;
       --config=*)
           tuned_checkpoint=$(echo $var |cut -f2 -d=)
       ;;
+       --task=*)
+           task=$(echo $var |cut -f2 -d=)
+       ;;
+       --approach=*)
+           approach=$(echo $var |cut -f2 -d=)
+       ;;
+       --backend=*)
+           backend=$(echo $var |cut -f2 -d=)
+       ;;
       *)
           echo "Error: No such parameter: ${var}"
           exit 1
@@ -58,80 +65,67 @@ function run_benchmark {
     extra_cmd=''
 
     if [[ ${mode} == "accuracy" ]]; then
-        mode_cmd=" --accuracy_only"
+        mode_cmd=" --accuracy"
     elif [[ ${mode} == "benchmark" ]]; then
-        mode_cmd=" --benchmark "
-    elif [[ ${mode} == "benchmark_only" ]]; then
-        mode_cmd=" --benchmark_only "
-    else
-        echo "Error: No such mode: ${mode}"
+        echo "Error: Only support accuracy now."
+        echo "Please go to text-generation folder to get accuracy."
         exit 1
+
     fi
 
-    if [ "${topology}" = "gpt_neo_clm_static" ]; then
-        script="run_clm.py"
+    if [ "${topology}" = "gpt_neo" ]; then
+        if [ "${task}" = "clm" ]; then
+            script="run_clm.py"
+        fi
         DATASET_NAME="wikitext"
         DATASET_CONFIG_NAME="wikitext-2-raw-v1"
         model_name_or_path="EleutherAI/gpt-neo-125M"
-    elif [ "${topology}" = "gpt_neo_clm_dynamic" ]; then
-        script="run_clm.py"
-        DATASET_NAME="wikitext"
-        DATASET_CONFIG_NAME="wikitext-2-raw-v1"
-        model_name_or_path="EleutherAI/gpt-neo-125M"
-    elif [ "${topology}" = "gptj_clm_static" ]; then
-        script="run_clm.py"
+    elif [ "${topology}" = "gpt_j" ]; then
+        if [ "${task}" = "clm" ]; then
+            script="run_clm.py"
+        fi
         DATASET_NAME="wikitext"
         DATASET_CONFIG_NAME="wikitext-2-raw-v1"
         model_name_or_path="/tf_dataset2/models/pytorch/gpt-j-6B"
-    elif [ "${topology}" = "gptj_clm_dynamic" ]; then
-        script="run_clm.py"
-        DATASET_NAME="wikitext"
-        DATASET_CONFIG_NAME="wikitext-2-raw-v1"
-        model_name_or_path="/tf_dataset2/models/pytorch/gpt-j-6B"
-    elif [ "${topology}" = "gpt_j_6b_clm_ipex" ]; then
-        script="run_gptj.py"
-        model_name_or_path="/tf_dataset2/models/pytorch/gpt-j-6B"
-        approach="PostTrainingStatic"
-    elif [ "${topology}" = "bert_mlm_static" ]; then
+        if [ "${backend}" = "ipex" ]; then
+            script="run_clm_no_trainer.py"
+            model_name_or_path="/tf_dataset2/models/pytorch/gpt-j-6B"
+            extra_cmd=$extra_cmd" --ipex"
+        fi
+    elif [ "${topology}" = "opt_2.7b" ]; then
+        script="run_clm_no_trainer.py"
+        model_name_or_path="facebook/opt-2.7b"
+        if [ "${backend}" = "ipex" ]; then
+            extra_cmd=$extra_cmd" --ipex"
+        fi
+    elif [ "${topology}" = "opt_6.7b" ]; then
+        script="run_clm_no_trainer.py"
+        model_name_or_path="facebook/opt-6.7b"
+        if [ "${backend}" = "ipex" ]; then
+            extra_cmd=$extra_cmd" --ipex"
+        fi
+    elif [ "${topology}" = "llama_7b" ]; then
+        script="run_clm_no_trainer.py"
+        model_name_or_path="decapoda-research/llama-7b-hf"
+        if [ "${backend}" = "ipex" ]; then
+            extra_cmd=$extra_cmd" --ipex"
+        fi
+    elif [ "${topology}" = "bert" ]; then
         script="run_mlm.py"
         DATASET_NAME="wikitext"
         DATASET_CONFIG_NAME="wikitext-2-raw-v1"
         model_name_or_path="bert-base-uncased"
-    elif [ "${topology}" = "bert_mlm_dynamic" ]; then
-        script="run_mlm.py"
-        DATASET_NAME="wikitext"
-        DATASET_CONFIG_NAME="wikitext-2-raw-v1"
-        model_name_or_path="bert-base-uncased"
-    elif [ "${topology}" = "xlnet_plm_static" ]; then
+    elif [ "${topology}" = "xlnet" ]; then
         script="run_plm.py"
         DATASET_NAME="wikitext"
         DATASET_CONFIG_NAME="wikitext-2-raw-v1"
         model_name_or_path="xlnet-base-cased"
-    elif [ "${topology}" = "xlnet_plm_dynamic" ]; then
-        script="run_plm.py"
-        DATASET_NAME="wikitext"
-        DATASET_CONFIG_NAME="wikitext-2-raw-v1"
-        model_name_or_path="xlnet-base-cased"
-    elif [ "${topology}" = "reformer_crime_and_punishment_static" ]; then
-        script="run_clm.py"
-        DATASET_NAME="crime_and_punish"
-        model_name_or_path="google/reformer-crime-and-punishment"
-    elif [ "${topology}" = "ctrl_wikitext_static" ]; then
-        script="run_clm.py"
-        DATASET_NAME="wikitext"
-        DATASET_CONFIG_NAME="wikitext-2-raw-v1"
-        model_name_or_path="sshleifer/tiny-ctrl"
-    elif [ "${topology}" = "gpt_neox_clm_static" ]; then
+    elif [ "${topology}" = "gpt_neox" ]; then
         script="run_clm.py"
         DATASET_NAME="oscar"
         DATASET_CONFIG_NAME="unshuffled_original_ast"
         model_name_or_path="abeja/gpt-neox-japanese-2.7b"
-    elif [ "${topology}" = "gpt_neox_clm_dynamic" ]; then
-        script="run_clm.py"
-        DATASET_NAME="oscar"
-        DATASET_CONFIG_NAME="unshuffled_original_ast"
-        model_name_or_path="abeja/gpt-neox-japanese-2.7b"
-    elif [ "${topology}" = "bloom_clm_static" ]; then
+    elif [ "${topology}" = "bloom" ]; then
         script="run_clm.py"
         DATASET_NAME="lambada"
         model_name_or_path="bigscience/bloom-560m"
@@ -139,23 +133,25 @@ function run_benchmark {
     
     if [[ ${int8} == "true" ]]; then
         extra_cmd=$extra_cmd" --int8"
-        model_name_or_path=${tuned_checkpoint}
+        if [ ${script} != "run_clm_no_trainer.py" ]; then
+            model_name_or_path=${tuned_checkpoint}
+        fi
     fi
 
-    if [[ ${int8} == "true" ]] && [ "${topology}" = "gpt_j_6b_clm_ipex" ]; then
-        model_name_or_path="/tf_dataset2/models/pytorch/gpt-j-6B"
-    fi
 
-    if [[ ${bf16} == "true" ]]; then
-        extra_cmd=$extra_cmd" --bf16_ipex"
+    if [ "${script}" == "run_clm_no_trainer.py" ]; then
+        if [ "${lm_eval_tasks}" != "" ]; then
+	    extra_cmd=$extra_cmd" --tasks ${lm_eval_tasks}"
+        fi
     fi
 
     echo $extra_cmd
 
-    if [ -z ${DATASET_NAME} ];then
+    if [ "${script}" == "run_clm_no_trainer.py" ];then
         python -u ./${script} \
             --model ${model_name_or_path} \
             --output_dir ${tuned_checkpoint} \
+            --batch_size ${batch_size} \
             ${mode_cmd} \
             ${extra_cmd}
     elif [ -z ${DATASET_CONFIG_NAME} ];then

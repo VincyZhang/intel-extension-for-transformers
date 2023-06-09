@@ -25,7 +25,7 @@ env:
 
 jobs:
   unit-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, X64, spr itrex]
     steps:
       - name: Clean workspace     
         run: |
@@ -45,6 +45,7 @@ jobs:
         run: |
           docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
+          -v /tf_dataset2:/tf_dataset2 \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
       - name: Env build
@@ -68,8 +69,10 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage \
-          && bash calc_coverage.sh"
-  
+                && bash calc_coverage.sh \ 
+                && cd /intel-extension-for-transformers \
+                && mv /log_dir . "
+
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
@@ -81,3 +84,10 @@ jobs:
         if: ${{ always() }}
         run: |
           docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+
+      - name: Clean docker container
+        if: ${{ always() }}
+        run: |
+          docker stop $(docker ps -aq)
+          docker rm -vf ${{ env.CONTAINER_NAME }} || true
+          echo y | docker system prune

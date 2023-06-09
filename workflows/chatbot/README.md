@@ -15,6 +15,13 @@ python -m pip install oneccl_bind_pt==1.13 -f https://developer.intel.com/ipex-w
 
 ## 2. Prepare the Model
 
+### LLaMA
+To acquire the checkpoints and tokenizer, the user has two options: completing the [Google form](https://forms.gle/jk851eBVbX1m5TAv5) or attempting [the released model on Huggingface](https://huggingface.co/decapoda-research/llama-7b-hf). 
+
+It should be noticed that the early version of LLama model's name in Transformers has resulted in many loading issues, please refer to this [revision history](https://github.com/huggingface/transformers/pull/21955). Therefore, Transformers has reorganized the code and rename LLaMA model as `Llama` in the model file. But the release model on Huggingface did not make modifications in react to this change. To avoid unexpexted confliction issues, we advise the user to modify the local `config.json` and `tokenizer_config.json` files according to the following recommendations:
+1. The `tokenizer_class` in `tokenizer_config.json` should be changed from `LLaMATokenizer` to `LlamaTokenizer`;
+2. The `architectures` in `config.json` should be changed from `LLaMAForCausalLM` to `LlamaForCausalLM`.
+
 ### FLAN-T5
 The user can obtain the [release model](https://huggingface.co/google/flan-t5-xl) from Huggingface.
 
@@ -27,7 +34,7 @@ The instruction-following dataset is needed for the finetuning. We select two ki
 
 # Finetune
 
-We employ the [LoRA approach](https://arxiv.org/pdf/2106.09685.pdf) to finetune the LLM efficiently, currently, FLAN-T5 is supported for finetuning.
+We employ the [LoRA approach](https://arxiv.org/pdf/2106.09685.pdf) to finetune the LLM efficiently, currently, FLAN-T5 and LLaMA are supported for finetuning.
 
 ## 1. Single Node Fine-tuning
 
@@ -35,7 +42,7 @@ For FLAN-T5, use the below command line for finetuning on the Alpaca dataset.
 
 ```bash
 python finetune_seq2seq.py \
-        --model_name_or_path "google/flan-t5-xl/" \
+        --model_name_or_path "google/flan-t5-xl" \
         --train_file "stanford_alpaca/alpaca_data.json" \
         --per_device_train_batch_size 2 \
         --per_device_eval_batch_size 2 \
@@ -51,6 +58,29 @@ python finetune_seq2seq.py \
         --overwrite_output_dir \
         --output_dir ./flan-t5-xl_peft_finetuned_model
 ```
+
+For LLaMA, use the below command line for finetuning on the Alpaca dataset.
+
+```bash
+python finetune_clm.py \
+        --model_name_or_path "decapoda-research/llama-7b-hf" \
+        --train_file "/path/to/alpaca_data.json" \
+        --dataset_concatenation \
+        --per_device_train_batch_size 8 \
+        --per_device_eval_batch_size 8 \
+        --gradient_accumulation_steps 1 \
+        --do_train \
+        --learning_rate 2e-5 \
+        --num_train_epochs 3 \
+        --logging_steps 100 \
+        --save_total_limit 2 \
+        --overwrite_output_dir \
+        --log_level info \
+        --save_strategy epoch \
+        --output_dir ./llama_finetuned_model
+```
+
+Where the `--dataset_concatenation` argument is a way to vastly accelerate the fine-tuning process through training samples concatenation. With several tokenized sentences concatenated into a longer and concentrated sentence as the training sample instead of having several training samples with different lengths, this way is more efficient due to the parallelism characteristic provided by the more concentrated training samples.
 
 For finetuning on SPR, add `--bf16` argument will speedup the finetuning process without the loss of model's performance.
 
@@ -73,7 +103,7 @@ For example, to finetune FLAN-T5 through Distributed Data Parallel training, bas
 ``` bash
 python -m torch.distributed.launch --master_addr=<MASTER_ADDRESS> --nproc_per_node=<NUM_PROCESSES_PER_NODE> --nnodes=<NUM_NODES> --node_rank=<NODE_RANK> \
     finetune_seq2seq.py \
-        --model_name_or_path "google/flan-t5-xl/" \
+        --model_name_or_path "google/flan-t5-xl" \
         --train_file "stanford_alpaca/alpaca_data.json" \
         --per_device_train_batch_size 2 \
         --per_device_eval_batch_size 2 \
@@ -94,7 +124,7 @@ python -m torch.distributed.launch --master_addr=<MASTER_ADDRESS> --nproc_per_no
 Once the model is finetuned, use the below command line to chat with it.
 ```bash
 python generate.py \
-        --base_model_path "google/flan-t5-xl/" \
+        --base_model_path "google/flan-t5-xl" \
         --lora_model_path "./flan-t5-xl_peft_finetuned_model" \
         --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
 ```
