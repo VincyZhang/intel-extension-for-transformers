@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 PATTERN='[-a-zA-Z0-9_]*='
 WORKSPACE="/intel-extension-for-transformers/benchmark_log"
 
@@ -14,6 +14,7 @@ function main {
     pip freeze
 
     generate_html_head
+    generate_html_overview
 
     for caselog in $(find $summary_dir/benchmark_log/cur/*_summary.log); do
         summary_dir_last="$summary_dir/benchmark_log/ref"
@@ -28,16 +29,8 @@ function main {
 
 function generate_html_overview {
     echo generate_html_overview...
-
-    PR_TITLE=''
-    Test_Info_Title=''
-    Test_Info=''
-
     commit_id=$(echo ${ghprbActualCommit} | awk '{print substr($1,1,7)}')
-
     PR_TITLE="[ <a href='${ghprbPullLink}'>PR-${ghprbPullId}</a> ]"
-    Test_Info_Title="<th colspan="2">Source Branch</th> <th colspan="4">Target Branch</th> <th colspan="4">Commit</th> "
-    Test_Info="<td colspan="2">${MR_source_branch}</td> <td colspan="4">${MR_target_branch}</td> <td colspan="4">${commit_id}"
 
     local pr_comment_opt=""
     if [[ -n $job_params ]]; then
@@ -49,22 +42,25 @@ function generate_html_overview {
 <body>
     <div id="main">
         <h1 align="center">Sparse Lib Tests ${PR_TITLE}
-        [ <a href="${RUN_DISPLAY_URL}">Job-${BUILD_NUMBER}</a> ]</h1>
+        [ <a href="https://github.com/VincyZhang/intel-extension-for-transformers/actions/runs/${BUILD_ID}">Job-${BUILD_NUMBER}</a> ]</h1>
       <h1 align="center">Test Status: ${github_actions_job_status}</h1>
         <h2>Summary</h2>
         ${pr_comment_opt}
         <table class="features-table">
-            <tr>
-              <th>Repo</th>
-              ${Test_Info_Title}
-              </tr>
-              <tr>
-                    <td><a href="https://github.com/intel-innersource/frameworks.ai.nlp-toolkit.intel-nlp-toolkit.git">NLP-TOOLKIT</a></td>
-              ${Test_Info}
-                </tr>
+          <tr>
+            <th>Repo</th>
+            <th colspan="2">Source Branch</th>
+            <th colspan="4">Target Branch</th>
+            <th colspan="4">Commit</th> 
+          </tr>
+          <tr>
+            <td><a href="https://github.com/intel/intel-extension-for-transformers">ITREX</a></td>
+            <td colspan="2"><a href="https://github.com/intel/intel-extension-for-transformers/tree/${MR_source_branch}">${MR_source_branch}</a></td>
+            <td colspan="4"><a href="https://github.com/intel/intel-extension-for-transformers/tree/${MR_target_branch}">${MR_target_branch}</a></td>
+            <td colspan="4"><a href="${ghprbPullLink}/commits/${commit_id}">${commit_id}</a></td>
+          </tr>
         </table>
 eof
-    createOverview
 }
 
 function generate_html_head {
@@ -72,7 +68,7 @@ function generate_html_head {
 
     local pr_title=''
     if [[ -n $ghprbPullId ]]; then pr_title=" PR-$ghprbPullId"; fi
-    local title_html="${report_title} ${JOB_NAME}-${BUILD_NUMBER}${pr_title}"
+    local title_html="SparseLib Test-${BUILD_NUMBER}${pr_title}"
 
     cat >${WORKSPACE}/SparseLibReport.html <<eof
 

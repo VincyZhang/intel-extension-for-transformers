@@ -50,18 +50,21 @@ jobs:
           bash -c "bash /generate_sparse_lib.sh"
         env:
           report_title: SparseLib Test
+          BUILD_NUMBER: ${{ github.run_number }}
+          BUILD_ID: ${{ github.run_id }}
           job_params: pre-CI
-          qtools_branch: ${{github.event.pull_request._links.html.href}}
-          qtools_commit: ${{github.event.pull_request._links.commits.href}}
+          qtools_branch: ${{ github.event.pull_request._links.html.href }}
+          qtools_commit: ${{ github.event.pull_request._links.commits.href }}
           summary_dir: "/intel-extension-for-transformers"
           device_list: spr-itrex
           overview_log: /intel-extension-for-transformers/benchmark_log/summary_overview.log
           github_actions_job_status: ${{ steps.SparseLib-Test.outcome }}
-          ghprbActualCommit: ${{github.event.pull_request._links.commits.href}}
-          ghprbPullLink: ${{github.event.pull_request._links.html.href}}
-          ghprbPullId: ${{github.event.number}}
-          MR_source_branch: ${{github.head_ref}}
-          MR_target_branch: ${{github.base_ref}}
+          ghprbActualCommit: ${{ github.event.pull_request.head.sha }}
+          ghprbHeadLink: ${{ github.event.pull_request.head.repo.html_url }}
+          ghprbPullLink: ${{ github.event.pull_request._links.html.href }}
+          ghprbPullId: ${{ github.event.number }}
+          MR_source_branch: ${{ github.head_ref }}
+          MR_target_branch: ${{ github.base_ref }}
 
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
