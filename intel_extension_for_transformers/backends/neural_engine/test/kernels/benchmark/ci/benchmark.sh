@@ -29,7 +29,7 @@ function run_multi_inst {
     else
         start_cpu=${ncores_per_socket}
     fi
-    for ((j = $start_cpu; $(($j + $ncores_per_inst)) <= $ncores_per_socket; j = $(($j + ${ncores_per_inst})))); do
+    for ((j = $start_cpu; $(($j + $ncores_per_inst)) <= $(($start_cpu + $ncores_per_socket)); j = $(($j + ${ncores_per_inst})))); do
         local numa_prefix="numactl -m ${socket} -C $j-$((j + ncores_per_inst - 1)) "
         # Make it works on machines with no numa support
         if [[ -n $no_numa_support ]]; then
