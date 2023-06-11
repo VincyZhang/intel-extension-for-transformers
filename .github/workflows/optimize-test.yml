@@ -45,8 +45,10 @@ jobs:
         include:
           - modelName: "bert_base_mrpc_static"
             framework: "pytorch"
+            mode: "accuracy,performance"
           - modelName: "bert_base_mrpc_static"
             framework: "tensorflow"
+            mode: "accuracy,performance"
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -81,19 +83,19 @@ jobs:
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_tuning.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode='tuning'"
+            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode='tuning'"
         
       - name: INT8 Benchmark
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_benchmark.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode='int8_benchmark'"
+            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }}"
         
       - name: FP32 Benchmark
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_benchmark.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode='fp32_benchmark'"
+            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }}"
 
       - name: Collect Log
         run: |
