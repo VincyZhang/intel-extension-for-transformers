@@ -1,4 +1,5 @@
 #!/bin/bash
+source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 export COVERAGE_RCFILE="/intel-extension-for-transformers/.github/workflows/script/unitTest/coverage/.coveragerc"
 LOG_DIR=/log_dir
 mkdir -p ${LOG_DIR}

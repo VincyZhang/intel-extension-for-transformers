@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 test_install_backend="true"
 LOG_DIR=/intel-extension-for-transformers/log_dir
 mkdir -p ${LOG_DIR}

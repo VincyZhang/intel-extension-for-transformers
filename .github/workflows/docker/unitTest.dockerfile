@@ -33,6 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     wget \
     bc \
     gawk \
+    jq \
     vim
 
 RUN ln -sf $(which python3) /usr/bin/python
