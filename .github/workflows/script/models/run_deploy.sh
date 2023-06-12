@@ -31,19 +31,19 @@ main() {
     prepare
 
     ## run accuracy
-    if [[ echo "${mode}" | grep "accuracy" ]]; then
+    if [[ $(echo "${mode}" | grep "accuracy") ]]; then
         run_benchmark "accuracy" 8
     fi
 
     ## run accuracy
-    if [[ echo "${mode}" | grep "latency" ]]; then
+    if [[ $(echo "${mode}" | grep "latency") ]]; then
         run_benchmark "latency" 1
     fi
 
     # run performance
-    if [[ echo "${mode}" | grep "performance" ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
+    if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
         run_benchmark "throughput" 1
-    elif [[ echo "${mode}" | grep "performance" ]]; then
+    elif [[ $(echo "${mode}" | grep "performance") ]]; then
         max_loop=3
         gap=(0.05 0.05 0.1)
         for ((iter = 0; iter < ${max_loop}; iter++)); do
@@ -64,7 +64,7 @@ main() {
     fi
 
     ## run inferencer
-    if [[ echo "${mode}" | grep "performance" ]] && [[ ${framework} == "engine" ]]; then
+    if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${framework} == "engine" ]]; then
         run_inferencer
     fi
     

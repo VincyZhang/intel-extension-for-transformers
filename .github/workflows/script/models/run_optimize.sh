@@ -34,11 +34,11 @@ main() {
         working_dir="/intel-extension-for-transformers/examples/huggingface/tensorflow/text-classification/quantization/ptq"
     fi
     ## tune
-    if [[ echo "${mode}" | grep "tuning" ]]; then
+    if [[ $(echo "${mode}" | grep "tuning") ]]; then
         run_tuning
     fi
     ## run accuracy
-    if [[ echo "${mode}" | grep "accuracy" ]]; then
+    if [[ $(echo "${mode}" | grep "accuracy") ]]; then
         run_benchmark "accuracy" 64
     fi
 
@@ -48,9 +48,9 @@ main() {
     fi
 
     # run performance
-    if [[ echo "${mode}" | grep "performance" ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
+    if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
         run_benchmark "performance" 1
-    elif [[ echo "${mode}" | grep "performance" ]]; then
+    elif [[ $(echo "${mode}" | grep "performance") ]]; then
         max_loop=3
         gap=(0.05 0.05 0.1)
         for ((iter = 0; iter < ${max_loop}; iter++)); do

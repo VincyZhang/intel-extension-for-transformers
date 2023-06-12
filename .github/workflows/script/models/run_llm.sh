@@ -30,14 +30,14 @@ main() {
     ## prepare env
     prepare
     ## run accuracy
-    if [[ echo "${mode}" | grep "accuracy" ]]; then
+    if [[ $(echo "${mode}" | grep "accuracy") ]]; then
         run_benchmark "accuracy"
     fi
 
     # run latency
-    if [[ echo "${mode}" | grep "latency" ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
+    if [[ $(echo "${mode}" | grep "latency") ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
         run_benchmark "latency"
-    elif [[ echo "${mode}" | grep "latency" ]]; then
+    elif [[ $(echo "${mode}" | grep "latency") ]]; then
         max_loop=3
         gap=(0.05 0.05 0.1)
         for ((iter = 0; iter < ${max_loop}; iter++)); do
