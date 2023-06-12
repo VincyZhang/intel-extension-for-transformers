@@ -39,7 +39,7 @@ env:
 
 jobs:
   Optmize-Workflow:
-    runs-on: ubuntu-latest
+    runs-on: itrex-node
     strategy:
       matrix:
         include:
