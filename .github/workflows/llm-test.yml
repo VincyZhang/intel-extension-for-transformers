@@ -1,4 +1,4 @@
-name: Deploy Model Test
+name: LLM Model Test
 
 on:
   pull_request:
@@ -52,6 +52,9 @@ jobs:
 
       - name: Docker Run
         run: |
+          docker stop $(docker ps -aq)
+          docker rm -vf ${{ env.CONTAINER_NAME }} || true
+          env | sort
           docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
