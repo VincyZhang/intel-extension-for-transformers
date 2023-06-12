@@ -32,7 +32,7 @@ env:
   DOCKER_CONFIG_NAME: "commonDockerConfig"
   REPO_NAME: "intel-extension-for-transformers"
   REPO_TAG: "py38"
-  DOCKER_FILE_NAME: "devel"
+  DOCKER_FILE_NAME: "unitTest"
   CONTAINER_NAME: "modelTest"
   REF_ID: 1
 
