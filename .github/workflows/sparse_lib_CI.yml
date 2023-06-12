@@ -30,11 +30,11 @@ jobs:
 
       - name: Docker Build
         run: |
-          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+          podman build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
 
       - name: Docker Run
         run: |
-          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
             -v ${{ github.workspace }}:/intel-extension-for-transformers \
             -e report_title="SparseLib Test" \
             -e BUILD_NUMBER="${{ github.run_number }}" \
@@ -57,12 +57,12 @@ jobs:
       - name: SparseLib Test
         id: SparseLib-Test
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} \
+          podman exec ${{ env.CONTAINER_NAME }} \
           bash -c "bash /intel-extension-for-transformers/.github/workflows/script/SparseLibCI/run_sparse_lib.sh"
 
       - name: Generate Report
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} \
+          podman exec ${{ env.CONTAINER_NAME }} \
           bash -c "bash /generate_sparse_lib.sh"
 
       - name: Publish pipeline artifact
@@ -76,11 +76,11 @@ jobs:
       - name: Docker clean up
         if: ${{ always() }}
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          podman exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
 
       - name: Clean docker container
         if: ${{ always() }}
         run: |
-          docker stop $(docker ps -aq)
-          docker rm -vf ${{ env.CONTAINER_NAME }} || true
-          echo y | docker system prune
+          podman stop $(podman ps -aq)
+          podman rm -vf ${{ env.CONTAINER_NAME }} || true
+          echo y | podman system prune
