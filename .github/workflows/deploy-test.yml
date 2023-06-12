@@ -25,8 +25,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OUT_SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/scripts/models
-  SCRIPT_PATH: /intel-extension-for-transformers/.github/workflows/scripts
+  OUT_SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/script/models
+  SCRIPT_PATH: /intel-extension-for-transformers/.github/workflows/script
   DOCKER_CONFIG_NAME: "commonDockerConfig"
   REPO_NAME: "intel-extension-for-transformers"
   REPO_TAG: "py38"
@@ -82,28 +82,28 @@ jobs:
       - name: FP32 Benchmark
         if: contains(${{ matrix.precision }}, "fp32")
         run: |
-            docker exec exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            docker exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: INT8 Benchmark
         if: contains(${{ matrix.precision }}, "int8")
         run: |
-            docker exec exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            docker exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
       
       - name: Dynamic INT8 Benchmark
         if: contains(${{ matrix.precision }}, "dynamic_int8")
         run: |
-            docker exec exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            docker exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
 
       - name: Collect Log
         run: |
-            docker exec exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            docker exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash collect_log.sh --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
         
       - name: Publish pipeline artifact
@@ -144,7 +144,7 @@ jobs:
             mkdir generated
             mkdir last_generated
             pip install requests
-            #ython -u collect_log_all.py --logs_dir ${{ env.OUT_SCRIPT_PATH }} --output_dir generated --build_id=${{ env.REF_ID }}
+            #python -u collect_log_all.py --logs_dir ${{ env.OUT_SCRIPT_PATH }} --output_dir generated --build_id=${{ env.REF_ID }}
 
       - name: Download R eference Artifact
         id: download-artifact
