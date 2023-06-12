@@ -1,24 +1,17 @@
-name: Optimize Model Test
+name: Deploy Model Test
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'intel_extension_for_transformers/optimization'
-      - 'intel_extension_for_transformers/evaluation'
-      - 'intel_extension_for_transformers/preprocessing'
-      - '.github/workflows/optimize-test.yml'
-      - '.github/workflows/script/models/run_tuning.sh'
-      - '.github/workflows/script/models/run_benchmark.sh'
-      - 'examples/huggingface/tensorflow'
-      - 'examples/huggingface/pytorch'
-      - '!examples/huggingface/pytorch/image-classification/deployment'
-      - '!examples/huggingface/pytorch/question-answering/deployment'
-      - '!examples/huggingface/pytorch/text-classification/deployment'
-      - '!examples/huggingface/pytorch/text-generation/deployment'
-      - '!examples/huggingface/pytorch/text-to-image/deployment'
-      - '!examples/huggingface/pytorch/neural_engine_utils'
-
+      - '.github/workflows/llm-test.yml'
+      - '.github/workflows/script/models/run_deploy.sh'
+      - 'examples/huggingface/pytorch/text-generation/deployment'
+      - 'intel_extension_for_transformers/backends'
+      - '!intel_extension_for_transformers/backends/neural_engine/kernels'
+      - '!intel_extension_for_transformers/backends/neural_engine/test'
+      
+      
   workflow_dispatch:
 
 # If there is a new commit, the previous jobs will be canceled
@@ -38,17 +31,15 @@ env:
 
 
 jobs:
-  Optmize-Workflow:
-    runs-on: ubuntu-latest
+  Deploy-Workflow:
+    runs-on: spr-itrex
     strategy:
       matrix:
         include:
-          - modelName: "bert_base_mrpc_static"
-            framework: "pytorch"
-            mode: "accuracy,performance"
-          - modelName: "bert_base_mrpc_static"
-            framework: "tensorflow"
-            mode: "accuracy,performance"
+          - modelName: "gpt-j-6b"
+            framework: "engine"
+            mode: "latency"
+            precision: "fp32,int8"
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -76,27 +67,34 @@ jobs:
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
           && bash install_binary.sh"
 
-      - name: Display structure of downloaded files
-        run: ls -R
-
-      - name: Tuning
-        run: |
-            docker exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode='tuning'"
-        
-      - name: INT8 Benchmark
-        run: |
-            docker exec exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }}"
-        
       - name: FP32 Benchmark
+        if: contains(${{ matrix.precision }}, "fp32")
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }}"
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32 --stage=${{ matrix.stage }}"
 
+      - name: INT8 Benchmark
+        if: contains(${{ matrix.precision }}, "int8")
+        run: |
+            docker exec exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8 --stage=${{ matrix.stage }}"
+      
+      - name: Dynamic INT8 Benchmark
+        if: contains(${{ matrix.precision }}, "dynamic_int8")
+        run: |
+            docker exec exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8 --stage=${{ matrix.stage }}"
+
+      - name: BF16 Benchmark
+        if: contains(${{ matrix.precision }}, "bf16")
+        run: |
+            docker exec exec ${{ env.CONTAINER_NAME }} \
+            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=bf16 --stage=${{ matrix.stage }}"
+      
       - name: Collect Log
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
@@ -118,7 +116,7 @@ jobs:
     
   Genreate-Report:
     runs-on: ubuntu-latest
-    needs: [Optmize-Workflow]
+    needs: [Deploy-Workflow]
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -133,12 +131,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: "**/*_summary.log"
-          path: ${{ env.OUT_SCRIPT_PATH }}
-      
-      - name: Download Tunning Log
-        uses: actions/download-artifact@v3
-        with:
-          name: "**/*_tuning_info.log"
           path: ${{ env.OUT_SCRIPT_PATH }}
         
       - name: Generate Log Path
@@ -167,7 +159,7 @@ jobs:
         
       - name: Display structure of downloaded files
         run: ls -R
-
+  
       - name: Generate report
         run: |
           echo "------ Generating final report.html ------"
@@ -187,7 +179,7 @@ jobs:
             echo "[Performance Regression] Some model performance regression occurred, please check artifacts and reports."
             exit 1
           fi
-
+          
       - name: Docker clean up
         if: ${{ always() }}
         run: |

@@ -41,19 +41,13 @@ jobs:
     strategy:
       matrix:
         include:
-          - modelName: "bert_base_mrpc"
+          - modelName: "bert_mini_sparse"
             framework: "engine"
             mode: "accuracy,performance"
-            stage: "benchmark"
-            precision: "fp32,int8,dynamic_int8"
-          - modelName: "gpt-j-6b"
-            framework: "engine"
-            mode: "latency"
-            stage: "prepare,benchmark"
             precision: "fp32,int8"
-          - modelName: "distilbert_squad"
+          - modelName: "distilbert_base_squad_ipex"
             framework: "ipex"
-            stage: "benchmark"
+            mode: "accuracy,performance"
             precision: "fp32,int8"
     steps:
       - name: Checkout out Repo
@@ -87,30 +81,22 @@ jobs:
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32 --stage=${{ matrix.stage }}"
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: INT8 Benchmark
         if: contains(${{ matrix.precision }}, "int8")
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8 --stage=${{ matrix.stage }}"
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
       
       - name: Dynamic INT8 Benchmark
         if: contains(${{ matrix.precision }}, "dynamic_int8")
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8 --stage=${{ matrix.stage }}"
+            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
 
-      - name: BF16 Benchmark
-        runs-on: spr-itrex
-        if: contains(${{ matrix.precision }}, "bf16")
-        run: |
-            docker exec exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/scripts/models \
-            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=bf16 --stage=${{ matrix.stage }}"
-      
       - name: Collect Log
         run: |
             docker exec exec ${{ env.CONTAINER_NAME }} \

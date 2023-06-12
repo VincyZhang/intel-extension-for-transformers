@@ -17,8 +17,6 @@ for i in "$@"; do
             log_dir=`echo $i | sed "s/${PATTERN}//"`;;
         --precision=*)
             precision=`echo $i | sed "s/${PATTERN}//"`;;
-        --stage=*)
-            stage=`echo $i | sed "s/${PATTERN}//"`;;
         --PERF_STABLE_CHECK=*)
             PERF_STABLE_CHECK=`echo $i | sed "s/${PATTERN}//"`;;
         *)
@@ -29,23 +27,27 @@ done
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
-    ## if need prepare the model, then run_prepare
-    if [[ echo "${stage}" | grep "prepare" ]]; then
-        run_prepare
-    fi
+    ## prepare
+    prepare
+
     ## run accuracy
-    if [[ echo "${stage}" | grep "accuracy" ]]; then
-        run_accuracy
+    if [[ echo "${mode}" | grep "accuracy" ]]; then
+        run_benchmark "accuracy" 8
+    fi
+
+    ## run accuracy
+    if [[ echo "${mode}" | grep "latency" ]]; then
+        run_benchmark "latency" 1
     fi
 
     # run performance
-    if [[ echo "${stage}" | grep "performance" ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
-        run_performance
-    elif [[ echo "${stage}" | grep "performance" ]]; then
+    if [[ echo "${mode}" | grep "performance" ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
+        run_benchmark "throughput" 1
+    elif [[ echo "${mode}" | grep "performance" ]]; then
         max_loop=3
         gap=(0.05 0.05 0.1)
         for ((iter = 0; iter < ${max_loop}; iter++)); do
-            run_performance
+            run_benchmark "throughput" 1
             {
                 check_perf_gap ${gap[${iter}]}
                 exit_code=$?
@@ -60,8 +62,53 @@ main() {
         done
         exit ${exit_code}
     fi
+
+    ## run inferencer
+    if [[ echo "${mode}" | grep "performance" ]] && [[ ${framework} == "engine" ]]; then
+        run_inferencer
+    fi
+    
 }
 
+function prepare() {
+    if [[ ${model} == "bert_mini_sparse" ]]; then
+        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-classification/deployment/sparse/bert_mini"
+    elif [[ ${model} == "distilbert_base_squad_ipex" ]]; then
+        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/question-answering/deployment/squad/ipex/distilbert_base_uncased"
+    fi
+    cd ${working_dir}
+    echo "Working in ${working_dir}"
+    echo -e "\nInstalling model requirements..."
+    if [ -f "requirements.txt" ]; then
+        python -m pip install -r requirements.txt 
+        pip list
+    else
+        echo "Not found requirements.txt file."
+    fi
+}
+
+function run_benchmark() {
+    local input_mode=$1
+    local batch_size=$2
+    if [[ ${model} == "bert_mini_sparse" ]]; then
+        benchmark_cmd="bash run_bert_mini.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
+    elif [[ ${model} == "distilbert_base_squad_ipex" ]]; then
+        benchmark_cmd="bash run_bert_mini.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
+    fi
+    cd ${working_dir}
+    overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-icx.log"
+    ${benchmark_cmd} 2>&1 | tee ${overall_log}
+}
+
+function run_inferencer() {
+    if [[ ${model} == "bert_mini_sparse" ]]; then
+        if_path="${working_dir_fullpath}/sparse_${precision}_ir"
+        inference_cmd="bash /intel_extension_for_transformers/.github/workflows/script/launch_benchmark.sh ${model} ${ir_path} 28 1 ${precision} ${working_dir} 0"
+    fi
+    overall_log="/intel_extension_for_transformers/inference_${model}.log"
+    eval ${inference_cmd} 2>&1 | tee $overall_log
+
+}
 function check_perf_gap() {
     python -u ${SCRIPTS_PATH}/collect_log_model.py \
         --framework=${framework} \
@@ -70,64 +117,8 @@ function check_perf_gap() {
         --logs_dir="${log_dir}" \
         --output_dir="${log_dir}" \
         --build_id=${BUILD_BUILDID} \
-        --stage=${stage} \
+        --mode=${mode} \
         --gap=$1
-}
-
-function run_performance() {
-    cmd="${benchmark_cmd} --input_model=${input_model}"
-    if [ "${new_benchmark}" == "true" ]; then
-        $BOLD_YELLOW && echo "run with internal benchmark..." && $RESET
-        export NUM_OF_INSTANCE=2
-        export CORES_PER_INSTANCE=4
-        eval ${cmd} 2>&1 | tee ${log_dir}/${framework}-${model}-performance-${precision}.log
-    else
-        $BOLD_YELLOW && echo "run with external multiInstance benchmark..." && $RESET
-        multiInstance
-    fi
-}
-
-function run_accuracy() {
-    $BOLD_YELLOW && echo "run tuning accuracy in precision ${precision}" && $RESET
-    eval "${benchmark_cmd} --input_model=${input_model} --mode=accuracy" 2>&1 | tee ${log_dir}/${framework}-${model}-accuracy-${precision}.log
-}
-
-function multiInstance() {
-    ncores_per_socket=${ncores_per_socket:=$(lscpu | grep 'Core(s) per socket' | cut -d: -f2 | xargs echo -n)}
-    $BOLD_YELLOW && echo "Executing multi instance benchmark" && $RESET
-    ncores_per_instance=4
-    $BOLD_YELLOW && echo "ncores_per_socket=${ncores_per_socket}, ncores_per_instance=${ncores_per_instance}" && $RESET
-
-    logFile="${log_dir}/${framework}-${model}-performance-${precision}"
-    benchmark_pids=()
-
-    core_list=$(python ${SCRIPTS_PATH}/new_benchmark.py --cores_per_instance=${ncores_per_instance} --num_of_instance=$(expr $ncores_per_socket / $ncores_per_instance))
-    core_list=($(echo $core_list | tr ';' ' '))
-
-    for ((j = 0; $j < $(expr $ncores_per_socket / $ncores_per_instance); j = $(($j + 1)))); do
-        $BOLD_GREEN && echo "OMP_NUM_THREADS=${ncores_per_instance} numactl --localalloc --physcpubind=${core_list[${j}]} ${cmd} 2>&1 | tee ${logFile}-${ncores_per_socket}-${ncores_per_instance}-${j}.log &" && $RESET
-        OMP_NUM_THREADS=${ncores_per_instance} numactl --localalloc --physcpubind=${core_list[${j}]} ${cmd} 2>&1 | tee ${logFile}-${ncores_per_socket}-${ncores_per_instance}-${j}.log &
-        benchmark_pids+=($!)
-    done
-
-    status="SUCCESS"
-    for pid in "${benchmark_pids[@]}"; do
-        wait $pid
-        exit_code=$?
-        $BOLD_YELLOW && echo "Detected exit code: ${exit_code}" && $RESET
-        if [ ${exit_code} == 0 ]; then
-            $BOLD_GREEN && echo "Process ${pid} succeeded" && $RESET
-        else
-            $BOLD_RED && echo "Process ${pid} failed" && $RESET
-            status="FAILURE"
-        fi
-    done
-
-    $BOLD_YELLOW && echo "Benchmark process status: ${status}" && $RESET
-    if [ ${status} == "FAILURE" ]; then
-        $BOLD_RED && echo "Benchmark process returned non-zero exit code." && $RESET
-        exit 1
-    fi
 }
 
 main
