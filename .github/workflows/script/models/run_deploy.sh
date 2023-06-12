@@ -12,7 +12,7 @@ for i in "$@"; do
         --model=*)
             model=`echo $i | sed "s/${PATTERN}//"`;;
         --mode=*)
-            benchmark_cmd=`echo $i | sed "s/${PATTERN}//"`;;
+            mode=`echo $i | sed "s/${PATTERN}//"`;;
         --log_dir=*)
             log_dir=`echo $i | sed "s/${PATTERN}//"`;;
         --precision=*)
