@@ -46,12 +46,12 @@ main() {
 
     # run performance
     if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
-        run_benchmark "performance" 1
+        run_benchmark "benchmark" 1
     elif [[ $(echo "${mode}" | grep "performance") ]]; then
         max_loop=3
         gap=(0.05 0.05 0.1)
         for ((iter = 0; iter < ${max_loop}; iter++)); do
-            run_benchmark "performance" 1
+            run_benchmark "benchmark" 1
             {
                 check_perf_gap ${gap[${iter}]}
                 exit_code=$?
@@ -119,7 +119,7 @@ function run_benchmark() {
         benchmark_cmd="${benchmark_cmd} --int8=false"
     fi
     cd ${working_dir}
-    if [[ $input_mode == "performance" ]]; then
+    if [[ $input_mode == "benchmark" ]]; then
         multiInstance
     else
         overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-icx.log"
