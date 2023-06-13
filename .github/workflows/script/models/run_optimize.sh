@@ -86,10 +86,10 @@ function run_tuning() {
     ${tuning_cmd} 2>&1|tee ${overall_log}
     $BOLD_YELLOW && echo "====== check tuning status. ======" && $RESET
     control_phrase="model which meet accuracy goal."
-    if [ $(grep "${control_phrase}" ${log_dir}/${model}/${framework}-${model}-tune.log | wc -l) == 0 ];then
+    if [ $(grep "${control_phrase}" ${overall_log} | wc -l) == 0 ];then
         $BOLD_RED && echo "====== tuning FAILED!! ======" && $RESET; exit 1
     fi
-    if [ $(grep "${control_phrase}" ${log_dir}/${model}/${framework}-${model}-tune.log | grep "Not found" | wc -l) == 1 ];then
+    if [ $(grep "${control_phrase}" ${overall_log} | grep "Not found" | wc -l) == 1 ];then
         $BOLD_RED && echo "====== tuning FAILED!! ======" && $RESET; exit 1
     fi
     $BOLD_GREEN && echo "====== tuning SUCCEED!! ======" && $RESET
