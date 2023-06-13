@@ -34,7 +34,7 @@ main() {
     working_dir=$(jq -r .${model}.working_dir ${CONFIG_PATH})
     working_dir="/intel-extension-for-transformers/examples/${working_dir}"
 
-    pip install -r ptq/requirements.txt
+    cd ${working_dir}/ptq && pip install -r requirements.txt
 
     ## tune
     if [[ $(echo "${mode}" | grep "tuning") ]]; then
