@@ -104,7 +104,7 @@ jobs:
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash collect_log.sh --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
+            && python collect_model_log.py --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
         
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
@@ -150,7 +150,7 @@ jobs:
             mkdir generated
             mkdir last_generated
             pip install requests
-            #python -u collect_log_all.py --logs_dir ${{ env.OUT_SCRIPT_PATH }} --output_dir generated --build_id=${{ env.REF_ID }}
+            python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }} --output_dir generated --build_id=${{ env.REF_ID }}
 
       - name: Download R eference Artifact
         id: download-artifact
@@ -174,7 +174,7 @@ jobs:
       - name: Generate report
         run: |
           echo "------ Generating final report.html ------"
-          cd ${OUT_SCRIPT_PATH}
+          cd ${{ env.OUT_SCRIPT_PATH }}
           /usr/bin/bash generate_report.sh --WORKSPACE generated --output_dir generated --last_logt_dir last_generated
       
       - name: Publish Report
