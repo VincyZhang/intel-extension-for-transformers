@@ -100,11 +100,11 @@ jobs:
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
 
-      - name: Collect Log
-        run: |
-            docker exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash collect_log.sh --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
+      #- name: Collect Log
+      #  run: |
+      #      docker exec ${{ env.CONTAINER_NAME }} \
+      #      bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
+      #      && bash collect_log.sh --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
         
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3

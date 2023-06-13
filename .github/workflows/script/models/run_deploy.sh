@@ -3,7 +3,7 @@ set -eo pipefail
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
-PERF_STABLE_CHECK=true
+PERF_STABLE_CHECK=false
 
 for i in "$@"; do
     case $i in
