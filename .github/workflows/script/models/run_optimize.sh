@@ -4,7 +4,7 @@ set -eo pipefail
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
 PERF_STABLE_CHECK=false
-
+log_dir="/intel-extension-for-transformers"
 for i in "$@"; do
     case $i in
         --framework=*)
@@ -27,12 +27,9 @@ done
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
-    ## prepare env
-    if [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "pytorch" ]]; then
-        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-classification/quantization/ptq"
-    elif [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "tensorflow" ]]; then
-        working_dir="/intel-extension-for-transformers/examples/huggingface/tensorflow/text-classification/quantization/ptq"
-    fi
+    ## prepare
+    prepare
+    
     ## tune
     if [[ $(echo "${mode}" | grep "tuning") ]]; then
         run_tuning
@@ -71,6 +68,23 @@ main() {
     fi
 }
 
+function prepare() {
+    ## prepare env
+    if [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "pytorch" ]]; then
+        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-classification/quantization/ptq"
+    elif [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "tensorflow" ]]; then
+        working_dir="/intel-extension-for-transformers/examples/huggingface/tensorflow/text-classification/quantization/ptq"
+    fi
+    cd ${working_dir}
+    echo "Working in ${working_dir}"
+    echo -e "\nInstalling model requirements..."
+    if [ -f "requirements.txt" ]; then
+        python -m pip install -r requirements.txt 
+        pip list
+    else
+        echo "Not found requirements.txt file."
+    fi
+}
 function run_tuning() {
     if [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "pytorch" ]]; then
         tuning_cmd="bash run_tuning.sh --topology=bert_base_mrpc_static --output_model=saved_results"

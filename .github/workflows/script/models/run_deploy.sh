@@ -4,7 +4,7 @@ set -eo pipefail
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
 PERF_STABLE_CHECK=false
-
+log_dir="/intel-extension-for-transformers"
 for i in "$@"; do
     case $i in
         --framework=*)
@@ -103,9 +103,9 @@ function run_benchmark() {
 function run_inferencer() {
     if [[ ${model} == "bert_mini_sparse" ]]; then
         if_path="${working_dir_fullpath}/sparse_${precision}_ir"
-        inference_cmd="bash /intel_extension_for_transformers/.github/workflows/script/launch_benchmark.sh ${model} ${ir_path} 28 1 ${precision} ${working_dir} 0"
+        inference_cmd="bash /intel-extension-for-transformers/.github/workflows/script/launch_benchmark.sh ${model} ${ir_path} 28 1 ${precision} ${working_dir} 0"
     fi
-    overall_log="/intel_extension_for_transformers/inference_${model}.log"
+    overall_log="/intel-extension-for-transformers/inference_${model}.log"
     eval ${inference_cmd} 2>&1 | tee $overall_log
 
 }
