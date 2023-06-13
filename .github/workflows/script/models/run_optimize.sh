@@ -31,7 +31,7 @@ $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
     ## prepare env
-    working_dir=$(jq .${model}.working_dir ${CONFIG_PATH})
+    working_dir=$(jq -r .${model}.working_dir ${CONFIG_PATH})
     working_dir="/intel-extension-for-transformers/examples/${working_dir}"
 
     ## tune
