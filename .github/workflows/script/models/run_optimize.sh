@@ -125,12 +125,12 @@ function run_benchmark() {
 function check_perf_gap() {
     python -u /intel-extension-for-transformers/.github/workflows/script/models/collect_model_log.py \
         --framework=${framework} \
-        --fwk_ver=${fwk_ver} \
+        --fwk_ver='na' \
         --model=${model} \
         --logs_dir="${log_dir}" \
         --output_dir="${log_dir}" \
-        --build_id=${BUILD_BUILDID} \
-        --mode=${mode} \
+        --build_id='0' \
+        --stage="${precision}_benchmark" \
         --gap=$1
 }
 
