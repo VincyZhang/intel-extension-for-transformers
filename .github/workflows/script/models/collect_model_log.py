@@ -103,7 +103,8 @@ def get_model_benchmark_dict_results():
 
 
 def get_refer_data():
-    refer_log = os.path.join(f"{args.logs_dir}_refer_log", f"{args.framework}_{args.model}_summary.log")
+    refer_log = os.path.join(f"{args.logs_dir}_refer_log",
+                             f"{args.framework}_{args.model}_summary.log")
     result = {}
     if os.path.exists(refer_log):
         with open(refer_log, "r") as f:
@@ -113,7 +114,8 @@ def get_refer_data():
         for value in values:
             precision = value[keys.index("Precision")]
             Type = value[keys.index("Type")]
-            result[f"{precision}_{Type}"] = float(value[keys.index("Value")]) if value[keys.index("Value")]!="unknown" else "unknown"
+            result[f"{precision}_{Type}"] = float(value[keys.index(
+                "Value")]) if value[keys.index("Value")] != "unknown" else "unknown"
         return result
     else:
         print(f"refer log file: {refer_log} not found")
@@ -128,43 +130,89 @@ def collect_log():
     if os.path.exists(tuning_log):
         print('tuning log found')
         tmp = {'fp32_acc': 0, 'int8_acc': 0, 'tuning_trials': 0}
-        with open(tuning_log, "r") as f:
-            for line in f:
-                parse_tuning_line(line, tmp)
-        print(tmp)
+        # with open(tuning_log, "r") as f:
+        #     for line in f:
+        #         parse_tuning_line(line, tmp)
 
-        results.append('{};{};{};{};FP32;{};Inference;Accuracy;1;{};{}\n'.format(
-            OS, PLATFORM, args.framework, args.fwk_ver, args.model, tmp['fp32_acc'], "<url>"))
-        results.append('{};{};{};{};INT8;{};Inference;Accuracy;1;{};{}\n'.format(
-            OS, PLATFORM, args.framework,  args.fwk_ver, args.model, tmp['int8_acc'], "<url>"))
-        tuning_infos.append(';'.join([OS, PLATFORM, args.framework,  args.fwk_ver, args.model, tmp.get('strategy', 'basic'), str(
-            tmp.get('tune_time', 'na')), str(tmp['tuning_trials']), "<url>", '0'+'\n']))
+        # results.append('{};{};{};{};FP32;{};Inference;Accuracy;1;{};{}\n'.format(
+        #     OS, PLATFORM, args.framework, args.fwk_ver, args.model, tmp['fp32_acc'], "<url>"))
+        # results.append('{};{};{};{};INT8;{};Inference;Accuracy;1;{};{}\n'.format(
+        #     OS, PLATFORM, args.framework,  args.fwk_ver, args.model, tmp['int8_acc'], "<url>"))
+        tuning_infos.append(';'.join([
+            OS, PLATFORM, args.framework, args.fwk_ver, args.model,
+            tmp.get('strategy', 'basic'),
+            str(tmp.get('tune_time', 'na')),
+            str(tmp['tuning_trials']), "<url>", '0' + '\n'
+        ]))
 
-    # get model benchmark results
+    # get model performance results
     for precision in ['int8', 'fp32']:
         throughput = 0.0
         bs = 1
         for root, dirs, files in os.walk(args.logs_dir):
             for name in files:
                 file_name = os.path.join(root, name)
-                # print(file_name)
-                if ("throughput" in name and precision in name):
+                if ("performance" in name and precision in name and args.framework in name):
                     for line in open(file_name, "r"):
                         result = parse_perf_line(line)
-                        if result.get("throughput"):
-                            throughput += result.get("throughput")
-                        if result.get("batch_size"):
-                            bs = result.get("batch_size")
-        results.append('{};{};{};{};{};{};Inference;Performance;{};{};{}\n'.format(OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs, throughput, URL))
+                        throughput += result.get("throughput", 0.0)
+                        bs = result.get("batch_size", bs)
+        results.append('{};{};{};{};{};{};Inference;Performance;{};{};{}\n'.format(
+            OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs,
+            throughput, URL))
+
+    # get model accuracy results
+    for precision in ['int8', 'fp32']:
+        accuracy = 0.0
+        bs = 1
+        for root, dirs, files in os.walk(args.logs_dir):
+            for name in files:
+                file_name = os.path.join(root, name)
+                if ("accuracy" in name and precision in name and args.framework in name):
+                    for line in open(file_name, "r"):
+                        result = parse_acc_line(line)
+                        accuracy += result.get("accuracy", 0.0)
+                        bs = result.get("batch_size", bs)
+        results.append('{};{};{};{};{};{};Inference;accuracy;{};{};{}\n'.format(
+            OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs,
+            accuracy, URL))
+
+    # get model benchmark_only results
+    for precision in ['int8', 'fp32']:
+        benchmark_only = 0.0
+        bs = 1
+        for root, dirs, files in os.walk(args.logs_dir):
+            for name in files:
+                file_name = os.path.join(root, name)
+                if ("benchmark_only" in name and precision in name and args.framework in name):
+                    for line in open(file_name, "r"):
+                        result = parse_benchmark_only_line(line)
+                        benchmark_only = result.get("throughput", benchmark_only)
+                        bs = result.get("batch_size", bs)
+        results.append('{};{};{};{};{};{};Inference;benchmark_only;{};{};{}\n'.format(
+            OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs,
+            benchmark_only, URL))
+
     # write model logs
-    f = open(args.output_dir+'/'+args.framework+'_'+args.model+'_summary.log', "a")
+    f = open(args.output_dir + '/' + args.framework + '_' + args.model + '_summary.log', "a")
     f.writelines("OS;Platform;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")
     for result in results:
         f.writelines(str(result))
-    f2 = open(args.output_dir + '/'+args.framework+'_'+args.model+'_tuning_info.log', "a")
+    f2 = open(args.output_dir + '/' + args.framework + '_' + args.model + '_tuning_info.log', "a")
     f2.writelines("OS;Platform;Framework;Version;Model;Strategy;Tune_time\n")
     for tuning_info in tuning_infos:
         f2.writelines(str(tuning_info))
+
+
+def get_tune_log():
+    framework = re.escape(args.framework)
+    model = re.escape(args.model)
+    pattern = f".*{framework}.*{model}.*tune\.log"
+    for root, dirs, files in os.walk(args.logs_dir):
+        for file in files:
+            if re.search(pattern, file):
+                return os.path.join(root, file)
+    return ''
 
 
 def parse_tuning_line(line, tmp):
@@ -172,12 +220,15 @@ def parse_tuning_line(line, tmp):
     if tuning_strategy and tuning_strategy.group(1):
         tmp['strategy'] = tuning_strategy.group(1)
 
-    baseline_acc = re.search(r"FP32 baseline is:\s+\[Accuracy:\s(\d+(\.\d+)?), Duration \(seconds\):\s*(\d+(\.\d+)?)\]",
-                             line)
+    baseline_acc = re.search(
+        r"FP32 baseline is:\s+\[Accuracy:\s(\d+(\.\d+)?), Duration \(seconds\):\s*(\d+(\.\d+)?)\]",
+        line)
     if baseline_acc and baseline_acc.group(1):
         tmp['fp32_acc'] = float(baseline_acc.group(1))
 
-    tuned_acc = re.search(r"Best tune result is:\s+\[Accuracy:\s(\d+(\.\d+)?), Duration \(seconds\):\s(\d+(\.\d+)?)\]", line)
+    tuned_acc = re.search(
+        r"Best tune result is:\s+\[Accuracy:\s(\d+(\.\d+)?), Duration \(seconds\):\s(\d+(\.\d+)?)\]",
+        line)
     if tuned_acc and tuned_acc.group(1):
         tmp['int8_acc'] = float(tuned_acc.group(1))
 
@@ -221,23 +272,56 @@ def parse_perf_line(line):
     return perf_data
 
 
+def parse_acc_line(line):
+    perf_data = {}
+
+    accuracy = re.search(r"Accuracy: (\d+\.\d+)", line)
+    if accuracy and accuracy.group(1):
+        perf_data.update({"accuracy": float(accuracy.group(1))})
+        print(float(accuracy.group(1)))
+
+    batch_size = re.search(r"Batch size = ([0-9]+)", line)
+    if batch_size and batch_size.group(1):
+        perf_data.update({"batch_size": int(batch_size.group(1))})
+
+    return perf_data
+
+
+def parse_benchmark_only_line(line):
+    perf_data = {}
+
+    if throughput := (line if "Throughput sum [samples/second]" in line else False):
+        throughput = re.findall(r'\d+\.\d+', throughput)[-1]
+        perf_data.update({"throughput": float(throughput)})
+
+    batch_size = re.search(r"Batch size = ([0-9]+)", line)
+    if batch_size and batch_size.group(1):
+        perf_data.update({"batch_size": int(batch_size.group(1))})
+
+    return perf_data
+
+
 def check_status(precision, precision_upper, check_accuracy=False):
     performance_result = get_model_benchmark_dict_results()
     current_performance = performance_result.get(precision).get("Value")
     refer_performance = refer.get(f"{precision_upper}_Performance")
-    print(f"current_performance_data = {current_performance:.3f}, refer_performance_data = {refer_performance:.3f}")
+    print(
+        f"current_performance_data = {current_performance:.3f}, refer_performance_data = {refer_performance:.3f}"
+    )
     assert (refer_performance - current_performance) / refer_performance <= args.gap
 
     if check_accuracy:
         _, accuracy_result = get_model_tuning_dict_results()
         current_accuracy = accuracy_result.get(precision).get("Value")
         refer_accuracy = refer.get(f"{precision_upper}_Accuracy")
-        print(f"current_accuracy_data = {current_accuracy:.3f}, refer_accuarcy_data = {refer_accuracy:.3f}")
+        print(
+            f"current_accuracy_data = {current_accuracy:.3f}, refer_accuarcy_data = {refer_accuracy:.3f}"
+        )
         assert abs(current_accuracy - refer_accuracy) <= 0.001
 
 
 if __name__ == '__main__':
-    tuning_log = os.path.join(args.logs_dir, f"{args.framework}-{args.model}-tune.log")
+    tuning_log = get_tune_log()
     refer = get_refer_data()
 
     if args.stage == "collect_log":
