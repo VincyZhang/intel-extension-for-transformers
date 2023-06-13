@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - .github/workflows/download.yml
+      # - .github/workflows/download.yml
 jobs:
   unit-test:
     runs-on: ubuntu-latest

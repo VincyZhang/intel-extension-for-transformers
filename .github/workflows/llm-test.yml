@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/llm-test.yml'
-      - '.github/workflows/script/models/run_deploy.sh'
+      # - '.github/workflows/llm-test.yml'
+      # - '.github/workflows/script/models/run_deploy.sh'
       - 'examples/huggingface/pytorch/text-generation/deployment'
       - 'intel_extension_for_transformers/backends'
       - '!intel_extension_for_transformers/backends/neural_engine/kernels'
