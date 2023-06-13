@@ -49,7 +49,7 @@ jobs:
           - modelName: "bert_base_mrpc_static"
             framework: "tensorflow"
             mode: "accuracy,performance"
-      fail-fast: false
+      fail-fast: true
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -93,13 +93,13 @@ jobs:
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }}"
+            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
         
       - name: FP32 Benchmark
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }}"
+            && bash run_optimize.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: Collect Log
         run: |

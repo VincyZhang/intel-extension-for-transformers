@@ -14,8 +14,6 @@ for i in "$@"; do
             model=`echo $i | sed "s/${PATTERN}//"`;;
         --mode=*)
             mode=`echo $i | sed "s/${PATTERN}//"`;;
-        --log_dir=*)
-            log_dir=`echo $i | sed "s/${PATTERN}//"`;;
         --precision=*)
             precision=`echo $i | sed "s/${PATTERN}//"`;;
         --PERF_STABLE_CHECK=*)
@@ -26,6 +24,8 @@ for i in "$@"; do
 done
 
 CONFIG_PATH="/intel-extension-for-transformers/examples/.config/${framework}_optimize.json"
+log_dir="/intel-extension-for-transformers/${framework}_${model}"
+mkdir -p ${log_dir}
 
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
