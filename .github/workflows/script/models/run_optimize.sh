@@ -123,7 +123,7 @@ function run_benchmark() {
 }
 
 function check_perf_gap() {
-    python -u ${SCRIPTS_PATH}/collect_log_model.py \
+    python -u /intel-extension-for-transformers/.github/workflows/script/models/collect_model_log.py \
         --framework=${framework} \
         --fwk_ver=${fwk_ver} \
         --model=${model} \
