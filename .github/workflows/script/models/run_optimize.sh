@@ -1,5 +1,6 @@
 #!/bin/bash
 set -eo pipefail
+source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
@@ -24,19 +25,20 @@ for i in "$@"; do
     esac
 done
 
+CONFIG_PATH="/intel-extension-for-transformers/examples/.config/${framework}_optimize.json"
+
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
     ## prepare env
-    if [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "pytorch" ]]; then
-        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-classification/quantization/ptq"
-    elif [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "tensorflow" ]]; then
-        working_dir="/intel-extension-for-transformers/examples/huggingface/tensorflow/text-classification/quantization/ptq"
-    fi
+    working_dir=$(jq .${model}.working_dir ${CONFIG_PATH})
+    working_dir="/intel-extension-for-transformers/examples/${working_dir}"
+
     ## tune
     if [[ echo "${mode}" | grep "tuning" ]]; then
         run_tuning
     fi
+
     ## run accuracy
     if [[ echo "${mode}" | grep "accuracy" ]]; then
         run_benchmark "accuracy" 64
