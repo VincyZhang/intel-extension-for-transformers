@@ -182,14 +182,14 @@ jobs:
         run: |
           echo "------ Generating final report.html ------"
           cd ${{ env.OUT_SCRIPT_PATH }}
-          /usr/bin/bash generate_report.sh --WORKSPACE generated --output_dir generated --last_log_dir last_generated
+          /usr/bin/bash generate_report.sh
       
       - name: Publish Report
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
         with:
           name: FinalReport
-          path: ${{ github.workspace }}/generated
+          path: cd ${{ env.OUT_SCRIPT_PATH }}/generated
 
       - name: Specify performance regression
         run: |
