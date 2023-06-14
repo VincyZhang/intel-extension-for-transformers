@@ -16,7 +16,7 @@
 
 from transformers import TrainingArguments
 from transformers import logging as hf_logging
-import yaml, argparse
+import yaml, argparse, os, sys
 
 
 hf_logging.set_verbosity_info()
@@ -25,12 +25,21 @@ hf_logging.set_verbosity_info()
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_file", type=str, required=True)
+    parser.add_argument("--local_rank", type=int, required=False)
+    parser.add_argument("--no_cuda", action='store_true', required=False)
     args = parser.parse_args()
 
     with open(args.config_file, "r") as f:
         data = yaml.safe_load(f)
 
-    training_args = TrainingArguments(output_dir="./output_dir")
+    training_args = None
+    if int(os.environ.get("LOCAL_RANK", -1)) != -1 and '--no_cuda' in sys.argv:
+        from intel_extension_for_transformers.optimization.utils.utility import distributed_init
+        distributed_init()
+        training_args = TrainingArguments(output_dir=data["training_args"].get("output_dir", "./output_dir"), no_cuda=True)
+    else:
+        training_args = TrainingArguments(output_dir=data["training_args"].get("output_dir", "./output_dir"))
+
     for item in data["training_args"]:
         setattr(training_args, item, data["training_args"][item])
 
@@ -56,6 +65,7 @@ def main():
             raise ValueError(error_msg)
 
         finetune.e2e_finetune()
+
     elif args.pipeline == "inference":
         if args.infer_impl == "trainer":
             from infer_trainer import TrainerInfer
@@ -68,8 +78,32 @@ def main():
             raise ValueError(error_msg)
 
         infer.e2e_infer()
+
+    elif args.pipeline == "inference_only":
+        if args.dataset != "local":
+            error_msg = f"Now only support local datasets for inference_only pipeline."
+            raise ValueError(error_msg)
+        
+        if args.infer_impl == "trainer":
+            from infer_trainer import TrainerInfer
+            infer = TrainerInfer(**kwargs)
+        elif args.infer_impl == "itrex":
+            from infer_itrex import ItrexInfer
+            infer = ItrexInfer(**kwargs)
+        else:
+            error_msg = f"Now only support trainer and itrex implementation for inference pipeline."
+            raise ValueError(error_msg)
+        
+        infer.e2e_infer_setup_only()
+
+        if type(args.local_dataset["inference_input"]) == str:
+            args.local_dataset["inference_input"] = args.local_dataset["inference_input"].split(",")
+            
+        for f in args.local_dataset["inference_input"]:
+            infer.e2e_infer_only(f)
+
     else:
-        error_msg = f"Now only support finetune and inference pipeline."
+        error_msg = f"Now only support finetune, inference and inference_only pipeline."
         raise ValueError(error_msg)
 
 if __name__ == "__main__":

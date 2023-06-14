@@ -15,3 +15,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from .lm_eval.evaluator import evaluate
+from .hf_eval.evaluator import summarization_evaluate

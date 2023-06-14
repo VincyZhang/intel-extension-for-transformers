@@ -1,5 +1,6 @@
 #!/bin/bash
 set -eo pipefail
+source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
@@ -13,8 +14,6 @@ for i in "$@"; do
             model=`echo $i | sed "s/${PATTERN}//"`;;
         --mode=*)
             mode=`echo $i | sed "s/${PATTERN}//"`;;
-        --log_dir=*)
-            log_dir=`echo $i | sed "s/${PATTERN}//"`;;
         --precision=*)
             precision=`echo $i | sed "s/${PATTERN}//"`;;
         --PERF_STABLE_CHECK=*)
@@ -24,16 +23,27 @@ for i in "$@"; do
     esac
 done
 
+CONFIG_PATH="/intel-extension-for-transformers/examples/.config/${framework}_optimize.json"
+log_dir="/intel-extension-for-transformers/${framework}_${model}"
+mkdir -p ${log_dir}
+
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
     ## prepare
     prepare
     
+    #### prepare env
+    ##working_dir=$(jq -r .${model}.working_dir ${CONFIG_PATH})
+    ##working_dir="/intel-extension-for-transformers/examples/${working_dir}"
+
+    ##cd ${working_dir} && pip install -r requirements.txt
+
     ## tune
     if [[ $(echo "${mode}" | grep "tuning") ]]; then
         run_tuning
     fi
+
     ## run accuracy
     if [[ $(echo "${mode}" | grep "accuracy") ]]; then
         run_benchmark "accuracy" 64
@@ -133,14 +143,14 @@ function run_benchmark() {
 }
 
 function check_perf_gap() {
-    python -u ${SCRIPTS_PATH}/collect_log_model.py \
+    python -u /intel-extension-for-transformers/.github/workflows/script/models/collect_model_log.py \
         --framework=${framework} \
-        --fwk_ver=${fwk_ver} \
+        --fwk_ver='na' \
         --model=${model} \
         --logs_dir="${log_dir}" \
         --output_dir="${log_dir}" \
-        --build_id=${BUILD_BUILDID} \
-        --mode=${mode} \
+        --build_id='0' \
+        --stage="${precision}_benchmark" \
         --gap=$1
 }
 
