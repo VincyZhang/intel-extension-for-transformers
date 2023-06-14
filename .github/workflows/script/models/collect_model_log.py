@@ -11,6 +11,7 @@ parser.add_argument("--output_dir", type=str, default=".")
 parser.add_argument("--build_id", type=str, default="0")
 parser.add_argument("--stage", type=str, default="collect_log")
 parser.add_argument("--gap", type=float, default=0.05)
+parser.add_argument("--model_test_type", type=str, default="optimize")
 args = parser.parse_args()
 print('====== collecting model test log =======')
 OS = 'linux'
@@ -157,9 +158,9 @@ def collect_log():
                         result = parse_perf_line(line)
                         throughput += result.get("throughput", 0.0)
                         bs = result.get("batch_size", bs)
-        results.append('{};{};{};{};{};{};Inference;Performance;{};{};{}\n'.format(
-            OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs,
-            throughput, URL))
+        results.append(
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Performance;{bs};{throughput};{URL}\n'
+        )
 
     # get model accuracy results
     for precision in ['int8', 'fp32']:
@@ -173,9 +174,9 @@ def collect_log():
                         result = parse_acc_line(line)
                         accuracy += result.get("accuracy", 0.0)
                         bs = result.get("batch_size", bs)
-        results.append('{};{};{};{};{};{};Inference;accuracy;{};{};{}\n'.format(
-            OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs,
-            accuracy, URL))
+        results.append(
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Performance;{bs};{accuracy};{URL}\n'
+        )
 
     # get model benchmark_only results
     for precision in ['int8', 'fp32']:
@@ -189,10 +190,10 @@ def collect_log():
                         result = parse_benchmark_only_line(line)
                         benchmark_only = result.get("throughput", benchmark_only)
                         bs = result.get("batch_size", bs)
-        results.append('{};{};{};{};{};{};Inference;benchmark_only;{};{};{}\n'.format(
-            OS, PLATFORM, args.framework, args.fwk_ver, precision.upper(), args.model, bs,
-            benchmark_only, URL))
-
+        results.append(
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Performance;{bs};{benchmark_only};{URL}\n'
+        )
+    print(results)
     # write model logs
     f = open(args.output_dir + '/' + args.framework + '_' + args.model + '_summary.log', "a")
     f.writelines("OS;Platform;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")

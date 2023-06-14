@@ -1,212 +1,22 @@
 #!/bin/bash
-set -x
+# set -x
+WORKSPACE=generated
+summaryLog=${WORKSPACE}/summary.log
+summaryLogLast=last_generated/summary.log
+tuneLog=${WORKSPACE}/tuning_info.log
+tuneLogLast=last_generated/tuning_info.log
 
 function main {
     echo "summaryLog: ${summaryLog}"
     echo "summaryLogLast: ${summaryLogLast}"
-    echo "inferencerSummaryLog: ${inferencerSummaryLog}"
-    echo "inferencerSummaryLogLast: ${inferencerSummaryLogLast}"
     echo "overviewLog: ${overviewLog}"
     echo "tunelog: ${tuneLog}"
     echo "last tunelog: ${tuneLogLast}"
-    echo "coverage_summary_optimize: ${coverage_summary_optimize}"
-    echo "coverage_summary_deploy: ${coverage_summary_deploy}"
-    echo "coverage_summary_optimize_base: ${coverage_summary_optimize_base}"
-    echo "coverage_summary_deploy_base: ${coverage_summary_deploy_base}"
-    echo "launcherSummaryLog: ${launcherSummaryLog}"
-    echo "launcherSummaryLogLast: ${launcherSummaryLogLast}"
-    echo "feature_tests_summary: ${feature_tests_summary}"
-    echo "LLMSummaryLog: ${LLMSummaryLog}"
-    echo "LLMSummaryLogLast: ${LLMSummaryLogLast}"
 
     generate_html_head
     generate_html_overview
     generate_optimize_results
-    generate_deploy_results
-    [[ -f ${launcherSummaryLog} ]] && generate_launcher_benchmark
-    generate_deploy_benchmark
-    [[ -f ${LLMSummaryLog} ]] && generate_llm_benchmark
     generate_html_footer
-}
-
-function createOverview {
-
-    gha_job_link="https://github.com/intel/intel-extension-for-transformers/actions/"
-
-    echo """
-      <h2>Overview</h2>
-      <table class=\"features-table\" style=\"width: 60%;margin: 0 auto 0 0;empty-cells: hide\">
-        <tr>
-            <th>Task</th>
-            <th>Job</th>
-            <th>Status</th>
-        </tr>
-    """ >>${WORKSPACE}/report.html
-
-    uts=$(sed '1d' ${overviewLog} | grep "^unit_test" | cut -d',' -f1 | awk '!a[$0]++')
-
-    for ut in ${uts[@]}; do
-        ut_info_list=($(grep "${ut}" ${overviewLog} | sed 's/,/ /g'))
-        ut_name="${ut_info_list[0]}"
-        ut_status="${ut_info_list[1]}"
-        ut_link="${ut_info_list[2]}"
-        if [[ "${ut_status}" == *"FAIL"* ]]; then
-            unit_test_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-        elif [[ "${ut_status}" == *"SUCC"* ]]; then
-            unit_test_status="<td style=\"background-color:#90EE90\">Pass</td>"
-        else
-            unit_test_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-        fi
-
-        echo """
-      <tr>
-      <td>${ut_name}</td>
-      <td style=\"text-align:left\"><a href=\"${ut_link}\">ut_link</a></td>
-      ${unit_test_status}
-      </tr>
-      """ >>${WORKSPACE}/report.html
-    done
-    gtests=$(grep 'engine_ut_gtest' ${overviewLog} | cut -d',' -f1 | awk '!a[$0]++')
-    for ut in ${gtests[@]}; do
-        ut_info_list=($(grep "${ut}" ${overviewLog} | sed 's/,/ /g'))
-        ut_name="${ut_info_list[0]}"
-        ut_status="${ut_info_list[1]}"
-        ut_link="${ut_info_list[2]}"
-        if [[ "${ut_status}" == *"FAIL"* ]]; then
-            unit_test_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-        elif [[ "${ut_status}" == *"SUCC"* ]]; then
-            unit_test_status="<td style=\"background-color:#90EE90\">Pass</td>"
-        else
-            unit_test_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-        fi
-
-        echo """
-      <tr>
-      <td>${ut_name}</td>
-      <td style=\"text-align:left\"><a href=\"${ut_link}\">ut_link</a></td>
-      ${unit_test_status}
-      </tr>
-      """ >>${WORKSPACE}/report.html
-    done
-
-    pytests=$(grep 'engine_ut_pytest' ${overviewLog} | cut -d',' -f1 | awk '!a[$0]++')
-    for ut in ${pytests[@]}; do
-        ut_info_list=($(grep "${ut}" ${overviewLog} | sed 's/,/ /g'))
-        ut_name="${ut_info_list[0]}"
-        ut_status="${ut_info_list[1]}"
-        ut_link="${ut_info_list[2]}"
-        if [[ "${ut_status}" == *"FAIL"* ]]; then
-            unit_test_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-        elif [[ "${ut_status}" == *"SUCC"* ]]; then
-            unit_test_status="<td style=\"background-color:#90EE90\">Pass</td>"
-        else
-            unit_test_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-        fi
-
-        echo """
-      <tr>
-      <td>${ut_name}</td>
-      <td style=\"text-align:left\"><a href=\"${ut_link}\">ut_link</a></td>
-      ${unit_test_status}
-      </tr>
-      """ >>${WORKSPACE}/report.html
-    done
-
-    format_scan=($(grep 'nlp-format-scan-localtest,format' ${overviewLog} | sed 's/,/ /g'))
-    if [[ "${format_scan[2]}" == *"FAIL"* ]]; then
-        format_scan_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    elif [[ "${format_scan[2]}" == *"SUCC"* ]]; then
-        format_scan_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    else
-        format_scan_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    fi
-
-    cpplint_scan=($(grep 'nlp-format-scan-localtest,cpplint' ${overviewLog} | sed 's/,/ /g'))
-    if [[ "${cpplint_scan[2]}" == *"FAIL"* ]]; then
-        cpplint_scan_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    elif [[ "${cpplint_scan[2]}" == *"SUCC"* ]]; then
-        cpplint_scan_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    else
-        cpplint_scan_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    fi
-
-    pylint_scan=($(grep 'nlp-format-scan-localtest,pylint' ${overviewLog} | sed 's/,/ /g'))
-    if [[ "${pylint_scan[2]}" == *"FAIL"* ]]; then
-        pylint_scan_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    elif [[ "${pylint_scan[2]}" == *"SUCC"* ]]; then
-        pylint_scan_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    else
-        pylint_scan_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    fi
-
-    bandit_scan=($(grep 'nlp-format-scan-localtest,bandit' ${overviewLog} | sed 's/,/ /g'))
-    if [[ "${bandit_scan[2]}" == *"FAIL"* ]]; then
-        bandit_scan_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    elif [[ "${bandit_scan[2]}" == *"SUCC"* ]]; then
-        bandit_scan_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    else
-        bandit_scan_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    fi
-
-    spellcheck_scan=($(grep 'nlp-format-scan-localtest,pyspelling' ${overviewLog} | sed 's/,/ /g'))
-    if [[ "${spellcheck_scan[2]}" == *"FAIL"* ]]; then
-        spellcheck_scan_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    elif [[ "${spellcheck_scan[2]}" == *"SUCC"* ]]; then
-        spellcheck_scan_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    else
-        spellcheck_scan_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    fi
-
-    copyright_check=($(grep 'nlp-toolkit-copyright-check' ${overviewLog} | sed 's/,/ /g'))
-    if [[ "${copyright_check[1]}" == *"FAIL"* ]]; then
-        copyright_check_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    elif [[ "${copyright_check[1]}" == *"SUCC"* ]]; then
-        copyright_check_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    else
-        copyright_check_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    fi
-
-    cat >>${WORKSPACE}/report.html <<eof
-
-        $(
-        if [ "${format_scan[3]}" != "" ]; then
-            echo "<tr><td>clang-format Scan</td>"
-            echo "<td style=\"text-align:left\"><a href=\"${gha_job_link}${format_scan[0]}/${format_scan[3]}\">${format_scan[0]}#${format_scan[3]}</a></td>"
-            echo "${format_scan_status}</tr>"
-        fi
-
-        if [ "${cpplint_scan[3]}" != "" ]; then
-            echo "<tr><td>cpplint Scan</td>"
-            echo "<td style=\"text-align:left\"><a href=\"${gha_job_link}${cpplint_scan[0]}/${cpplint_scan[3]}\">${cpplint_scan[0]}#${cpplint_scan[3]}</a></td>"
-            echo "${cpplint_scan_status}</tr>"
-        fi
-
-        if [ "${pylint_scan[3]}" != "" ]; then
-            echo "<tr><td>PyLint Scan</td>"
-            echo "<td style=\"text-align:left\"><a href=\"${gha_job_link}${pylint_scan[0]}/${pylint_scan[3]}\">${pylint_scan[0]}#${pylint_scan[3]}</a></td>"
-            echo "${pylint_scan_status}</tr>"
-        fi
-
-        if [ "${bandit_scan[3]}" != "" ]; then
-            echo "<tr><td>Bandit Scan</td>"
-            echo "<td style=\"text-align:left\"><a href=\"${gha_job_link}${bandit_scan[0]}/${bandit_scan[3]}\">${bandit_scan[0]}#${bandit_scan[3]}</a></td>"
-            echo "${bandit_scan_status}</tr>"
-        fi
-
-        if [ "${spellcheck_scan[3]}" != "" ]; then
-            echo "<tr><td>Spellcheck Scan</td>"
-            echo "<td style=\"text-align:left\"><a href=\"${gha_job_link}${spellcheck_scan[0]}/${spellcheck_scan[3]}\">${spellcheck_scan[0]}#${spellcheck_scan[3]}</a></td>"
-            echo "${spellcheck_scan_status}</tr>"
-        fi
-
-        if [ "${copyright_check[2]}" != "" ]; then
-            echo "<tr><td>Copyright Check</td>"
-            echo "<td style=\"text-align:left\"><a href=\"${gha_job_link}intel-lpot-copyright-check/${copyright_check[2]}/artifact/copyright_issue_summary.log\">${copyright_check[0]}#${copyright_check[2]}</a></td>"
-            echo "${copyright_check_status}</tr>"
-        fi
-    )
-    </table>
-eof
 }
 
 function generate_html_overview {
@@ -235,605 +45,6 @@ function generate_html_overview {
                 </tr>
         </table>
 eof
-
-    createOverview
-    createCoverageOverview
-    createFeatureTestsOverview
-
-}
-
-function createCoverageOverview {
-    echo "Generating coverage overview for NLP-TOOLKIT."
-    if [ ! -f "${coverage_summary_optimize}" ] || [ $(wc -l ${coverage_summary_optimize} | awk '{ print $1 }') -le 1 ]; then
-        return 0
-    fi
-
-    lines_coverage=($(grep 'lines_coverage' ${coverage_summary_optimize} | sed 's/,/ /g'))
-    branches_coverage=($(grep 'branches_coverage' ${coverage_summary_optimize} | sed 's/,/ /g'))
-
-    echo """
-        <h2>Code Coverage for NLP-TOOLKIT Optimize</h2>
-        <table class=\"features-table\" style=\"width: 60%;margin: 0 auto 0 0;empty-cells: hide\">
-        <tr>
-            <th></th>
-            <th>Covered</th>
-            <th>Total</th>
-            <th>Coverage</th>
-        </tr>
-        <tr>
-            <td>Lines</td>
-            <td>${lines_coverage[1]}</td>
-            <td>${lines_coverage[2]}</td>
-    """ >>${WORKSPACE}/report.html
-
-    awk -v lines_coverage="${lines_coverage[3]}" -v lines_coverage_threshold="${lines_coverage_threshold}" -F ';' '
-    BEGIN {
-        if(lines_coverage < lines_coverage_threshold) {
-            printf("<td style=\"background-color:#FFD2D2\">%.2f%</td>", lines_coverage);
-        } else {
-            printf("<td style=\"background-color:#90EE90\">%.2f%</td>", lines_coverage);
-        }
-    }' >>${WORKSPACE}/report.html
-
-    echo """
-        </tr>
-        <tr>
-            <td>Branches</td>
-            <td>${branches_coverage[1]}</td>
-            <td>${branches_coverage[2]}</td>
-    """ >>${WORKSPACE}/report.html
-
-    awk -v branches_coverage="${branches_coverage[3]}" -v branches_coverage_threshold="${branches_coverage_threshold}" -F ';' '
-    BEGIN {
-        if(branches_coverage < branches_coverage_threshold) {
-            printf("<td style=\"background-color:#FFD2D2\">%.2f%</td>", branches_coverage);
-        } else {
-            printf("<td style=\"background-color:#90EE90\">%.2f%</td>", branches_coverage);
-        }
-    }' >>${WORKSPACE}/report.html
-
-    echo """
-        </tr>
-        </table>
-    """ >>${WORKSPACE}/report.html
-    echo "Generating coverage overview for NLP-TOOLKIT."
-    if [ ! -f "${coverage_summary_deploy}" ] || [ $(wc -l ${coverage_summary_deploy} | awk '{ print $1 }') -le 1 ]; then
-        return 0
-    fi
-
-    lines_coverage=($(grep 'lines_coverage' ${coverage_summary_deploy} | sed 's/,/ /g'))
-    branches_coverage=($(grep 'branches_coverage' ${coverage_summary_deploy} | sed 's/,/ /g'))
-
-    echo """
-        <h2>Code Coverage for NLP-TOOLKIT Backends</h2>
-        <table class=\"features-table\" style=\"width: 60%;margin: 0 auto 0 0;empty-cells: hide\">
-        <tr>
-            <th></th>
-            <th>Covered</th>
-            <th>Total</th>
-            <th>Coverage</th>
-        </tr>
-        <tr>
-            <td>Lines</td>
-            <td>${lines_coverage[1]}</td>
-            <td>${lines_coverage[2]}</td>
-    """ >>${WORKSPACE}/report.html
-
-    awk -v lines_coverage="${lines_coverage[3]}" -v lines_coverage_threshold="${lines_coverage_threshold}" -F ';' '
-    BEGIN {
-        if(lines_coverage < lines_coverage_threshold) {
-            printf("<td style=\"background-color:#FFD2D2\">%.2f%</td>", lines_coverage);
-        } else {
-            printf("<td style=\"background-color:#90EE90\">%.2f%</td>", lines_coverage);
-        }
-    }' >>${WORKSPACE}/report.html
-
-    echo """
-        </tr>
-        <tr>
-            <td>Branches</td>
-            <td>${branches_coverage[1]}</td>
-            <td>${branches_coverage[2]}</td>
-    """ >>${WORKSPACE}/report.html
-
-    awk -v branches_coverage="${branches_coverage[3]}" -v branches_coverage_threshold="${branches_coverage_threshold}" -F ';' '
-    BEGIN {
-        if(branches_coverage < branches_coverage_threshold) {
-            printf("<td style=\"background-color:#FFD2D2\">%.2f%</td>", branches_coverage);
-        } else {
-            printf("<td style=\"background-color:#90EE90\">%.2f%</td>", branches_coverage);
-        }
-    }' >>${WORKSPACE}/report.html
-
-    echo """
-        </tr>
-        </table>
-    """ >>${WORKSPACE}/report.html
-}
-
-function createFeatureTestsOverview {
-    pass_status="<td style=\"background-color:#90EE90\">Pass</td>"
-    fail_status="<td style=\"background-color:#FFD2D2\">Fail</td>"
-    verify_status="<td style=\"background-color:#f2ea0a\">Verify</td>"
-    echo "Generating feature tests overview."
-    if [ ! -f ${feature_tests_summary} ]; then
-        return 0
-    fi
-
-    echo """
-        <h2>Feature Test</h2>
-        <table class=\"features-table\" style=\"width: auto;margin: 0 auto 0 0;\">
-        <tr>
-            <th style=\"padding: 5px 40px;\">Task</th>
-            <th style=\"padding: 5px 40px;\">Platform</th>
-            <th style=\"padding: 5px 20px;\">Status</th>
-        </tr>
-    """ >>${WORKSPACE}/report.html
-
-    features=$(sed '1d' ${feature_tests_summary} | cut -d';' -f2 | awk '!a[$0]++')
-
-    for feature in ${features[@]}; do
-        feature_result=($(grep ${feature} ${feature_tests_summary} | sed 's/;/ /g'))
-        feature_url=${feature_result[3]}
-        platform=${feature_result[0]}
-        if [[ "${feature_result[2]}" == "fail" ]]; then
-            feature_status=${fail_status}
-        elif [[ "${feature_result[2]}" == "pass" ]]; then
-            feature_status=${pass_status}
-        else
-            feature_status=${verify_status}
-        fi
-
-        if [ "${feature_result[2]}" != "" ]; then
-            echo """
-            <tr>
-            <td style=\"text-align:left;padding: 0 40px;\"><a href=\"${feature_url}\">${feature}</a></td>
-            <td style=\"text-align:center;padding: 0 40px;\">${platform}</td>
-            ${feature_status}
-            </tr>
-            """ >>${WORKSPACE}/report.html
-        fi
-    done
-    echo "</table>" >>${WORKSPACE}/report.html
-}
-
-function generate_deploy_benchmark {
-
-    cat >>${WORKSPACE}/report.html <<eof
-    <h2>Deploy Inferencer</h2>
-      <table class="features-table">
-        <tr>
-          <th rowspan="2">Model</th>
-          <th rowspan="2">Seq_len</th>
-          <th rowspan="2">VS</th>
-          <th rowspan="2">Full<br>Cores</th>
-          <th rowspan="2">NCores<br>per Instance</th>
-          <th rowspan="2">BS</th>
-          <th>INT8</th>
-          <th>FP32</th>
-          <th>BF16</th>
-          <th colspan="2" class="col-cell col-cell1 col-cellh">Ratio</th>
-        </tr>
-        <tr>
-          <th>throughput</th>
-          <th>throughput</th>
-          <th>throughput</th>
-          <th colspan="2" class="col-cell col-cell1"><font size="2px">FP32/INT8</font></th>
-        </tr>
-eof
-
-    mode='throughput'
-    models=$(cat ${inferencerSummaryLog} | grep "${mode}," | cut -d',' -f3 | awk '!a[$0]++')
-    for model in ${models[@]}; do
-        seq_lens=$(cat ${inferencerSummaryLog} | grep "${mode},${model}," | cut -d',' -f4 | awk '!a[$0]++')
-        for seq_len in ${seq_lens[@]}; do
-            full_cores=$(cat ${inferencerSummaryLog} | grep "${mode},${model},${seq_len}," | cut -d',' -f5 | awk '!a[$0]++')
-            for full_core in ${full_cores[@]}; do
-                core_per_inss=$(cat ${inferencerSummaryLog} | grep "${mode},${model},${seq_len},${full_core}," | cut -d',' -f6 | awk '!a[$0]++')
-                for core_per_ins in ${core_per_inss[@]}; do
-                    bss=$(cat ${inferencerSummaryLog} | grep "${mode},${model},${seq_len},${full_core},${core_per_ins}," | cut -d',' -f7 | awk '!a[$0]++')
-                    for bs in ${bss[@]}; do
-                        benchmark_pattern="${mode},${model},${seq_len},${full_core},${core_per_ins},${bs}"
-                        benchmark_int8=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},int8" | cut -d',' -f9)
-                        benchmark_int8_url=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern}," | tail -1 | cut -d',' -f10)
-                        benchmark_fp32=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},fp32" | cut -d',' -f9)
-                        benchmark_fp32_url=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},fp32" | cut -d',' -f10)
-                        benchmark_bf16=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},bf16" | cut -d',' -f9)
-                        benchmark_bf16_url=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},bf16" | cut -d',' -f10)
-                        if [ $(cat ${inferencerSummaryLogLast} | grep -c "${benchmark_pattern},int8") == 0 ]; then
-                            benchmark_int8_last=nan
-                            benchmark_int8_url_last=nan
-                            benchmark_fp32_last=nan
-                            benchmark_fp32_url_last=nan
-                            benchmark_bf16_last=nan
-                            benchmark_bf16_url_last=nan
-                        else
-                            benchmark_int8_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},int8" | cut -d',' -f9)
-                            benchmark_int8_url_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},int8" | cut -d',' -f10)
-                            benchmark_fp32_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},fp32" | cut -d',' -f9)
-                            benchmark_fp32_url_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},fp32" | cut -d',' -f10)
-                            benchmark_bf16_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},bf16" | cut -d',' -f9)
-                            benchmark_bf16_url_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},bf16" | cut -d',' -f10)
-                        fi
-                        generate_perf_core
-                    done
-                done
-            done
-        done
-    done
-    cat >>${WORKSPACE}/report.html <<eof
-    </table>
-eof
-}
-
-function generate_llm_benchmark {
-
-    cat >>${WORKSPACE}/report.html <<eof
-    <h2>LLM Inferencer</h2>
-      <table class="features-table">
-        <tr>
-          <th>Model</th>
-          <th>Input</th>
-          <th>Output</th>
-          <th>Batchsize</th>
-          <th>Cores/Instance</th>
-          <th>Precision</th>
-          <th>Beam</th>
-          <th>VS</th>
-          <th>Avg Latency</th>
-          <th>Throughput</th>
-          <th>Memory</th>
-          <th>1st Latency</th>
-          <th>p90 Latency</th>
-          <th>Total Latency</th>
-        </tr>
-eof
-
-    mode='latency'
-    models=$(cat ${LLMSummaryLog} | grep "${mode}," | cut -d',' -f3 | awk '!a[$0]++')
-    for model in ${models[@]}; do
-        precisions=$(cat ${LLMSummaryLog} | grep "${mode},${model}," | cut -d',' -f4 | awk '!a[$0]++')
-        for precision in ${precisions[@]}; do
-            batch_size_list=$(cat ${LLMSummaryLog} | grep "${mode},${model},${precision}," | cut -d',' -f5 | awk '!a[$0]++')
-            for batch_size in ${batch_size_list[@]}; do
-                input_token_list=$(cat ${LLMSummaryLog} | grep "${mode},${model},${precision},${batch_size}," | cut -d',' -f6 | awk '!a[$0]++')
-                for input_token in ${input_token_list[@]}; do
-                    beam_search=$(cat ${LLMSummaryLog} | grep "${mode},${model},${precision},${batch_size},${input_token}," | cut -d',' -f8 | awk '!a[$0]++')
-                    for beam in ${beam_search[@]}; do
-                        benchmark_pattern="${mode},${model},${precision},${batch_size},${input_token},"
-                        output_token=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f7 | awk '!a[$0]++')
-                        cores_per_instance=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f10 | awk '!a[$0]++')
-                        count=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f11 | awk '!a[$0]++')
-                        throughput=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f12 | awk '!a[$0]++')
-                        link=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f13 | awk '!a[$0]++')
-                        memory=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f9 | awk '!a[$0]++')
-                        total_latency=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f14 | awk '!a[$0]++')
-                        avg_latency=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f15 | awk '!a[$0]++')
-                        fst_latency=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f16 | awk '!a[$0]++')
-                        p90_latency=$(cat ${LLMSummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f17 | awk '!a[$0]++')
-
-                        if [ $(cat ${LLMSummaryLogLast} | grep -c "${benchmark_pattern}") == 0 ]; then
-                            throughput_last=nan
-                            link_last=nan
-                            memory_last=nan
-                            total_latency_last=nan
-                            avg_latency_last=nan
-                            fst_latency_last=nan
-                            p90_latency_last=nan
-                        else
-                            throughput_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f12 | awk '!a[$0]++')
-                            link_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f13 | awk '!a[$0]++')
-                            memory_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f9 | awk '!a[$0]++')
-                            total_latency_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f14 | awk '!a[$0]++')
-                            avg_latency_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f15 | awk '!a[$0]++')
-                            fst_latency_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f16 | awk '!a[$0]++')
-                            p90_latency_last=$(cat ${LLMSummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f17 | awk '!a[$0]++')
-                        fi
-                        generate_llm_core
-                    done
-                done
-            done
-        done
-    done
-    cat >>${WORKSPACE}/report.html <<eof
-    </table>
-eof
-}
-
-function generate_launcher_benchmark {
-
-    cat >>${WORKSPACE}/report.html <<eof
-    <h2>Deploy Launcher</h2>
-      <table class="features-table">
-        <tr>
-          <th rowspan="2">Model</th>
-          <th rowspan="2">Launcher_mode</th>
-          <th rowspan="2">VS</th>
-          <th rowspan="2">Batch_size</th>
-          <th rowspan="2">NCores<br>per Instance</th>
-          <th>INT8</th>
-          <th>FP32</th>
-          <th>BF16</th>
-          <th class="col-cell col-cell1 col-cellh">Ratio</th>
-        </tr>
-        <tr>
-          <th>throughput</th>
-          <th>throughput</th>
-          <th>throughput</th>
-          <th class="col-cell col-cell1"><font size="2px">FP32/INT8</font></th>
-        </tr>
-eof
-
-    framework='engine'
-    models=$(cat ${launcherSummaryLog} | grep "${framework}," | cut -d',' -f3 | awk '!a[$0]++')
-    for model in ${models[@]}; do
-        modes=$(cat ${launcherSummaryLog} | grep "${framework},.*,${model}," | cut -d',' -f2 | awk '!a[$0]++')
-        for mode in ${modes[@]}; do
-            batch_size=$(cat ${launcherSummaryLog} | grep "${mode},${model}," | cut -d',' -f4 | awk '!a[$0]++')
-            for batch in ${batch_size[@]}; do
-                core_per_ins_int8=$(cat ${launcherSummaryLog} | grep "${mode},${model},${batch},.*,.*,int8" | cut -d',' -f5 | awk '!a[$0]++')
-                benchmark_pattern_int8="${mode},${model},${batch},${core_per_ins_int8}"
-                benchmark_int8=$(cat ${launcherSummaryLog} | grep "${benchmark_pattern_int8},.*,int8" | cut -d',' -f6)
-                benchmark_int8_url=$(cat ${launcherSummaryLog} | grep "${benchmark_pattern_int8},.*,int8," | tail -1 | cut -d',' -f8)
-                core_per_ins_fp32=$(cat ${launcherSummaryLog} | grep "${mode},${model},${batch},.*,.*,fp32" | cut -d',' -f5 | awk '!a[$0]++')
-                benchmark_pattern_fp32="${mode},${model},${batch},${core_per_ins_fp32}"
-                benchmark_fp32=$(cat ${launcherSummaryLog} | grep "${benchmark_pattern_fp32},.*,fp32" | cut -d',' -f6)
-                benchmark_fp32_url=$(cat ${launcherSummaryLog} | grep "${benchmark_pattern_fp32},.*,fp32," | cut -d',' -f8)
-                core_per_ins_bf16=$(cat ${launcherSummaryLog} | grep "${mode},${model},${batch},.*,.*,bf16" | cut -d',' -f5 | awk '!a[$0]++')
-                benchmark_pattern_bf16="${mode},${model},${batch},${core_per_ins_bf16}"
-                benchmark_bf16=$(cat ${launcherSummaryLog} | grep "${benchmark_pattern_bf16},.*,bf16" | cut -d',' -f6)
-                benchmark_bf16_url=$(cat ${launcherSummaryLog} | grep "${benchmark_pattern_bf16},.*,bf16," | cut -d',' -f8)
-                core_per_ins=$core_per_ins_int8
-                if [ $(cat ${launcherSummaryLogLast} | grep -c "${benchmark_pattern_int8},.*,int8") == 0 ]; then
-                    benchmark_int8_last=nan
-                    benchmark_int8_url_last=nan
-                    benchmark_fp32_last=nan
-                    benchmark_fp32_url_last=nan
-                    benchmark_bf16_last=nan
-                    benchmark_bf16_url_last=nan
-                else
-                    benchmark_int8_last=$(cat ${launcherSummaryLogLast} | grep "${benchmark_pattern_int8},.*,int8" | cut -d',' -f6)
-                    benchmark_int8_url_last=$(cat ${launcherSummaryLogLast} | grep "${benchmark_pattern_int8},.*,int8" | cut -d',' -f8)
-                    benchmark_fp32_last=$(cat ${launcherSummaryLogLast} | grep "${benchmark_pattern_fp32},.*,fp32" | cut -d',' -f6)
-                    benchmark_fp32_url_last=$(cat ${launcherSummaryLogLast} | grep "${benchmark_pattern_fp32},.*,fp32" | cut -d',' -f8)
-                    benchmark_bf16_last=$(cat ${launcherSummaryLogLast} | grep "${benchmark_pattern_bf16},.*,bf16" | cut -d',' -f6)
-                    benchmark_bf16_url_last=$(cat ${launcherSummaryLogLast} | grep "${benchmark_pattern_bf16},.*,bf16" | cut -d',' -f8)
-                fi
-                generate_launcher_core
-            done
-        done
-    done
-    cat >>${WORKSPACE}/report.html <<eof
-    </table>
-eof
-}
-
-function generate_launcher_core {
-    echo "<tr><td rowspan=2>${model}</td><td rowspan=2>${mode}</td><td>New</td><td rowspan=2>${batch}</td><td rowspan=2>${core_per_ins}</td>" >>${WORKSPACE}/report.html
-
-    echo | awk -v b_int8=${benchmark_int8} -v b_int8_url=${benchmark_int8_url} -v b_fp32=${benchmark_fp32} -v b_fp32_url=${benchmark_fp32_url} -v b_bf16=${benchmark_bf16} -v b_bf16_url=${benchmark_bf16_url} -v b_int8_l=${benchmark_int8_last} -v b_int8_url_l=${benchmark_int8_url_last} -v b_fp32_l=${benchmark_fp32_last} -v b_fp32_url_l=${benchmark_fp32_url_last} -v b_bf16_l=${benchmark_bf16_last} -v b_bf16_url_l=${benchmark_bf16_url_last} '
-        function show_benchmark(a,b) {
-            if(a ~/[1-9]/) {
-                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
-            }else {
-                if(a == "") {
-                    printf("<td><a href=%s>%s</a></td>\n",b,a);
-                }else{
-                    printf("<td></td>\n");
-                }
-            }
-        }
-
-        function compare_current(a,b) {
-
-            if(a ~/[1-9]/ && b ~/[1-9]/) {
-                target = a / b;
-                if(target >= 2) {
-                   printf("<td rowspan=2 style=\"background-color:#90EE90\">%.2f</td>", target);
-                }else if(target < 1) {
-                   printf("<td rowspan=2 style=\"background-color:#FFD2D2\">%.2f</td>", target);
-                }else{
-                   printf("<td rowspan=2>%.2f</td>", target);
-                }
-            }else{
-                printf("<td rowspan=2></td>");
-            }
-
-        }
-
-
-        BEGIN {
-            job_status = "pass"
-        }{
-            // current
-            show_benchmark(b_int8,b_int8_url)
-            show_benchmark(b_fp32,b_fp32_url)
-            show_benchmark(b_bf16,b_bf16_url)
-
-            // current comparison
-            compare_current(b_int8,b_fp32)
-
-            // Last
-            printf("</tr>\n<tr><td>Last</td>")
-            show_benchmark(b_int8_l,b_int8_url_l)
-            show_benchmark(b_fp32_l,b_fp32_url_l)
-            show_benchmark(b_bf16_l,b_bf16_url_l)
-            
-            printf("</tr>\n");
-        } END{
-          printf("\n%s", job_status);
-        }
-    ' >>${WORKSPACE}/report.html
-    job_state=$(tail -1 ${WORKSPACE}/report.html)
-    sed -i '$s/.*//' ${WORKSPACE}/report.html
-    if [ ${job_state} == 'fail' ]; then
-        echo "performance regression" >>${WORKSPACE}/perf_regression.log
-    fi
-}
-
-function generate_llm_core {
-    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${input_token}</td><td rowspan=3>${output_token}</td><td rowspan=3>${batch_size}</td><td rowspan=3>${core_per_instance}</td><td rowspan=3>${precision}</td><td rowspan=3>${beam}</td><td>New</td>" >>${WORKSPACE}/report.html
-
-    echo | awk -v al=${avg_latency} -v throughput=${throughput} -v link=${link} -v mem=${memory} -v tl=${total_latency} -v fl=${fst_latency} -v pl=${p90_latency} -v al_l=${avg_latency_last} -v throughput_l=${throughput_last} -v mem_l=${memory_last} -v tl_l=${total_latency_last} -v fl_l=${fst_latency_last} -v pl=${p90_latency_last} -v link_l=${link_last} '
-        function show_benchmark(a,b) {
-            if(a ~/[1-9]/) {
-                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
-            }else {
-                if(a == "") {
-                    printf("<td><a href=%s>%s</a></td>\n",b,a);
-                }else{
-                    printf("<td></td>\n");
-                }
-            }
-        }
-
-        function compare_new_last(a,b){
-            if(a ~/[1-9]/ && b ~/[1-9]/) {
-                target = a / b;
-                if(target >= 0.945) {
-                    status_png = "background-color:#90EE90";
-                }else {
-                    status_png = "background-color:#FFD2D2";
-                    job_status = "fail"
-                }
-                printf("<td style=\"%s\">%.2f</td>", status_png, target);
-            }else{
-                if(a == ""){
-                    job_status = "fail"
-                    status_png = "background-color:#FFD2D2";
-                    printf("<td style=\"%s\"></td>", status_png);
-                }else{
-                    printf("<td class=\"col-cell col-cell3\"></td>");
-                }
-            }
-        }
-        BEGIN {
-            job_status = "pass"
-        }{
-            // current
-            show_benchmark(al,link)
-            show_benchmark(throughput,link)
-            show_benchmark(mem,link)
-            show_benchmark(fl,link)
-            show_benchmark(pl,link)
-            show_benchmark(tl,link)
-
-            // Last
-            printf("</tr>\n<tr><td>Last</td>")
-            show_benchmark(al_l,link_l)
-            show_benchmark(throughput_l,link_l)
-            show_benchmark(mem_l,link_l)
-            show_benchmark(fl_l,link_l)
-            show_benchmark(pl_l,link_l)
-            show_benchmark(tl_l,link_l)
-
-            // current vs last
-            printf("</tr>\n<tr><td>New/Last</td>");
-            compare_new_last(al,al_l)
-            compare_new_last(throughput,throughput_l)
-            compare_new_last(mem,mem_l)
-            compare_new_last(fl,fl_l)
-            compare_new_last(pl,pl_l)
-            compare_new_last(tl,tl_l)
-            printf("</tr>\n");
-        } END{
-          printf("\n%s", job_status);
-        }
-    ' >>${WORKSPACE}/report.html
-    job_state=$(tail -1 ${WORKSPACE}/report.html)
-    sed -i '$s/.*//' ${WORKSPACE}/report.html
-    if [ ${job_state} == 'fail' ]; then
-        echo "performance regression" >>${WORKSPACE}/perf_regression.log
-    fi
-}
-
-function generate_perf_core {
-    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${seq_len}</td><td>New</td><td rowspan=2>${full_core}</td><td rowspan=2>${core_per_ins}</td><td rowspan=2>${bs}</td>" >>${WORKSPACE}/report.html
-
-    echo | awk -v b_int8=${benchmark_int8} -v b_int8_url=${benchmark_int8_url} -v b_fp32=${benchmark_fp32} -v b_fp32_url=${benchmark_fp32_url} -v b_bf16=${benchmark_bf16} -v b_bf16_url=${benchmark_bf16_url} -v b_int8_l=${benchmark_int8_last} -v b_int8_url_l=${benchmark_int8_url_last} -v b_fp32_l=${benchmark_fp32_last} -v b_fp32_url_l=${benchmark_fp32_url_last} -v b_bf16_l=${benchmark_bf16_last} -v b_bf16_url_l=${benchmark_bf16_url_last} '
-        function show_benchmark(a,b) {
-            if(a ~/[1-9]/) {
-                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
-            }else {
-                if(a == "") {
-                    printf("<td><a href=%s>%s</a></td>\n",b,a);
-                }else{
-                    printf("<td></td>\n");
-                }
-            }
-        }
-
-        function compare_current(a,b) {
-
-            if(a ~/[1-9]/ && b ~/[1-9]/) {
-                target = a / b;
-                if(target >= 2) {
-                   printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
-                }else if(target < 1) {
-                   printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
-                }else{
-                   printf("<td rowspan=3>%.2f</td>", target);
-                }
-            }else{
-                printf("<td rowspan=3></td>");
-            }
-
-        }
-
-        function compare_new_last(a,b){
-            if(a ~/[1-9]/ && b ~/[1-9]/) {
-                target = a / b;
-                if(target >= 0.945) {
-                    status_png = "background-color:#90EE90";
-                }else {
-                    status_png = "background-color:#FFD2D2";
-                    job_status = "fail"
-                }
-                printf("<td style=\"%s\">%.2f</td>", status_png, target);
-            }else{
-                if(a == ""){
-                    job_status = "fail"
-                    status_png = "background-color:#FFD2D2";
-                    printf("<td style=\"%s\"></td>", status_png);
-                }else{
-                    printf("<td class=\"col-cell col-cell3\"></td>");
-                }
-            }
-        }
-
-
-        BEGIN {
-            job_status = "pass"
-        }{
-            // current
-            show_benchmark(b_int8,b_int8_url)
-            show_benchmark(b_fp32,b_fp32_url)
-            show_benchmark(b_bf16,b_bf16_url)
-
-            // current comparison
-            compare_current(b_int8,b_fp32)
-
-            // Last
-            printf("</tr>\n<tr><td>Last</td>")
-            show_benchmark(b_int8_l,b_int8_url_l)
-            show_benchmark(b_fp32_l,b_fp32_url_l)
-            show_benchmark(b_bf16_l,b_bf16_url_l)
-
-            // current vs last
-            printf("</tr>\n<tr><td>New/Last</td><td colspan=3 class=\"col-cell3\"></td>");
-            compare_new_last(b_int8,b_int8_l)
-            compare_new_last(b_fp32,b_fp32_l)
-            compare_new_last(b_bf16,b_bf16_l)
-            printf("</tr>\n");
-        } END{
-          printf("\n%s", job_status);
-        }
-    ' >>${WORKSPACE}/report.html
-    job_state=$(tail -1 ${WORKSPACE}/report.html)
-    sed -i '$s/.*//' ${WORKSPACE}/report.html
-    if [ ${job_state} == 'fail' ]; then
-        echo "performance regression" >>${WORKSPACE}/perf_regression.log
-    fi
 }
 
 function generate_optimize_results {
@@ -904,94 +115,6 @@ eof
 eof
 }
 
-function generate_deploy_results {
-
-    cat >>${WORKSPACE}/report.html <<eof
-    <h2>Deploy Result</h2>
-      <table class="features-table">
-          <tr>
-                <th rowspan="2">Platform</th>
-                <th rowspan="2">System</th>
-                <th rowspan="2">Framework</th>
-                <th rowspan="2">Version</th>
-                <th rowspan="2">Model</th>
-                <th rowspan="2">VS</th>
-                <th rowspan="2">Tuning<br>Time(s)</th>
-                <th rowspan="2">Tuning<br>Count</th>
-                <th colspan="4">INT8</th>
-                <th colspan="4">FP32</th>
-                <th colspan="4">BF16</th>
-                <th colspan="4">FP8</th>
-                <th colspan="4">DynamicINT8</th>
-                <th colspan="8" class="col-cell col-cell1 col-cellh">Ratio</th>
-          </tr>
-          <tr>
-                <th>bs</th>
-                <th>imgs/s</th>
-                <th>bs</th>
-                <th>top1</th>
-
-                <th>bs</th>
-                <th>imgs/s</th>
-                <th>bs</th>
-                <th>top1</th>
-
-                <th>bs</th>
-                <th>imgs/s</th>
-                <th>bs</th>
-                <th>top1</th>
-
-                <th>bs</th>
-                <th>imgs/s</th>
-                <th>bs</th>
-                <th>top1</th>
-
-                <th>bs</th>
-                <th>imgs/s</th>
-                <th>bs</th>
-                <th>top1</th>
-
-                <th class="col-cell col-cell1">Throughput<br><font size="2px">INT8/FP32>=2</font></th>
-                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(INT8-FP32)/FP32>=-0.01</font></th>
-                <th class="col-cell col-cell1">Throughput<br><font size="2px">BF16/FP32>=2</font></th>
-                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(BF16-FP32)/FP32>=-0.01</font></th>
-                <th class="col-cell col-cell1">Throughput<br><font size="2px">FP8/FP32>=2</font></th>
-                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(FP8-FP32)/FP32>=-0.01</font></th>
-                <th class="col-cell col-cell1">Throughput<br><font size="2px">DynamicINT8/FP32>=2</font></th>
-                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(DynamicINT8-FP32)/FP32>=-0.01</font></th>
-          </tr>
-eof
-
-    oses=$(sed '1d' ${summaryLog} | cut -d';' -f1 | awk '!a[$0]++')
-
-    for os in ${oses[@]}; do
-        platforms=$(sed '1d' ${summaryLog} | grep "^${os}" | cut -d';' -f2 | awk '!a[$0]++')
-        for platform in ${platforms[@]}; do
-            frameworks=$(sed '1d' ${summaryLog} | grep "^${os};${platform};deploy" | cut -d';' -f4 | awk '!a[$0]++')
-            for framework in ${frameworks[@]}; do
-                fw_versions=$(sed '1d' ${summaryLog} | grep "^${os};${platform};deploy;${framework}" | cut -d';' -f5 | awk '!a[$0]++')
-                for fw_version in ${fw_versions[@]}; do
-                    models=$(sed '1d' ${summaryLog} | grep "^${os};${platform};deploy;${framework};${fw_version}" | cut -d';' -f7 | awk '!a[$0]++')
-                    for model in ${models[@]}; do
-                        current_values=$(generate_inference ${summaryLog} "deploy")
-                        last_values=$(generate_inference ${summaryLogLast} "deploy")
-                        if [[ ${model} == "gpt-j-6b" ]] || [[ ${model} == "llama-7b-hf" ]] || [[ ${model} == "stable_diffusion" ]] || [[ ${model} == "gpt-j-6b-pruned" ]]; then
-                            local_mode="latency"
-                        else
-                            local_mode="performance"
-                        fi
-                        generate_tuning_core "deploy" "${local_mode}"
-                    done
-                done
-            done
-        done
-    done
-
-    cat >>${WORKSPACE}/report.html <<eof
-    </table>
-eof
-}
-
 function generate_inference {
     local workflow=$2
     awk -v framework="${framework}" -v workflow="${workflow}" -v fw_version="${fw_version}" -v model="${model}" -v os="${os}" -v platform=${platform} -F ';' '
@@ -1051,19 +174,18 @@ function generate_inference {
                         fp32_perf_url = $12;
                     }
                     // Accuracy
-                    if($9 == "Accuracy") {
+                    if($9 == "Accuracy" || $9 == "accuracy") {
                         fp32_acc_bs = $10;
                         fp32_acc_value = $11;
                         fp32_acc_url = $12;
                     }
                     // Benchmark
-                    if($9 == "Benchmark") {
+                    if($9 == "Benchmark" || $9 == "benchmark_only") {
                         fp32_bench_bs = $10;
                         fp32_bench_value = $11;
                         fp32_bench_url = $12;
                     }
                 }
-
                 // INT8
                 if($6 == "INT8") {
                     // Performance
@@ -1073,13 +195,13 @@ function generate_inference {
                         int8_perf_url = $12;
                     }
                     // Accuracy
-                    if($9 == "Accuracy") {
+                    if($9 == "Accuracy" || $9 == "accuracy") {
                         int8_acc_bs = $10;
                         int8_acc_value = $11;
                         int8_acc_url = $12;
                     }
                     // Benchmark
-                    if($9 == "Benchmark") {
+                    if($9 == "Benchmark" || $9 == "benchmark_only") {
                         int8_bench_bs = $10;
                         int8_bench_value = $11;
                         int8_bench_url = $12;
@@ -1093,13 +215,13 @@ function generate_inference {
                         bf16_perf_url = $12;
                     }
                     // Accuracy
-                    if($9 == "Accuracy") {
+                    if($9 == "Accuracy" || $9 == "accuracy") {
                         bf16_acc_bs = $10;
                         bf16_acc_value = $11;
                         bf16_acc_url = $12;
                     }
                     // Benchmark
-                    if($9 == "Benchmark") {
+                    if($9 == "Benchmark" || $9 == "benchmark_only") {
                         bf16_bench_bs = $10;
                         bf16_bench_value = $11;
                         bf16_bench_url = $12;
@@ -1113,13 +235,13 @@ function generate_inference {
                         dint8_perf_url = $12;
                     }
                     // Accuracy
-                    if($9 == "Accuracy") {
+                    if($9 == "Accuracy" || $9 == "accuracy") {
                         dint8_acc_bs = $10;
                         dint8_acc_value = $11;
                         dint8_acc_url = $12;
                     }
                     // Benchmark
-                    if($9 == "Benchmark") {
+                    if($9 == "Benchmark" || $9 == "benchmark_only") {
                         dint8_bench_bs = $10;
                         dint8_bench_value = $11;
                         dint8_bench_url = $12;
@@ -1133,13 +255,13 @@ function generate_inference {
                         fp8_perf_url = $12;
                     }
                     // Accuracy
-                    if($9 == "Accuracy") {
+                    if($9 == "Accuracy" || $9 == "accuracy") {
                         fp8_acc_bs = $10;
                         fp8_acc_value = $11;
                         fp8_acc_url = $12;
                     }
                     // Benchmark
-                    if($9 == "Benchmark") {
+                    if($9 == "Benchmark" || $9 == "benchmark_only") {
                         fp8_bench_bs = $10;
                         fp8_bench_value = $11;
                         fp8_bench_url = $12;
@@ -1154,15 +276,17 @@ function generate_inference {
             printf("%s;%s;%s;%s;%s;%s;%s;%s;%s;", dint8_perf_bs,dint8_perf_value,dint8_perf_url,dint8_acc_bs,dint8_acc_value,dint8_acc_url,dint8_bench_bs,dint8_bench_value,dint8_bench_url);
             printf("%s;%s;%s;%s;%s;%s;%s;%s;%s;", fp8_perf_bs,fp8_perf_value,fp8_perf_url,fp8_acc_bs,fp8_acc_value,fp8_acc_url,fp8_bench_bs,fp8_bench_value,fp8_bench_url);
         }
-    ' $1
+    ' "$1"
 }
 
 function generate_tuning_core {
     local workflow=$1
     local mode=$2
+
     tuning_time=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $7}')
     tuning_count=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $8}')
     tuning_log=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $9}')
+
     echo "<tr><td rowspan=3>${platform}</td><td rowspan=3>${os}</td><td rowspan=3>${framework}</td><td rowspan=3>${fw_version}</td><td rowspan=3>${model}</td><td>New</td>" >>${WORKSPACE}/report.html
     echo "<td><a href=${tuning_log}>${tuning_time}</a></td><td><a href=${tuning_log}>${tuning_count}</a></td>" >>${WORKSPACE}/report.html
 

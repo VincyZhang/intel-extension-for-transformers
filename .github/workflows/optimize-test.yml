@@ -38,7 +38,7 @@ env:
 
 
 jobs:
-  Optmize-Workflow:
+  Optimize-Workflow:
     runs-on: itrex-node
     strategy:
       matrix:
@@ -110,14 +110,17 @@ jobs:
              --fwk_ver=0 \
              --logs_dir=/intel-extension-for-transformers/${{matrix.framework}}_${{matrix.modelName}} \
              --output_dir=/intel-extension-for-transformers/${{matrix.framework}}_${{matrix.modelName}} \
-             --build_id=${{ github.run_id }}"
+             --build_id=${{ github.run_id }} \
+             --model_test_type=optimize"
         
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
         with:
-          name: Model Test
+          name: ${{ matrix.framework }}-${{ matrix.modelName }}
           path: ${{ github.workspace }}/${{ matrix.framework }}_${{ matrix.modelName }}
+          if-no-files-found: ignore # 'warn' or 'ignore' are also available, defaults to `warn`
+          retention-days: 60 # 1 <= retention-days <= 90
 
       - name: Docker clean up
         if: ${{ always() }}
@@ -141,14 +144,7 @@ jobs:
       - name: Download Summary Log
         uses: actions/download-artifact@v3
         with:
-          name: "**/*_summary.log"
-          path: ${{ env.OUT_SCRIPT_PATH }}
-      
-      - name: Download Tunning Log
-        uses: actions/download-artifact@v3
-        with:
-          name: "**/*_tuning_info.log"
-          path: ${{ env.OUT_SCRIPT_PATH }}
+          path: ${{ env.OUT_SCRIPT_PATH }}/log
         
       - name: Generate Log Path
         run: |
@@ -156,23 +152,24 @@ jobs:
             mkdir generated
             mkdir last_generated
             pip install requests
-            python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }} --output_dir generated --build_id=${{ env.REF_ID }}
+            python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }}/log --output_dir=generated --build_id=${{ env.REF_ID }}
+            cp -r generated last_generated
 
-      - name: Download R eference Artifact
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: model-test.yml
-          run_id: ${{ env.REF_ID }}
-          name: "**/*_summary.log"
-          path: ${{ env.OUT_SCRIPT_PATH }}/last_generated
-          name_is_regexp: true
-          repo: ${{ github.repository }}
-          check_artifacts: false
-          search_artifacts: false
-          skip_unpack: false
-          if_no_artifact_found: warn
+      # - name: Download Reference Artifact
+      #   id: download-artifact
+      #   uses: dawidd6/action-download-artifact@v2
+      #   with:
+      #     github_token: ${{secrets.GITHUB_TOKEN}}
+      #     workflow: model-test.yml
+      #     run_id: ${{ env.REF_ID }}
+      #     name: "**/*_summary.log"
+      #     path: ${{ env.OUT_SCRIPT_PATH }}/last_generated
+      #     name_is_regexp: true
+      #     repo: ${{ github.repository }}
+      #     check_artifacts: false
+      #     search_artifacts: false
+      #     skip_unpack: false
+      #     if_no_artifact_found: warn
         
       - name: Display structure of downloaded files
         run: ls -R
@@ -181,7 +178,7 @@ jobs:
         run: |
           echo "------ Generating final report.html ------"
           cd ${{ env.OUT_SCRIPT_PATH }}
-          /usr/bin/bash generate_report.sh --WORKSPACE generated --output_dir generated --last_logt_dir last_generated
+          /usr/bin/bash generate_report.sh --WORKSPACE generated --output_dir generated --last_log_dir last_generated
       
       - name: Publish Report
         uses: actions/upload-artifact@v3
@@ -196,8 +193,3 @@ jobs:
             echo "[Performance Regression] Some model performance regression occurred, please check artifacts and reports."
             exit 1
           fi
-
-      - name: Docker clean up
-        if: ${{ always() }}
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"

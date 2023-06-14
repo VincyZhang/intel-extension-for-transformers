@@ -11,8 +11,8 @@ print(args)
 
 def main():
     file_dir = args.logs_dir
-    summary_content = ['OS;Platform;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n']
-    tuning_info_content = ['OS;Platform;Framework;Version;Model;Strategy;Tune_time\n']
+    summary_content = ['OS;Platform;Workflow;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n']
+    tuning_info_content = ['OS;Platform;Workflow;Framework;Version;Model;Strategy;Tune_time\n']
     # get full path of all files
     for root, dirs, files in os.walk(file_dir):
         for name in files:
