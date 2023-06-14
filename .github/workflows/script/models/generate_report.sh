@@ -21,11 +21,8 @@ function main {
 }
 
 function generate_html_overview {
-    Test_Info_Title=''
-    Test_Info=''
-
     Test_Info_Title="<th colspan="4">Test Branch</th> <th colspan="4">Commit ID</th> "
-    Test_Info="<th colspan="4">${nlp_branch}</th> <th colspan="4">${nlp_commit}</th> "
+    Test_Info="<th colspan="4">${MR_source_branch}</th> <th colspan="4">${ghprbActualCommit}</th> "
 
     cat >>${WORKSPACE}/report.html <<eof
 
@@ -33,7 +30,7 @@ function generate_html_overview {
     <div id="main">
         <h1 align="center">NLP-TOOLKIT Tests
         [ <a href="${RUN_DISPLAY_URL}">Job-${BUILD_NUMBER}</a> ]</h1>
-      <h1 align="center">Test Status: ${Jenkins_job_status}</h1>
+      <h1 align="center">Test Status: ${JOB_STATUS}</h1>
         <h2>Summary</h2>
         <table class="features-table">
             <tr>
@@ -41,7 +38,7 @@ function generate_html_overview {
               ${Test_Info_Title}
               </tr>
               <tr>
-                    <td><a href="https://github.com/intel-innersource/frameworks.ai.nlp-toolkit.intel-nlp-toolkit.git">NLP-TOOLKIT</a></td>
+                    <td><a href="https://github.com/intel/intel-extension-for-transformers">ITREX</a></td>
               ${Test_Info}
                 </tr>
         </table>
