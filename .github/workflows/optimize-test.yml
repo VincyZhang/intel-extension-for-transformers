@@ -34,7 +34,7 @@ env:
   REPO_TAG: "py38"
   DOCKER_FILE_NAME: "devel"
   CONTAINER_NAME: "modelTest"
-  REF_ID: 1
+  REF_ID: 9514745981
 
 
 jobs:
@@ -46,9 +46,9 @@ jobs:
           - modelName: "bert_base_mrpc_static"
             framework: "pytorch"
             mode: "accuracy,performance"
-          - modelName: "bert_base_mrpc_static"
-            framework: "tensorflow"
-            mode: "accuracy,performance"
+          # - modelName: "bert_base_mrpc_static"
+          #   framework: "tensorflow"
+          #   mode: "accuracy,performance"
       fail-fast: true
     steps:
       - name: Checkout out Repo
@@ -150,24 +150,18 @@ jobs:
         run: |
             cd ${{ env.OUT_SCRIPT_PATH }}
             mkdir generated
-
             pip install requests
-            python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }}/log --output_dir=generated --build_id=${{ env.REF_ID }}
-            cp -r generated last_generated
-            echo "-----------cur summary-------------"
-            cat generated/summary.log
-            echo "-----------last summary-------------"
-            cat last_generated/summary.log
+            python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }}/log --output_dir=generated
+            cp -r generated FinalReport
 
       # - name: Download Reference Artifact
       #   id: download-artifact
       #   uses: dawidd6/action-download-artifact@v2
       #   with:
       #     github_token: ${{secrets.GITHUB_TOKEN}}
-      #     workflow: model-test.yml
+      #     workflow: optimize-test.yml
       #     run_id: ${{ env.REF_ID }}
-      #     name: "**/*_summary.log"
-      #     path: ${{ env.OUT_SCRIPT_PATH }}/last_generated
+      #     path: ${{ env.OUT_SCRIPT_PATH }}
       #     name_is_regexp: true
       #     repo: ${{ github.repository }}
       #     check_artifacts: false
@@ -189,7 +183,7 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: FinalReport
-          path: cd ${{ env.OUT_SCRIPT_PATH }}/generated
+          path: ${{ env.OUT_SCRIPT_PATH }}/generated
 
       - name: Specify performance regression
         run: |

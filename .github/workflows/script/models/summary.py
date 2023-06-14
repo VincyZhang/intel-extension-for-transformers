@@ -4,7 +4,6 @@ import os
 parser = argparse.ArgumentParser(allow_abbrev=False)
 parser.add_argument("--logs_dir", type=str, default=".")
 parser.add_argument("--output_dir", type=str, default=".")
-parser.add_argument("--build_id", type=str, default="0")
 args = parser.parse_args()
 print(args)
 

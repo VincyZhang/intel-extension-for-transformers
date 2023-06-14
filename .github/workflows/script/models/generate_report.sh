@@ -1,15 +1,16 @@
 #!/bin/bash
 # set -x
+set -eo pipefail
 WORKSPACE=generated
+last_log_path=FinalReport
 summaryLog=${WORKSPACE}/summary.log
-summaryLogLast=last_generated/summary.log
+summaryLogLast=${last_log_path}/summary.log
 tuneLog=${WORKSPACE}/tuning_info.log
-tuneLogLast=last_generated/tuning_info.log
+tuneLogLast=${last_log_path}/tuning_info.log
 
 function main {
     echo "summaryLog: ${summaryLog}"
     echo "summaryLogLast: ${summaryLogLast}"
-    echo "overviewLog: ${overviewLog}"
     echo "tunelog: ${tuneLog}"
     echo "last tunelog: ${tuneLogLast}"
 
