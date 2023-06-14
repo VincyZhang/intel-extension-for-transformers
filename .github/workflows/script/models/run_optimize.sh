@@ -144,15 +144,6 @@ function check_perf_gap() {
         --gap=$1
 }
 
-function run_performance() {
-    if [ "${single_instance}" == "true" ]; then
-        run_benchmark "performance" 1
-    else
-        $BOLD_YELLOW && echo "run with external multiInstance benchmark..." && $RESET
-        multiInstance 
-    fi
-}
-
 function multiInstance() {
     ncores_per_socket=${ncores_per_socket:=$(lscpu | grep 'Core(s) per socket' | cut -d: -f2 | xargs echo -n)}
     $BOLD_YELLOW && echo "Executing multi instance benchmark" && $RESET
