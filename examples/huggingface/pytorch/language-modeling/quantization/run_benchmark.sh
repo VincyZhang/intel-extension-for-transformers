@@ -64,15 +64,6 @@ function init_params {
 function run_benchmark {
     extra_cmd=''
 
-    if [[ ${mode} == "accuracy" ]]; then
-        mode_cmd=" --accuracy"
-    elif [[ ${mode} == "benchmark" ]]; then
-        echo "Error: Only support accuracy now."
-        echo "Please go to text-generation folder to get accuracy."
-        exit 1
-
-    fi
-
     if [ "${topology}" = "gpt_neo" ]; then
         if [ "${task}" = "clm" ]; then
             script="run_clm.py"
@@ -92,6 +83,13 @@ function run_benchmark {
             model_name_or_path="/tf_dataset2/models/pytorch/gpt-j-6B"
             extra_cmd=$extra_cmd" --ipex"
         fi
+    elif [ "${topology}" = "opt_1.3b" ]; then
+        script="run_clm_no_trainer.py"
+        model_name_or_path="facebook/opt-1.3b"
+        if [ "${backend}" = "ipex" ]; then
+            extra_cmd=$extra_cmd" --ipex"
+        fi
+
     elif [ "${topology}" = "opt_2.7b" ]; then
         script="run_clm_no_trainer.py"
         model_name_or_path="facebook/opt-2.7b"
@@ -146,6 +144,18 @@ function run_benchmark {
     fi
 
     echo $extra_cmd
+    if [[ ${mode} == "accuracy" ]]; then
+        mode_cmd=" --accuracy"
+    elif [[ ${mode} == "benchmark" ]]; then
+	if [ "${script}" == "run_clm_no_trainer.py" ]; then
+            echo "Error: Only support accuracy now."
+            echo "Please go to text-generation folder to get performance."
+            exit 1
+	 fi
+	 mode_cmd=" --benchmark"
+
+    fi
+
 
     if [ "${script}" == "run_clm_no_trainer.py" ];then
         python -u ./${script} \
