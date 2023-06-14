@@ -176,7 +176,7 @@ jobs:
         env:
           RUN_DISPLAY_URL: https://github.com/VincyZhang/intel-extension-for-transformers/actions/runs/${{ github.run_id }}
           BUILD_NUMBER: ${{ github.run_id }}
-          JOB_STATUS: ${{ jobs.Optimize-Workflow.outcome }}
+          JOB_STATUS: succeed
           MR_source_branch: ${{ github.head_ref }}
           ghprbActualCommit: ${{ github.event.pull_request.head.sha }}
 
