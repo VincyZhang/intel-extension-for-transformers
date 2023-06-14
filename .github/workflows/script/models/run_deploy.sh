@@ -93,7 +93,7 @@ function run_benchmark() {
     if [[ ${model} == "bert_mini_sparse" ]]; then
         benchmark_cmd="bash run_bert_mini.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
     elif [[ ${model} == "distilbert_base_squad_ipex" ]]; then
-        benchmark_cmd="bash run_bert_mini.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
+        benchmark_cmd="bash run_distilbert.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
     fi
     cd ${working_dir}
     overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-icx.log"

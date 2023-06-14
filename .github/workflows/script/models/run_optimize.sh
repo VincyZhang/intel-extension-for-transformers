@@ -40,7 +40,7 @@ main() {
     fi
 
     ## run traner.benchmark using pytorch
-    if [[ $framework == "pytorch" ]]; then
+    if [[ $(echo "${mode}" | grep "performance") ]] && [[ $framework == "pytorch" ]]; then
         run_benchmark "benchmark_only" 1
     fi
 
