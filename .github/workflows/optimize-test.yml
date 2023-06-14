@@ -34,7 +34,7 @@ env:
   REPO_TAG: "py38"
   DOCKER_FILE_NAME: "devel"
   CONTAINER_NAME: "modelTest"
-  REF_ID: 9514745981
+  REF_ID: 5266389801
 
 
 jobs:
@@ -148,22 +148,21 @@ jobs:
             mkdir generated
             pip install requests
             python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }}/log --output_dir=generated
-            cp -r generated FinalReport
 
-      # - name: Download Reference Artifact
-      #   id: download-artifact
-      #   uses: dawidd6/action-download-artifact@v2
-      #   with:
-      #     github_token: ${{secrets.GITHUB_TOKEN}}
-      #     workflow: optimize-test.yml
-      #     run_id: ${{ env.REF_ID }}
-      #     path: ${{ env.OUT_SCRIPT_PATH }}
-      #     name_is_regexp: true
-      #     repo: ${{ github.repository }}
-      #     check_artifacts: false
-      #     search_artifacts: false
-      #     skip_unpack: false
-      #     if_no_artifact_found: warn
+      - name: Download Reference Artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: optimize-test.yml
+          name: FinalReport
+          run_id: ${{ env.REF_ID }}
+          path: ${{ env.OUT_SCRIPT_PATH }}
+          name_is_regexp: true
+          repo: ${{ github.repository }}
+          check_artifacts: false
+          search_artifacts: false
+          skip_unpack: false
+          if_no_artifact_found: warn
         
       - name: Display structure of downloaded files
         run: cd ${{ env.OUT_SCRIPT_PATH }}/log && ls -R
