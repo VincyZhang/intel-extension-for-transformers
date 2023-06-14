@@ -175,7 +175,7 @@ def collect_log():
                         accuracy += result.get("accuracy", 0.0)
                         bs = result.get("batch_size", bs)
         results.append(
-            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Performance;{bs};{accuracy};{URL}\n'
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Accuracy;{bs};{accuracy};{URL}\n'
         )
 
     # get model benchmark_only results
@@ -191,7 +191,7 @@ def collect_log():
                         benchmark_only = result.get("throughput", benchmark_only)
                         bs = result.get("batch_size", bs)
         results.append(
-            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Performance;{bs};{benchmark_only};{URL}\n'
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Benchmark;{bs};{benchmark_only};{URL}\n'
         )
     print(results)
     # write model logs
