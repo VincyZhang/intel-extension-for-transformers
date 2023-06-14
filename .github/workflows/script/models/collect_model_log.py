@@ -140,7 +140,7 @@ def collect_log():
         # results.append('{};{};{};{};INT8;{};Inference;Accuracy;1;{};{}\n'.format(
         #     OS, PLATFORM, args.framework,  args.fwk_ver, args.model, tmp['int8_acc'], "<url>"))
         tuning_infos.append(';'.join([
-            OS, PLATFORM, args.framework, args.model_test_type, args.fwk_ver, args.model,
+            OS, PLATFORM, args.model_test_type, args.framework, args.fwk_ver, args.model,
             tmp.get('strategy', 'basic'),
             str(tmp.get('tune_time', 'na')),
             str(tmp['tuning_trials']), "<url>", '0' + '\n'
