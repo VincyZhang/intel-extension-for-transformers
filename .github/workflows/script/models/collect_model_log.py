@@ -131,9 +131,9 @@ def collect_log():
     if os.path.exists(tuning_log):
         print('tuning log found')
         tmp = {'fp32_acc': 0, 'int8_acc': 0, 'tuning_trials': 0}
-        # with open(tuning_log, "r") as f:
-        #     for line in f:
-        #         parse_tuning_line(line, tmp)
+        with open(tuning_log, "r") as f:
+            for line in f:
+                parse_tuning_line(line, tmp)
 
         # results.append('{};{};{};{};FP32;{};Inference;Accuracy;1;{};{}\n'.format(
         #     OS, PLATFORM, args.framework, args.fwk_ver, args.model, tmp['fp32_acc'], "<url>"))
@@ -193,7 +193,7 @@ def collect_log():
         results.append(
             f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Benchmark;{bs};{benchmark_only};{URL}\n'
         )
-    print(results)
+
     # write model logs
     f = open(args.output_dir + '/' + args.framework + '_' + args.model + '_summary.log', "a")
     f.writelines("OS;Platform;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")
