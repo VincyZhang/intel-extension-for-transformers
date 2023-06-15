@@ -76,26 +76,26 @@ jobs:
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
-      - name: Env build
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} \
-          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
-
-      - name: Binary build
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
-          && bash install_binary.sh"
+      #- name: Env build
+      #  run: |
+      #    docker exec ${{ env.CONTAINER_NAME }} \
+      #    bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
+#
+      #- name: Binary build
+      #  run: |
+      #    docker exec ${{ env.CONTAINER_NAME }} \
+      #    bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
+      #    && bash install_binary.sh"
 
       - name: FP32 Benchmark
-        if: ${{ matrix.precision }} == "*fp32*"
+        if: matrix.precision == '*fp32*'
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: INT8 Benchmark
-        if: contains("${{ matrix.precision }}", "int8")
+        if: contains('${{ matrix.precision }}', 'int8')
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
