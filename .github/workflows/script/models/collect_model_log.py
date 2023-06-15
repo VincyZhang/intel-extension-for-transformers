@@ -65,7 +65,6 @@ def get_model_tuning_dict_results():
                 "Url": URL,
             }
         }
-
         return tuning_result_dict, benchmark_accuracy_result_dict
     else:
         return {}, {}
@@ -146,8 +145,10 @@ def collect_log():
             str(tmp['tuning_trials']), URL, '0' + '\n'
         ]))
 
+    precision_list = ['int8', 'fp32'] if(args.model_test_type=="optimize") else ['int8', 'fp32', "dynamic_int8"]
+
     # get model performance results
-    for precision in ['int8', 'fp32']:
+    for precision in precision_list:
         throughput = 0.0
         bs = 1
         for root, dirs, files in os.walk(args.logs_dir):
@@ -163,7 +164,7 @@ def collect_log():
         )
 
     # get model accuracy results
-    for precision in ['int8', 'fp32']:
+    for precision in precision_list:
         accuracy = 0.0
         bs = 1
         for root, dirs, files in os.walk(args.logs_dir):
@@ -179,7 +180,7 @@ def collect_log():
         )
 
     # get model benchmark_only results
-    for precision in ['int8', 'fp32']:
+    for precision in precision_list:
         benchmark_only = 0.0
         bs = 1
         for root, dirs, files in os.walk(args.logs_dir):
