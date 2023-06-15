@@ -4,8 +4,8 @@ source /intel-extension-for-transformers/.github/workflows/script/change_color.s
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
-PERF_STABLE_CHECK=true
-
+PERF_STABLE_CHECK=false
+log_dir="/intel-extension-for-transformers"
 for i in "$@"; do
     case $i in
         --framework=*)
@@ -94,7 +94,7 @@ function run_benchmark() {
     if [[ ${model} == "bert_mini_sparse" ]]; then
         benchmark_cmd="bash run_bert_mini.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
     elif [[ ${model} == "distilbert_base_squad_ipex" ]]; then
-        benchmark_cmd="bash run_bert_mini.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
+        benchmark_cmd="bash run_distilbert.sh --mode=${input_mode} --precision=${precision} --model=Intel/bert-mini-sst2-distilled-sparse-90-1X4-block --dataset=sst2 --output=${log_dir} --log_name=engine-bert_mini_sparse-${precision}-linux-icx --batch_size=${batch_size}"
     fi
     cd ${working_dir}
     overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-icx.log"
@@ -103,10 +103,10 @@ function run_benchmark() {
 
 function run_inferencer() {
     if [[ ${model} == "bert_mini_sparse" ]]; then
-        if_path="${working_dir_fullpath}/sparse_${precision}_ir"
-        inference_cmd="bash /intel_extension_for_transformers/.github/workflows/script/launch_benchmark.sh ${model} ${ir_path} 28 1 ${precision} ${working_dir} 0"
+        ir_path="${working_dir_fullpath}/sparse_${precision}_ir"
+        inference_cmd="bash -x /intel-extension-for-transformers/.github/workflows/script/launch_benchmark.sh "${model}" "${ir_path}" "28" "1" "${precision}" "${working_dir}" "0""
     fi
-    overall_log="/intel_extension_for_transformers/inference_${model}.log"
+    overall_log="/intel-extension-for-transformers/inference_${model}.log"
     eval ${inference_cmd} 2>&1 | tee $overall_log
 
 }

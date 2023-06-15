@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      # - '.github/workflows/deploy-test.yml'
-      # - '.github/workflows/script/models/run_deploy.sh'
+      - '.github/workflows/deploy-test.yml'
+      - '.github/workflows/script/models/run_deploy.sh'
       - 'examples/huggingface/pytorch/image-classification/deployment'
       - 'examples/huggingface/pytorch/question-answering/deployment'
       - 'examples/huggingface/pytorch/text-classification/deployment'
@@ -50,6 +50,14 @@ jobs:
             mode: "accuracy,performance"
             precision: "fp32,int8"
     steps:
+      - name: Docker Clean Up
+        run: |
+          docker ps -a
+          if [[ $(docker ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+              docker start $(docker ps -aq)
+              echo "remove left files through container ..."
+              docker exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          fi
       - name: Checkout out Repo
         uses: actions/checkout@v3
         with:
@@ -100,11 +108,11 @@ jobs:
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
 
-      - name: Collect Log
-        run: |
-            docker exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash collect_log.sh --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
+      #- name: Collect Log
+      #  run: |
+      #      docker exec ${{ env.CONTAINER_NAME }} \
+      #      bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
+      #      && bash collect_log.sh --model=${{ matrix.modelName }} --BUILD_BUILDID=${{ github.run_id }} --ref_id=${{ env.REF_ID }}"
         
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3

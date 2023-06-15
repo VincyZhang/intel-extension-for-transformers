@@ -1,0 +1,115 @@
+name: Scanner-Coverity 
+# This is a re-usable workflow for running Coverity scans.
+# Please follow process/flow on workflow usages/examples in docs/README_Coverity.md
+# Docs url: https://github.com/intel-innersource/frameworks.ai.infrastructure.code-scan-tools/blob/one-ci-cd/docs/README_Coverity.md
+on:
+  workflow_call:
+    inputs:
+      repos:
+        description: 'Enter Project repo for which you want to run coverity scan:'
+        required: true
+        type: string
+      refs:
+        description: 'Enter Project branch, tag:'
+        required: true
+        type: string
+      buildCommand:
+        description: 'Enter Project build command or Script:'
+        required: false
+        type: string
+      projectType:
+        description: 'Enter project type: (gcc, java or python)'
+        required: true
+        type: string
+        default: gcc
+      url:
+        description: 'Enter coverity server url:'
+        required: true
+        type: string
+      stream:
+        description: 'Enter coverity stream name:'
+        required: true 
+        type: string
+      runner_label:
+        description: 'Enter one label of the runner that will execute the workflow:'
+        required: true
+        type: string
+        default: gasp
+    secrets:
+      USER:
+        description: 'Enter User name for coverity server portal:'
+        required: true 
+      PASSWORD:
+        description: 'Enter passowrd for coverity server portal:'
+        required: true        
+      token:
+        description: 'GITHUB_TOKEN or a repo scoped PAT.'
+        required: true
+
+jobs:
+  scan_coverity:
+    runs-on: [self-hosted, Linux, "${{ inputs.runner_label }}"]
+    steps:
+    - name: Workspace Initialization
+      run: |
+        git config --global --add safe.directory ${GITHUB_WORKSPACE}
+    - name: Checkout Project Repo
+      uses: actions/checkout@v3
+      with:
+        repository: intel-innersource/${{inputs.repos}}
+        token: ${{ secrets.token }}
+        path: code
+        ref: ${{inputs.refs}}
+    - name: Download and Install coverity
+      run: |
+        wget https://ubit-artifactory-or.intel.com/artifactory/coverity-or-local/Enterprise/cov-analysis-linux64-2023.3.0.sh
+        wget https://ubit-artifactory-or.intel.com/artifactory/coverity-or-local/Enterprise/license.dat
+        chmod +x ${GITHUB_WORKSPACE}/cov-analysis-linux64-2023.3.0.sh
+        ./cov-analysis-linux64-2023.3.0.sh -q --installation.dir=${GITHUB_WORKSPACE}/coverity/analysis/ \
+        --license.agreement=agree --license.region=0 --license.type.choice=0 \
+        --license.cov.path=${GITHUB_WORKSPACE}/license.dat --component.sdk=false --component.skip.documentation=true
+        echo "${GITHUB_WORKSPACE}/coverity/analysis/bin/" >> $GITHUB_PATH
+    - name: Configure compilers for Coverity
+      run: |
+        cov-configure --cs
+        cov-configure --gcc
+        cov-configure --msvc
+        cov-configure --python
+    - if: ${{ inputs.projectType == 'gcc' || inputs.projectType == 'java' }}
+      name: Coverity Build - ${{inputs.projectType}}
+      run: |
+        cd ${GITHUB_WORKSPACE}/code
+        cov-build --dir ${GITHUB_WORKSPACE}/cov_dir ${{inputs.buildCommand}}
+        cd -
+    - if: ${{ inputs.projectType == 'gcc' || inputs.scan_type == 'java' }}    
+      name: Coverity Analysis - gcc/java
+      run: |
+        cov-analyze --dir ${GITHUB_WORKSPACE}/cov_dir --concurrency --security --rule --enable-constraint-fpp --enable-fnptr        
+    - if: inputs.projectType == 'python'
+      name: Coverity Build - python
+      run: |
+        cd ${GITHUB_WORKSPACE}/code
+        cov-capture --dir ${GITHUB_WORKSPACE}/cov_dir --source-dir ${GITHUB_WORKSPACE}/code
+        cov-build --dir ${GITHUB_WORKSPACE}/cov_dir --no-command
+        cd -        
+    - if: inputs.projectType == 'python' 
+      name: Coverity Analysis - python
+      run: |
+        cov-analyze --dir ${GITHUB_WORKSPACE}/cov_dir --enable-default --security --webapp-security --enable-audit-checkers
+    - if: success() || failure()
+      run: cat ${GITHUB_WORKSPACE}/cov_dir/output/distributor.log
+    - name: Run cov-format-errors to read defects/create statis HTMl pages
+      run: |    
+        cov-format-errors --dir ${GITHUB_WORKSPACE}/cov_dir --json-output-v8 ${GITHUB_WORKSPACE}/coverity_dir_result.json
+    - name: Upload Scan artifact to Github
+      uses: actions/upload-artifact@v3
+      with:
+        name: Coverity-reports
+        path: |
+           coverity_dir_result.json
+    - name: Commit defects to Coverity portal - ${{inputs.url}}
+      if: success() || failure()
+      env: 
+        no_proxy: coverityent.devtools.intel.com, intel.com
+      run: |
+        cov-commit-defects --dir ${GITHUB_WORKSPACE}/cov_dir --url ${{inputs.url}} --user ${{ secrets.USER }} --password ${{ secrets.PASSWORD }} --stream ${{inputs.stream}}

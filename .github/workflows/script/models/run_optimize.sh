@@ -4,8 +4,8 @@ source /intel-extension-for-transformers/.github/workflows/script/change_color.s
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
-PERF_STABLE_CHECK=true
-
+PERF_STABLE_CHECK=false
+log_dir="/intel-extension-for-transformers"
 for i in "$@"; do
     case $i in
         --framework=*)
@@ -30,11 +30,14 @@ mkdir -p ${log_dir}
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
-    ## prepare env
-    working_dir=$(jq -r .${model}.working_dir ${CONFIG_PATH})
-    working_dir="/intel-extension-for-transformers/examples/${working_dir}"
+    ## prepare
+    prepare
+    
+    #### prepare env
+    ##working_dir=$(jq -r .${model}.working_dir ${CONFIG_PATH})
+    ##working_dir="/intel-extension-for-transformers/examples/${working_dir}"
 
-    cd ${working_dir} && pip install -r requirements.txt
+    ##cd ${working_dir} && pip install -r requirements.txt
 
     ## tune
     if [[ $(echo "${mode}" | grep "tuning") ]]; then
@@ -47,13 +50,13 @@ main() {
     fi
 
     ## run traner.benchmark using pytorch
-    if [[ $framework == "pytorch" ]]; then
+    if [[ $(echo "${mode}" | grep "performance") ]] && [[ $framework == "pytorch" ]]; then
         run_benchmark "benchmark_only" 1
     fi
 
     # run performance
     if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
-        run_benchmark "performance" 1
+        run_benchmark "benchmark" 1
     elif [[ $(echo "${mode}" | grep "performance") ]]; then
         max_loop=3
         gap=(0.05 0.05 0.1)
@@ -75,6 +78,23 @@ main() {
     fi
 }
 
+function prepare() {
+    ## prepare env
+    if [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "pytorch" ]]; then
+        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-classification/quantization/ptq"
+    elif [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "tensorflow" ]]; then
+        working_dir="/intel-extension-for-transformers/examples/huggingface/tensorflow/text-classification/quantization/ptq"
+    fi
+    cd ${working_dir}
+    echo "Working in ${working_dir}"
+    echo -e "\nInstalling model requirements..."
+    if [ -f "requirements.txt" ]; then
+        python -m pip install -r requirements.txt 
+        pip list
+    else
+        echo "Not found requirements.txt file."
+    fi
+}
 function run_tuning() {
     if [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "pytorch" ]]; then
         tuning_cmd="bash run_tuning.sh --topology=bert_base_mrpc_static --output_model=saved_results"
@@ -132,15 +152,6 @@ function check_perf_gap() {
         --build_id='0' \
         --stage="${precision}_benchmark" \
         --gap=$1
-}
-
-function run_performance() {
-    if [ "${single_instance}" == "true" ]; then
-        run_benchmark "performance" 1
-    else
-        $BOLD_YELLOW && echo "run with external multiInstance benchmark..." && $RESET
-        multiInstance 
-    fi
 }
 
 function multiInstance() {
