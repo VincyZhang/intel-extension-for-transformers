@@ -5,7 +5,6 @@ source /intel-extension-for-transformers/.github/workflows/script/change_color.s
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
 PERF_STABLE_CHECK=false
-log_dir="/intel-extension-for-transformers"
 for i in "$@"; do
     case $i in
         --framework=*)
