@@ -143,7 +143,7 @@ def collect_log():
             OS, PLATFORM, args.model_test_type, args.framework, args.fwk_ver, args.model,
             tmp.get('strategy', 'basic'),
             str(tmp.get('tune_time', 'na')),
-            str(tmp['tuning_trials']), "<url>", '0' + '\n'
+            str(tmp['tuning_trials']), URL, '0' + '\n'
         ]))
 
     # get model performance results
