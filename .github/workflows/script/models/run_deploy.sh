@@ -5,8 +5,6 @@ source /intel-extension-for-transformers/.github/workflows/script/change_color.s
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
 PERF_STABLE_CHECK=false
-log_dir="/intel-extension-for-transformers/${framework}_${model}"
-mkdir -p ${log_dir}
 
 for i in "$@"; do
     case $i in
@@ -27,6 +25,8 @@ for i in "$@"; do
     esac
 done
 
+log_dir="/intel-extension-for-transformers/${framework}_${model}"
+mkdir -p ${log_dir}
 $BOLD_YELLOW && echo "-------- run_benchmark_common --------" && $RESET
 
 main() {
@@ -108,20 +108,9 @@ function run_inferencer() {
         ir_path="${working_dir_fullpath}/sparse_${precision}_ir"
         inference_cmd="bash -x /intel-extension-for-transformers/.github/workflows/script/launch_benchmark.sh "${model}" "${ir_path}" "28" "1" "${precision}" "${working_dir}" "0""
     fi
-    overall_log="/intel-extension-for-transformers/inference_${model}.log"
+    overall_log="${log_dir}/inference_${model}.log"
     eval ${inference_cmd} 2>&1 | tee $overall_log
 
-}
-function check_perf_gap() {
-    python -u ${SCRIPTS_PATH}/collect_log_model.py \
-        --framework=${framework} \
-        --fwk_ver=${fwk_ver} \
-        --model=${model} \
-        --logs_dir="${log_dir}" \
-        --output_dir="${log_dir}" \
-        --build_id=${BUILD_BUILDID} \
-        --mode=${mode} \
-        --gap=$1
 }
 
 main
