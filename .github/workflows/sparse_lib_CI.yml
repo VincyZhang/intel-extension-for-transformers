@@ -23,7 +23,7 @@ env:
 
 jobs:
   sparselib:
-    runs-on: [self-hosted, linux, X64, spr itrex]
+    runs-on: [self-hosted, Linux, X64, spr]
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
