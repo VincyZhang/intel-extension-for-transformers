@@ -327,6 +327,8 @@ if __name__ == '__main__':
     if (args.model_test_type == "optimize"):
         tuning_log = get_tune_log()
         refer = get_refer_data()
+    else:
+        tuning_log, refer = 'tune.log', 'tune.log'
 
     if args.stage == "collect_log":
         collect_log()
