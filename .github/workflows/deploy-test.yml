@@ -39,14 +39,14 @@ jobs:
     strategy:
       matrix:
         include:
-          # - modelName: "bert_mini_sparse"
-          #   framework: "engine"
-          #   mode: "accuracy,performance"
-          #   precision: "fp32,int8"
-          - modelName: "distilbert_base_squad_ipex"
-            framework: "ipex"
+          - modelName: "bert_mini_sparse"
+            framework: "engine"
             mode: "accuracy,performance"
             precision: "fp32,int8"
+          # - modelName: "distilbert_base_squad_ipex"
+          #   framework: "ipex"
+          #   mode: "accuracy,performance"
+          #   precision: "fp32,int8"
     steps:
       - name: Docker Clean Up
         run: |
