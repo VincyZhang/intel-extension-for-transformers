@@ -145,7 +145,8 @@ def collect_log():
             str(tmp['tuning_trials']), URL, '0' + '\n'
         ]))
 
-    precision_list = ['int8', 'fp32'] if(args.model_test_type=="optimize") else ['int8', 'fp32', "dynamic_int8"]
+    precision_list = ['int8', 'fp32'] if (args.model_test_type
+                                          == "optimize") else ['int8', 'fp32', "dynamic_int8"]
 
     # get model performance results
     for precision in precision_list:
@@ -323,8 +324,9 @@ def check_status(precision, precision_upper, check_accuracy=False):
 
 
 if __name__ == '__main__':
-    tuning_log = get_tune_log()
-    refer = get_refer_data()
+    if (args.model_test_type == "optimize"):
+        tuning_log = get_tune_log()
+        refer = get_refer_data()
 
     if args.stage == "collect_log":
         collect_log()
