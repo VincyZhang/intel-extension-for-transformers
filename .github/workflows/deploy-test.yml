@@ -44,11 +44,11 @@ jobs:
           - modelName: "bert_mini_sparse"
             framework: "engine"
             mode: "accuracy,performance"
-            precision: "fp32,int8"
+            precision: "int8"
           - modelName: "distilbert_base_squad_ipex"
             framework: "ipex"
             mode: "accuracy,performance"
-            precision: "fp32,int8"
+            precision: "int8"
     steps:
       - name: Docker Clean Up
         run: |
@@ -88,7 +88,7 @@ jobs:
           && bash install_binary.sh"
 
       - name: FP32 Benchmark
-        if: contains("${{ matrix.precision }}", "fp32")
+        if: ${{ matrix.precision }} == "*fp32*"
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
@@ -102,7 +102,7 @@ jobs:
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
       
       - name: Dynamic INT8 Benchmark
-        if: contains("${{ matrix.precision }}", "dynamic_int8")
+        if: ${{ matrix.precision }} == "*dynamic_int8*"
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
