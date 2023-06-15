@@ -281,16 +281,16 @@ function generate_tuning_core {
     local workflow=$1
     local mode=$2
 
-    tuning_time=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $7}')
-    tuning_count=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $8}')
-    tuning_log=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $9}')
+    tuning_time=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $8}')
+    tuning_count=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $9}')
+    tuning_log=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLog} | awk -F';' '{print $10}')
 
     echo "<tr><td rowspan=3>${platform}</td><td rowspan=3>${os}</td><td rowspan=3>${framework}</td><td rowspan=3>${fw_version}</td><td rowspan=3>${model}</td><td>New</td>" >>${WORKSPACE}/report.html
     echo "<td><a href=${tuning_log}>${tuning_time}</a></td><td><a href=${tuning_log}>${tuning_count}</a></td>" >>${WORKSPACE}/report.html
 
-    tuning_time=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLogLast} | awk -F';' '{print $7}')
-    tuning_count=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLogLast} | awk -F';' '{print $8}')
-    tuning_log=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLogLast} | awk -F';' '{print $9}')
+    tuning_time=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLogLast} | awk -F';' '{print $8}')
+    tuning_count=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLogLast} | awk -F';' '{print $9}')
+    tuning_log=$(grep "^${os};${platform};${workflow};${framework};${fw_version};${model};" ${tuneLogLast} | awk -F';' '{print $10}')
 
     echo | awk -F ';' -v current_values="${current_values}" -v last_values="${last_values}" \
         -v tuning_time="${tuning_time}" \
