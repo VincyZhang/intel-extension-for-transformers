@@ -88,25 +88,25 @@ jobs:
       #    && bash install_binary.sh"
 
       - name: FP32 Benchmark
-        if: matrix.precision == '*fp32*'
+        if: matrix.framework == 'engine'
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
-      - name: INT8 Benchmark
-        if: matrix.precision == '*int8*'
-        run: |
-            docker exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
-      
-      - name: Dynamic INT8 Benchmark
-        if: matrix.precision == '*dynamic_int8*'
-        run: |
-            docker exec ${{ env.CONTAINER_NAME }} \
-            bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-            && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
+      #- name: INT8 Benchmark
+      #  if: matrix.precision == '*int8*'
+      #  run: |
+      #      docker exec ${{ env.CONTAINER_NAME }} \
+      #      bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
+      #      && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
+      #
+      #- name: Dynamic INT8 Benchmark
+      #  if: matrix.precision == '*dynamic_int8*'
+      #  run: |
+      #      docker exec ${{ env.CONTAINER_NAME }} \
+      #      bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
+      #      && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
 
       #- name: Collect Log
       #  run: |
