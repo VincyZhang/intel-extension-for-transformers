@@ -88,21 +88,21 @@ jobs:
           && bash install_binary.sh"
 
       - name: FP32 Benchmark
-        if: contains(${{ matrix.precision }}, "fp32")
+        if: contains("${{ matrix.precision }}", "fp32")
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: INT8 Benchmark
-        if: contains(${{ matrix.precision }}, "int8")
+        if: contains("${{ matrix.precision }}", "int8")
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
             && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
       
       - name: Dynamic INT8 Benchmark
-        if: contains(${{ matrix.precision }}, "dynamic_int8")
+        if: contains("${{ matrix.precision }}", "dynamic_int8")
         run: |
             docker exec ${{ env.CONTAINER_NAME }} \
             bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
