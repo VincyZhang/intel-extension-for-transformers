@@ -79,7 +79,7 @@ jobs:
         with:
           name: SparseLib Test
           path: ${{ github.workspace }}/benchmark_log
-          retention-days: 5
+          retention-days: 60
 
       - name: Docker clean up
         if: ${{ always() }}
