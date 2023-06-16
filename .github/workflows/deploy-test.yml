@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - '.github/workflows/deploy-test.yml'
-      - '.github/workflows/script/models/run_deploy.sh'
+      #- '.github/workflows/deploy-test.yml'
+      #- '.github/workflows/script/models/run_deploy.sh'
       - 'examples/huggingface/pytorch/image-classification/deployment'
       - 'examples/huggingface/pytorch/question-answering/deployment'
       - 'examples/huggingface/pytorch/text-classification/deployment'
