@@ -181,9 +181,8 @@ def collect_log():
                 if ("accuracy.log" in name and precision in name and args.framework in name):
                     for line in open(file_name, "r"):
                         result = parse_acc_line(line)
-                        if result:
-                            print(f"{result=}")
                         accuracy = result.get("accuracy", accuracy)
+                        accuracy =  accuracy / 100 if (1 < accuracy <= 100) else accuracy
                         bs = result.get("batch_size", bs)
         results.append(
             f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Accuracy;{bs};{accuracy};{URL}\n'
