@@ -28,7 +28,6 @@ def get_model_tuning_dict_results():
         with open(tuning_log, "r") as f:
             for line in f:
                 parse_tuning_line(line, tmp)
-        print(tmp)
 
         tuning_result_dict = {
             "OS": OS,
@@ -174,7 +173,7 @@ def collect_log():
                 if ("accuracy" in name and precision in name and args.framework in name):
                     for line in open(file_name, "r"):
                         result = parse_acc_line(line)
-                        accuracy += result.get("accuracy", 0.0)
+                        accuracy = result.get("accuracy", 0.0)
                         bs = result.get("batch_size", bs)
         results.append(
             f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Accuracy;{bs};{accuracy};{URL}\n'
