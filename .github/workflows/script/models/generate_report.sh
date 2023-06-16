@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+set -x
 set -eo pipefail
 WORKSPACE=generated
 last_log_path=FinalReport
@@ -7,6 +7,17 @@ summaryLog=${WORKSPACE}/summary.log
 summaryLogLast=${last_log_path}/summary.log
 tuneLog=${WORKSPACE}/tuning_info.log
 tuneLogLast=${last_log_path}/tuning_info.log
+PATTERN='[-a-zA-Z0-9_]*='
+
+for i in "$@"; do
+    case $i in
+        --workflow=*)
+            workflow=`echo $i | sed "s/${PATTERN}//"`;;
+        *)
+            echo "Parameter $i not recognized."; exit 1;;
+    esac
+done
+
 
 function main {
     echo "summaryLog: ${summaryLog}"
@@ -16,7 +27,11 @@ function main {
 
     generate_html_head
     generate_html_overview
-    generate_optimize_results
+    if [[ $workflow == "optimize" ]]; then
+        generate_optimize_results
+    elif [[ $workflow == "deploy" ]]; then
+        generate_deploy_results
+    fi
     generate_html_footer
 }
 
@@ -28,7 +43,7 @@ function generate_html_overview {
 
 <body>
     <div id="main">
-        <h1 align="center">NLP-TOOLKIT Tests
+        <h1 align="center">intel-extension-for-transformers Tests
         [ <a href="${RUN_DISPLAY_URL}">Job-${BUILD_NUMBER}</a> ]</h1>
       <h1 align="center">Test Status: ${JOB_STATUS}</h1>
         <h2>Summary</h2>
@@ -112,6 +127,101 @@ eof
     </table>
 eof
 }
+
+
+function generate_deploy_results {
+
+cat >> ${WORKSPACE}/report.html << eof
+    <h2>Deploy Result</h2>
+      <table class="features-table">
+          <tr>
+                <th rowspan="2">Platform</th>
+                <th rowspan="2">System</th>
+                <th rowspan="2">Framework</th>
+                <th rowspan="2">Version</th>
+                <th rowspan="2">Model</th>
+                <th rowspan="2">VS</th>
+                <th rowspan="2">Tuning<br>Time(s)</th>
+                <th rowspan="2">Tuning<br>Count</th>
+                <th colspan="4">INT8</th>
+                <th colspan="4">FP32</th>
+                <th colspan="4">BF16</th>
+                <th colspan="4">FP8</th>
+                <th colspan="4">DynamicINT8</th>
+                <th colspan="8" class="col-cell col-cell1 col-cellh">Ratio</th>
+          </tr>
+          <tr>
+                <th>bs</th>
+                <th>imgs/s</th>
+                <th>bs</th>
+                <th>top1</th>
+
+                <th>bs</th>
+                <th>imgs/s</th>
+                <th>bs</th>
+                <th>top1</th>
+
+                <th>bs</th>
+                <th>imgs/s</th>
+                <th>bs</th>
+                <th>top1</th>
+
+                <th>bs</th>
+                <th>imgs/s</th>
+                <th>bs</th>
+                <th>top1</th>
+
+                <th>bs</th>
+                <th>imgs/s</th>
+                <th>bs</th>
+                <th>top1</th>
+
+                <th class="col-cell col-cell1">Throughput<br><font size="2px">INT8/FP32>=2</font></th>
+                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(INT8-FP32)/FP32>=-0.01</font></th>
+                <th class="col-cell col-cell1">Throughput<br><font size="2px">BF16/FP32>=2</font></th>
+                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(BF16-FP32)/FP32>=-0.01</font></th>
+                <th class="col-cell col-cell1">Throughput<br><font size="2px">FP8/FP32>=2</font></th>
+                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(FP8-FP32)/FP32>=-0.01</font></th>
+                <th class="col-cell col-cell1">Throughput<br><font size="2px">DynamicINT8/FP32>=2</font></th>
+                <th class="col-cell col-cell1">Accuracy<br><font size="2px">(DynamicINT8-FP32)/FP32>=-0.01</font></th>
+          </tr>
+eof
+
+    oses=$(sed '1d' ${summaryLog} |cut -d';' -f1 | awk '!a[$0]++')
+
+    for os in ${oses[@]}
+    do
+        platforms=$(sed '1d' ${summaryLog} |grep "^${os}" |cut -d';' -f2 | awk '!a[$0]++')
+        for platform in ${platforms[@]}
+        do
+            frameworks=$(sed '1d' ${summaryLog} |grep "^${os};${platform};deploy" |cut -d';' -f4 | awk '!a[$0]++')
+            for framework in ${frameworks[@]}
+            do
+                fw_versions=$(sed '1d' ${summaryLog} |grep "^${os};${platform};deploy;${framework}" |cut -d';' -f5 | awk '!a[$0]++')
+                for fw_version in ${fw_versions[@]}
+                do
+                    models=$(sed '1d' ${summaryLog} |grep "^${os};${platform};deploy;${framework};${fw_version}" |cut -d';' -f7 | awk '!a[$0]++')
+                    for model in ${models[@]}
+                    do
+                        current_values=$(generate_inference ${summaryLog} "deploy")
+                        last_values=$(generate_inference ${summaryLogLast} "deploy")
+                        if [[ ${model} == "gpt-j-6b" ]] || [[ ${model} == "llama-7b-hf" ]] || [[ ${model} == "stable_diffusion" ]] || [[ ${model} == "gpt-j-6b-pruned" ]]; then
+                            local_mode="latency"
+                        else
+                            local_mode="performance"
+                        fi
+                        generate_tuning_core "deploy" "${local_mode}"
+                    done
+                done
+            done
+        done
+    done
+
+    cat >> ${WORKSPACE}/report.html << eof
+    </table>
+eof
+}
+
 
 function generate_inference {
     local workflow=$2

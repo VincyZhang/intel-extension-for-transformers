@@ -101,7 +101,7 @@ function run_tuning() {
         tuning_cmd="bash run_tuning.sh --topology=bert_base_mrpc_static --output_model=saved_results"
     fi
     cd ${working_dir}
-    overall_log="${log_dir}/${framework}-${model}-linux-icx-tune.log"
+    overall_log="${log_dir}/${framework}-${model}-tune.log"
     ${tuning_cmd} 2>&1|tee ${overall_log}
     $BOLD_YELLOW && echo "====== check tuning status. ======" && $RESET
     control_phrase="model which meet accuracy goal."
@@ -131,7 +131,7 @@ function run_benchmark() {
     if [[ $input_mode == "benchmark" ]]; then
         multiInstance
     else
-        overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-icx.log"
+        overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}.log"
         ${benchmark_cmd} 2>&1|tee ${overall_log}
         status=$?
         if [ ${status} != 0 ]; then
@@ -159,7 +159,7 @@ function multiInstance() {
     ncores_per_instance=4
     $BOLD_YELLOW && echo "ncores_per_socket=${ncores_per_socket}, ncores_per_instance=${ncores_per_instance}" && $RESET
 
-    logFile="${log_dir}/${framework}-${model}-${precision}-performance-linux-icx"
+    logFile="${log_dir}/${framework}-${model}-${precision}-performance"
     benchmark_pids=()
     export OMP_NUM_THREADS=${ncores_per_instance}
     

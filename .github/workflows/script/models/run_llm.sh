@@ -102,7 +102,7 @@ function prepare() {
     elif [[ $precision == "int8" ]]; then
         prepare_cmd="python optimize_llm.py --pt_file=/tf_dataset2/models/nlp_toolkit/gpt-j/best_model_bk.pt --dtype=int8 --model=/tf_dataset2/models/pytorch/gpt-j-6B --output_model=${working_dir}/int8_ir"
     fi
-    ${prepare_cmd} 2>&1 | tee -a ${log_dir}/${framework}-${model}-linux-spr-tune.log
+    ${prepare_cmd} 2>&1 | tee -a ${log_dir}/${framework}-${model}-tune.log
 }
 
 function run_benchmark() {
@@ -112,7 +112,7 @@ function run_benchmark() {
         benchmark_cmd="python run_llm.py --max-new-tokens=32 --model_path=${working_dir}/${precision}_ir"
     fi
     cd ${working_dir}
-    overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-spr.log"
+    overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}.log"
     ${benchmark_cmd} 2>&1 | tee ${overall_log}
 }
 

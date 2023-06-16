@@ -99,7 +99,7 @@ function run_benchmark() {
         benchmark_cmd="bash run_distilbert.sh --mode=${input_mode} --precision=${precision} --model=distilbert-base-uncased-distilled-squad --dataset=squad --output=${log_dir} --log_name=ipex-distilbert_base_squad_ipex-${precision}-linux-icx --batch_size=${batch_size}"
     fi
     cd ${working_dir}
-    overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}-linux-icx.log"
+    overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}.log"
     ${benchmark_cmd} 2>&1 | tee ${overall_log}
 }
 
@@ -110,7 +110,6 @@ function run_inferencer() {
     fi
     overall_log="${log_dir}/inference_${model}.log"
     eval ${inference_cmd} 2>&1 | tee $overall_log
-
 }
 
 main

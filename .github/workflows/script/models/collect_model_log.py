@@ -155,7 +155,7 @@ def collect_log():
         for root, dirs, files in os.walk(args.logs_dir):
             for name in files:
                 file_name = os.path.join(root, name)
-                if ("performance" in name and precision in name and args.framework in name):
+                if (("performance.log" in name or "throughput.log" in name) and precision in name and args.framework in name):
                     for line in open(file_name, "r"):
                         result = parse_perf_line(line)
                         throughput += result.get("throughput", 0.0)
@@ -181,20 +181,21 @@ def collect_log():
         )
 
     # get model benchmark_only results
-    for precision in precision_list:
-        benchmark_only = 0.0
-        bs = 1
-        for root, dirs, files in os.walk(args.logs_dir):
-            for name in files:
-                file_name = os.path.join(root, name)
-                if ("benchmark_only" in name and precision in name and args.framework in name):
-                    for line in open(file_name, "r"):
-                        result = parse_benchmark_only_line(line)
-                        benchmark_only = result.get("throughput", benchmark_only)
-                        bs = result.get("batch_size", bs)
-        results.append(
-            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Benchmark;{bs};{benchmark_only};{URL}\n'
-        )
+    if (args.model_test_type == 'optimize'):
+        for precision in precision_list:
+            benchmark_only = 0.0
+            bs = 1
+            for root, dirs, files in os.walk(args.logs_dir):
+                for name in files:
+                    file_name = os.path.join(root, name)
+                    if ("benchmark_only" in name and precision in name and args.framework in name):
+                        for line in open(file_name, "r"):
+                            result = parse_benchmark_only_line(line)
+                            benchmark_only = result.get("throughput", benchmark_only)
+                            bs = result.get("batch_size", bs)
+            results.append(
+                f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Benchmark;{bs};{benchmark_only};{URL}\n'
+            )
 
     # write model logs
     f = open(args.output_dir + '/' + args.framework + '_' + args.model + '_summary.log', "a")
@@ -263,10 +264,14 @@ def parse_tuning_line(line, tmp):
 def parse_perf_line(line):
     perf_data = {}
 
-    throughput = re.search(r"Throughput:\s+(\d+(\.\d+)?)", line)
-    if throughput and throughput.group(1):
-        perf_data.update({"throughput": float(throughput.group(1))})
-        print(float(throughput.group(1)))
+    if throughput := (line if "Throughput:" in line else False):
+        throughput = re.findall(r'\d+\.\d+', throughput)[-1]
+        perf_data.update({"throughput": float(throughput)})
+
+    # throughput = re.search(r"Throughput:\s+(\d+(\.\d+)?)", line)
+    # if throughput and throughput.group(1):
+    #     perf_data.update({"throughput": float(throughput.group(1))})
+    #     print(float(throughput.group(1)))
 
     batch_size = re.search(r"Batch size = ([0-9]+)", line)
     if batch_size and batch_size.group(1):
@@ -324,11 +329,14 @@ def check_status(precision, precision_upper, check_accuracy=False):
 
 
 if __name__ == '__main__':
-    if (args.model_test_type == "optimize"):
-        tuning_log = get_tune_log()
-        refer = get_refer_data()
-    else:
-        tuning_log, refer = 'tune.log', 'tune.log'
+    # if (args.model_test_type == "optimize"):
+    #     tuning_log = get_tune_log()
+    #     refer = get_refer_data()
+    # else:
+    #     tuning_log, refer = 'tune.log', 'tune.log'
+
+    tuning_log = get_tune_log()
+    refer = get_refer_data()
 
     if args.stage == "collect_log":
         collect_log()
