@@ -23,8 +23,16 @@ env:
 
 jobs:
   sparselib:
-    runs-on: [self-hosted, linux, X64, spr itrex]
+    runs-on: [self-hosted, Linux, X64, spr]
     steps:
+      - name: Docker Clean Up
+        run: |
+          podman ps -a
+          if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+              podman start ${{ env.CONTAINER_NAME }}
+              echo "remove left files through container ..."
+              podman exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          fi
       - name: Checkout out Repo
         uses: actions/checkout@v3
 
@@ -81,6 +89,6 @@ jobs:
       - name: Clean docker container
         if: ${{ always() }}
         run: |
-          podman stop $(podman ps -aq)
+          podman stop ${{ env.CONTAINER_NAME }}
           podman rm -vf ${{ env.CONTAINER_NAME }} || true
           echo y | podman system prune

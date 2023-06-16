@@ -30,7 +30,7 @@ env:
 
 jobs:
   Deploy-Workflow:
-    runs-on: spr itrex
+    runs-on: spr
     strategy:
       matrix:
         include:
@@ -58,7 +58,7 @@ jobs:
 
       - name: Docker Run
         run: |
-          podman stop $(podman ps -aq)
+          podman stop ${{ env.CONTAINER_NAME }}
           podman rm -vf ${{ env.CONTAINER_NAME }} || true
           env | sort
           podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
