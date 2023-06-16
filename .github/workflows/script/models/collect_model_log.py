@@ -18,6 +18,13 @@ OS = 'linux'
 PLATFORM = 'spr'
 URL = '_blank'
 
+patterns = {
+    "batch_size": re.compile(r"Batch size = ([0-9]+)"),
+    "accuracy": re.compile(r'Accuracy:\D+(\d+\.\d+)'),
+    "throughput": re.compile(r"Throughput:\D+(\d+\.\d+)"),
+    "benchmark_only": re.compile(r"Throughput sum\D+(\d+\.\d+)"),
+}
+
 
 def get_model_tuning_dict_results():
     tuning_result_dict = {}
@@ -144,8 +151,8 @@ def collect_log():
             str(tmp['tuning_trials']), URL, '0' + '\n'
         ]))
 
-    precision_list = ['int8', 'fp32'] if (args.model_test_type
-                                          == "optimize") else ['int8', 'fp32', "dynamic_int8"]
+    precision_list = ['int8', 'fp32', "dynamic_int8"] if (
+        args.model_test_type == "deploy" and args.framework != "ipex") else ['int8', 'fp32']
 
     # get model performance results
     for precision in precision_list:
@@ -154,7 +161,8 @@ def collect_log():
         for root, dirs, files in os.walk(args.logs_dir):
             for name in files:
                 file_name = os.path.join(root, name)
-                if (("performance.log" in name or "throughput.log" in name) and precision in name and args.framework in name):
+                if (("performance" in name or "throughput.log" in name) and precision in name
+                        and args.framework in name):
                     for line in open(file_name, "r"):
                         result = parse_perf_line(line)
                         throughput += result.get("throughput", 0.0)
@@ -170,10 +178,12 @@ def collect_log():
         for root, dirs, files in os.walk(args.logs_dir):
             for name in files:
                 file_name = os.path.join(root, name)
-                if ("accuracy" in name and precision in name and args.framework in name):
+                if ("accuracy.log" in name and precision in name and args.framework in name):
                     for line in open(file_name, "r"):
                         result = parse_acc_line(line)
-                        accuracy = result.get("accuracy", 0.0)
+                        if result:
+                            print(f"{result=}")
+                        accuracy = result.get("accuracy", accuracy)
                         bs = result.get("batch_size", bs)
         results.append(
             f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Accuracy;{bs};{accuracy};{URL}\n'
@@ -260,50 +270,45 @@ def parse_tuning_line(line, tmp):
         tmp['max_mem_size'] = float(max_mem_size.group(1))
 
 
+def parse_benchmark_log(key, line):
+    value = patterns[key].search(line)
+    if value and value.group(1):
+        return value.group(1)
+    return None
+
+
 def parse_perf_line(line):
     perf_data = {}
 
-    if throughput := (line if "Throughput:" in line else False):
-        throughput = re.findall(r'\d+\.\d+', throughput)[-1]
-        perf_data.update({"throughput": float(throughput)})
+    perf_data.update({"throughput": float(through)} if (
+        through := parse_benchmark_log("throughput", line)) else {})
 
-    # throughput = re.search(r"Throughput:\s+(\d+(\.\d+)?)", line)
-    # if throughput and throughput.group(1):
-    #     perf_data.update({"throughput": float(throughput.group(1))})
-    #     print(float(throughput.group(1)))
-
-    batch_size = re.search(r"Batch size = ([0-9]+)", line)
-    if batch_size and batch_size.group(1):
-        perf_data.update({"batch_size": int(batch_size.group(1))})
+    perf_data.update({"batch_size": int(batch_size)} if (
+        batch_size := parse_benchmark_log("batch_size", line)) else {})
 
     return perf_data
 
 
 def parse_acc_line(line):
-    perf_data = {}
+    accuracy_data = {}
 
-    accuracy = re.search(r"Accuracy: (\d+\.\d+)", line)
-    if accuracy and accuracy.group(1):
-        perf_data.update({"accuracy": float(accuracy.group(1))})
-        print(float(accuracy.group(1)))
+    accuracy_data.update({"accuracy": float(accuracy)} if (
+        accuracy := parse_benchmark_log("accuracy", line)) else {})
 
-    batch_size = re.search(r"Batch size = ([0-9]+)", line)
-    if batch_size and batch_size.group(1):
-        perf_data.update({"batch_size": int(batch_size.group(1))})
+    accuracy_data.update({"batch_size": int(batch_size)} if (
+        batch_size := parse_benchmark_log("batch_size", line)) else {})
 
-    return perf_data
+    return accuracy_data
 
 
 def parse_benchmark_only_line(line):
     perf_data = {}
 
-    if throughput := (line if "Throughput sum [samples/second]" in line else False):
-        throughput = re.findall(r'\d+\.\d+', throughput)[-1]
-        perf_data.update({"throughput": float(throughput)})
+    perf_data.update({"throughput": float(throughput)} if (
+        throughput := parse_benchmark_log("benchmark_only", line)) else {})
 
-    batch_size = re.search(r"Batch size = ([0-9]+)", line)
-    if batch_size and batch_size.group(1):
-        perf_data.update({"batch_size": int(batch_size.group(1))})
+    perf_data.update({"batch_size": int(batch_size)} if (
+        batch_size := parse_benchmark_log("batch_size", line)) else {})
 
     return perf_data
 
@@ -328,12 +333,6 @@ def check_status(precision, precision_upper, check_accuracy=False):
 
 
 if __name__ == '__main__':
-    # if (args.model_test_type == "optimize"):
-    #     tuning_log = get_tune_log()
-    #     refer = get_refer_data()
-    # else:
-    #     tuning_log, refer = 'tune.log', 'tune.log'
-
     tuning_log = get_tune_log()
     refer = get_refer_data()
 
