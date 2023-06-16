@@ -16,6 +16,12 @@
 #===============================================================================
 
 script_dir=$(dirname "${BASH_SOURCE[0]}")
+modes=acc,perf
+medium_n=5
+if [ $# -eq 0 ]; then
+    echo "At least one argument required to specify log_dir!"
+    exit 1
+fi
 log_dir=$1
 socket_id=$2
 rm -rf $log_dir
