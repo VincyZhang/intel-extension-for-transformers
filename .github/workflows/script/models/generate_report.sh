@@ -205,6 +205,7 @@ eof
                     do
                         current_values=$(generate_inference ${summaryLog} "deploy")
                         last_values=$(generate_inference ${summaryLogLast} "deploy")
+                        echo $last_values
                         if [[ ${model} == "gpt-j-6b" ]] || [[ ${model} == "llama-7b-hf" ]] || [[ ${model} == "stable_diffusion" ]] || [[ ${model} == "gpt-j-6b-pruned" ]]; then
                             local_mode="latency"
                         else
@@ -686,15 +687,15 @@ function generate_tuning_core {
                 show_new_last(last_fp8_acc_batch, last_fp8_acc_url, last_fp8_acc_value, "acc");
 
                 // Show last dynamic int8 Performance results
-                last_dint8_perf_batch=last_value[19]
-                last_dint8_perf_value=last_value[20]
-                last_dint8_perf_url=last_value[21]
+                last_dint8_perf_batch=last_value[28]
+                last_dint8_perf_value=last_value[29]
+                last_dint8_perf_url=last_value[30]
                 show_new_last(last_dint8_perf_batch, last_dint8_perf_url, last_dint8_perf_value, "perf");
                 
                 // Show last dynamic int8 Accuracy results
-                last_dint8_acc_batch=last_value[22]
-                last_dint8_acc_value=last_value[23]
-                last_dint8_acc_url=last_value[24]
+                last_dint8_acc_batch=last_value[31]
+                last_dint8_acc_value=last_value[32]
+                last_dint8_acc_url=last_value[33]
                 show_new_last(last_dint8_acc_batch, last_dint8_acc_url, last_dint8_acc_value, "acc");
             }
 
