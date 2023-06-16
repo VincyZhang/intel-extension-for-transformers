@@ -1,4 +1,4 @@
-name: Scanner Coverity
+name: coverity draft
 
 on:
   # User can select events based on push, pull request or schedulers.
@@ -19,7 +19,3 @@ jobs:
       url: 'https://github.com/VincyZhang/intel-extension-for-transformers' # Note: Change it as per your project
       stream: 'stream-name' # Note: Change the name of stream as per your coverity project.
       runner_label: 'self-hosted'
-    secrets:
-      token: ${{ secrets.ACTION_TOKEN }}
-      USER: ${{secrets.USER }}
-      PASSWORD : ${{secrets.PASSWORD }}

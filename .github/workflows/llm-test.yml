@@ -58,7 +58,9 @@ jobs:
 
       - name: Docker Run
         run: |
-          podman stop ${{ env.CONTAINER_NAME }}
+          if [[ $(docker ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+              podman stop ${{ env.CONTAINER_NAME }}
+          fi
           podman rm -vf ${{ env.CONTAINER_NAME }} || true
           env | sort
           podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
