@@ -16,7 +16,7 @@ function main() {
     working_dir="$3"
     log_prefix="$4"
     script="${working_dir}/run_llm.py"
-    precision_list=("int8" "bf16")
+    precision="$5"
     # init params
     if [[ "${model}" == "gpt-j-6b" ]] || [[ "${model}" == "gpt-j-6b-pruned" ]]; then
         model_name="EleutherAI/gpt-j-6B"
@@ -49,26 +49,13 @@ function main() {
         do
             for input in ${input_list[@]}
             do
-                for precision in ${precision_list[@]}
-                do
-                    [[ "${input}" == "32" ]] && output=32 || output=128
-                    sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
-                    logs_file="${model}-${precision}-${cores_per_instance}-${batch_size}-${input}-${output}.log"
-                    ir_path="${working_dir}/${precision}_ir"
-                    python /intel-extension-for-transformers/.github/workflows/script/py_task_injection.py --task=get_ITREX_cpu_memory_info --file_name=${script} --toolkit=intel_extension_for_transformers
-                    OMP_NUM_THREADS=$[$cores_per_instance * 1] numactl -m 0 -C 0-$[$cores_per_instance * 1 - 1] \
-                            python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path} --model_type ${model_type} 2>&1 |tee ${WORKSPACE}/${logs_file} || true
-                    collect_perf_logs_llm ${logs_file} ${precision}
-
-                    #if [[ ${model} == "gpt-j-6b" ]]; then
-                    #    sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
-                    #    logs_file="${model}-${precision}-prune-${cores_per_instance}-${batch_size}-${input}-${output}.log"
-                    #    ir_path="${working_dir}/${precision}_ir_pruned"
-                    #    OMP_NUM_THREADS=$[$cores_per_instance * 1] numactl -m 0 -C 0-$[$cores_per_instance * 1 - 1] \
-                    #            python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path}-prune --print-memory 2>&1 |tee ${logs_file} || true
-                    #    collect_perf_logs_llm ${logs_file} ${precision}-prune
-                    #fi
-                done
+                [[ "${input}" == "32" ]] && output=32 || output=128
+                sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+                logs_file="${model}-${precision}-${cores_per_instance}-${batch_size}-${input}-${output}.log"
+                ir_path="${working_dir}/${precision}_ir"
+                python ${WORKING_DIR}/.github/workflows/script/py_task_injection.py --task=get_ITREX_cpu_memory_info --file_name=${script}
+                numactl -m 1 -C 56-111 python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path} --model_type ${model_type} 2>&1 |tee ${WORKING_DIR}/${logs_file} || true
+                collect_perf_logs_llm ${logs_file} ${precision}
             done
         done
     done
@@ -78,7 +65,7 @@ function main() {
 
 function collect_perf_logs_llm {
     # latency
-    log_dir="${WORKSPACE}/$1"
+    log_dir="${WORKING_DIR}/$1"
     latency=($(grep -i 'inference latency:' ${log_dir} |sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' |awk '
         BEGIN {
             num = 0;
@@ -159,16 +146,16 @@ function collect_perf_logs_llm {
     mode_name="latency"
     precision=$2
     link="${log_prefix}/$1"
-    printf "${framework},${mode_name},${model_name},${precision},${batch_size}," |tee -a ${WORKSPACE}/llm_summary.log
-    printf "${input_tokens},${max_new_tokens},${beam_search},${used_memory}," |tee -a ${WORKSPACE}/llm_summary.log
-    printf "${cores_per_instance},${latency[0]},${throughput[0]},${link} ," |tee -a ${WORKSPACE}/llm_summary.log
-    printf "${latency[1]},${first_latency},${avg_latency},${p90_latency},$(hostname)\n" |tee -a ${WORKSPACE}/llm_summary.log
+    printf "${framework},${mode_name},${model_name},${precision},${batch_size}," |tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${input_tokens},${max_new_tokens},${beam_search},${used_memory}," |tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${cores_per_instance},${latency[0]},${throughput[0]},${link} ," |tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${latency[1]},${first_latency},${avg_latency},${p90_latency},$(hostname)\n" |tee -a ${WORKING_DIR}/llm_summary.log
     set +x
     echo -e "\n\n-------- Summary --------"
-    sed -n '1p;$p' ${WORKSPACE}/llm_summary.log |column -t -s ','
+    sed -n '1p;$p' ${WORKING_DIR}/llm_summary.log |column -t -s ','
 }
 
 
-main $@ 2>&1 |tee ${WORKSPACE}/launch.log
+main $@ 2>&1 |tee ${WORKING_DIR}/launch.log
 
 

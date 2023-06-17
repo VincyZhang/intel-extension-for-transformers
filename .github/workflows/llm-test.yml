@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
     paths:
-      # - '.github/workflows/llm-test.yml'
-      # - '.github/workflows/script/models/run_llm.sh'
+      - '.github/workflows/llm-test.yml'
+      - '.github/workflows/script/models/run_llm.sh'
       - 'examples/huggingface/pytorch/text-generation/deployment'
       - 'intel_extension_for_transformers/backends'
       - '!intel_extension_for_transformers/backends/neural_engine/kernels'
@@ -19,13 +19,14 @@ concurrency:
 
 env:
   OUT_SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/script/models
-  SCRIPT_PATH: /intel-extension-for-transformers/.github/workflows/script
+  SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/script
+  WORKING_DIR: ${{ github.workspace }}
   DOCKER_CONFIG_NAME: "commonDockerConfig"
   REPO_NAME: "intel-extension-for-transformers"
   REPO_TAG: "py38"
   DOCKER_FILE_NAME: "devel"
   CONTAINER_NAME: "modelTest"
-  REF_ID: 1
+  REF_ID: 5307542685
 
 
 jobs:
@@ -37,90 +38,88 @@ jobs:
           - modelName: "gpt-j-6b"
             framework: "engine"
             mode: "latency"
-            precision: "fp32,int8"
+            precision: "bf16,int8"
     steps:
-      - name: Docker Clean Up
-        run: |
-          podman ps -a
-          if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
-              podman start ${{ env.CONTAINER_NAME }}
-              echo "remove left files through container ..."
-              podman exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
-          fi
+      #- name: Docker Clean Up
+      #  run: |
+      #    podman ps -a
+      #    if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+      #        podman start ${{ env.CONTAINER_NAME }}
+      #        echo "remove left files through container ..."
+      #        podman exec ${{ env.CONTAINER_NAME }} bash -c "ls -a ${{ github.workspace }} && rm -fr ${{ github.workspace }}/* && rm -fr ${{ github.workspace }}/.* || true"
+      #    fi
       - name: Checkout out Repo
         uses: actions/checkout@v3
         with:
           submodules: "recursive"
     # We need this because GitHub needs to clone the branch to pipeline
-      - name: Docker Build
-        run: |
-          podman build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+      #- name: Docker Build
+      #  run: |
+      #    podman build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
 
-      - name: Docker Run
-        run: |
-          if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
-              podman stop ${{ env.CONTAINER_NAME }}
-          fi
-          podman rm -vf ${{ env.CONTAINER_NAME }} || true
-          env | sort
-          podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
-          -v ${{ github.workspace }}:/intel-extension-for-transformers \
-          ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
+      #- name: Docker Run
+      #  run: |
+      #    if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+      #        podman stop ${{ env.CONTAINER_NAME }}
+      #    fi
+      #    podman rm -vf ${{ env.CONTAINER_NAME }} || true
+      #    env | sort
+      #    podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+      #    -v ${{ github.workspace }}:${{ github.workspace }} \
+      #    ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
       - name: Env build
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env_with_conda.sh
+          bash ${{ github.workspace }}/.github/workflows/script/prepare_env_with_conda.sh "llm-test" "3.8"
 
       - name: Binary build
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
-          && bash install_binary.sh"
+          cd ${{ github.workspace }}
+          conda activate llm-test || source activate llm-test 
+          python setup.py sdist bdist_wheel
+          pip install dist/intel_extension_for_transformers*.whl
+          pip list
 
-      - name: FP32 Benchmark
+      - name: BF16 Benchmark
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
+          cd ${{ github.workspace }}/.github/workflows/script/models
+          bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=bf16
 
       - name: INT8 Benchmark
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
+          cd ${{ github.workspace }}/.github/workflows/script/models
+          bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=int8
       
-      - name: BF16 Benchmark
-        run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=bf16"
+      #- name: BF16 Benchmark
+      #  run: |
+      #    podman exec ${{ env.CONTAINER_NAME }} \
+      #    bash -c "cd ${{ github.workspace }}/.github/workflows/script/models
+      #    && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=bf16"
       
-      - name: Collect Log
-        run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && python collect_model_log.py --model=${{ matrix.modelName }} \
-           --framework=${{ matrix.framework }} \
-           --fwk_ver=0 \
-           --logs_dir=/intel-extension-for-transformers/${{matrix.framework}}_${{matrix.modelName}} \
-           --output_dir=/intel-extension-for-transformers/${{matrix.framework}}_${{matrix.modelName}} \
-           --build_id=${{ github.run_id }} \
-           --model_test_type=deploy"
+      #- name: Collect Log
+      #  run: |
+      #    cd ${{ github.workspace }}/.github/workflows/script/models
+      #    python collect_model_log.py --model=${{ matrix.modelName }} \
+      #     --framework=${{ matrix.framework }} \
+      #     --fwk_ver=0 \
+      #     --logs_dir=${{ github.workspace }}/${{matrix.framework}}_${{matrix.modelName}} \
+      #     --output_dir=${{ github.workspace }}/${{matrix.framework}}_${{matrix.modelName}} \
+      #     --build_id=${{ github.run_id }} \
+      #     --model_test_type=deploy
   
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
         with:
-          name: ${{ matrix.framework }}-${{ matrix.modelName }}
-          path: ${{ github.workspace }}/${{ matrix.framework }}_${{ matrix.modelName }}
+          name: llm
+          path: ${{ github.workspace }}/llm_summary.log
           if-no-files-found: ignore # 'warn' or 'ignore' are also available, defaults to `warn`
           retention-days: 60 # 1 <= retention-days <= 90
 
-      - name: Docker clean up
-        if: ${{ always() }}
-        run: |
-          podman exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+      #- name: Docker clean up
+      #  if: ${{ always() }}
+      #  run: |
+      #    podman exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr ${{ github.workspace }}/* && rm -fr ${{ github.workspace }}/.* || true"
   
   Genreate-Report:
     runs-on: ubuntu-latest
@@ -134,20 +133,13 @@ jobs:
       - name: Download Summary Log
         uses: actions/download-artifact@v3
         with:
-          path: ${{ env.OUT_SCRIPT_PATH }}/log
-
-      - name: Analysis Summary
-        run: |
-          cd ${{ env.OUT_SCRIPT_PATH }}
-          mkdir generated
-          pip install requests
-          python summary.py --logs_dir ${{ env.OUT_SCRIPT_PATH }}/log --output_dir=generated
+          path: ${{ env.OUT_SCRIPT_PATH }}/generated/log
 
       - name: Download Reference Artifact
         id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: deploy-test.yml
+          workflow: llm-test.yml
           name: FinalReport
           run_id: ${{ env.REF_ID }}
           path: ${{ env.OUT_SCRIPT_PATH }}
@@ -167,7 +159,7 @@ jobs:
           cd ${{ env.OUT_SCRIPT_PATH }}
           /usr/bin/bash generate_report.sh --workflow=deploy
         env:
-          RUN_DISPLAY_URL: https://github.com/VincyZhang/intel-extension-for-transformers/actions/runs/${{ github.run_id }}
+          RUN_DISPLAY_URL: https://github.com/VincyZhang${{ github.workspace }}/actions/runs/${{ github.run_id }}
           BUILD_NUMBER: ${{ github.run_id }}
           JOB_STATUS: succeed
           MR_source_branch: ${{ github.head_ref }}
