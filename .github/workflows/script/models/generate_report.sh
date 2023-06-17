@@ -24,6 +24,8 @@ function main {
     echo "summaryLogLast: ${summaryLogLast}"
     echo "tunelog: ${tuneLog}"
     echo "last tunelog: ${tuneLogLast}"
+    echo "summaryLog: ${llmsummaryLog}"
+    echo "summaryLogLast: ${llmsummaryLogLast}"
 
     generate_html_head
     generate_html_overview
@@ -31,6 +33,9 @@ function main {
         generate_optimize_results
     elif [[ $workflow == "deploy" ]]; then
         generate_deploy_results
+        if [[ -f ${llmsummaryLog} ]]; then
+            generate_llm_results
+        fi
     fi
     generate_html_footer
 }
@@ -386,6 +391,84 @@ function generate_inference {
             printf("%s;%s;%s;%s;%s;%s;%s;%s;%s;", fp8_perf_bs,fp8_perf_value,fp8_perf_url,fp8_acc_bs,fp8_acc_value,fp8_acc_url,fp8_bench_bs,fp8_bench_value,fp8_bench_url);
         }
     ' "$1"
+}
+
+function generate_llm_results {
+    cat >> ${WORKSPACE}/report.html << eof
+    <h2>LLM Inferencer</h2>
+      <table class="features-table">
+        <tr>
+          <th>Model</th>
+          <th>Input</th>
+          <th>Output</th>
+          <th>Batchsize</th>
+          <th>Cores/Instance</th>
+          <th>Precision</th>
+          <th>Beam</th>
+          <th>VS</th>
+          <th>Avg Latency</th>
+          <th>Throughput</th>
+          <th>Memory</th>
+          <th>1st Latency</th>
+          <th>p90 Latency</th>
+          <th>Total Latency</th>
+        </tr>
+eof
+
+    mode='latency'
+    models=$(cat ${llmsummaryLog} |grep "${mode}," |cut -d',' -f3 |awk '!a[$0]++')
+    for model in ${models[@]}
+    do
+        precisions=$(cat ${llmsummaryLog} |grep "${mode},${model}," |cut -d',' -f4 |awk '!a[$0]++')
+        for precision in ${precisions[@]}
+        do
+            batch_size_list=$(cat ${llmsummaryLog} |grep "${mode},${model},${precision}," |cut -d',' -f5 |awk '!a[$0]++')
+            for batch_size in ${batch_size_list[@]}
+            do
+                input_token_list=$(cat ${llmsummaryLog} |grep "${mode},${model},${precision},${batch_size}," |cut -d',' -f6 |awk '!a[$0]++')
+                for input_token in ${input_token_list[@]}
+                do
+                    beam_search=$(cat ${llmsummaryLog} |grep "${mode},${model},${precision},${batch_size},${input_token}," |cut -d',' -f8 |awk '!a[$0]++')
+                    for beam in ${beam_search[@]}
+                    do
+                        benchmark_pattern="${mode},${model},${precision},${batch_size},${input_token},"
+                        output_token=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f7 |awk '!a[$0]++')
+                        cores_per_instance=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f10 |awk '!a[$0]++')
+                        count=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f11 |awk '!a[$0]++')
+                        throughput=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f12 |awk '!a[$0]++')
+                        link=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')
+                        memory=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f9 |awk '!a[$0]++')
+                        total_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
+                        avg_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f15 |awk '!a[$0]++')
+                        fst_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f16 |awk '!a[$0]++')
+                        p90_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f17 |awk '!a[$0]++')
+                        
+                        if [ $(cat ${llmsummaryLogLast} |grep -c "${benchmark_pattern}") == 0 ]; then
+                            throughput_last=nan
+                            link_last=nan
+                            memory_last=nan
+                            total_latency_last=nan
+                            avg_latency_last=nan
+                            fst_latency_last=nan
+                            p90_latency_last=nan
+                        else
+                            throughput_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f12 |awk '!a[$0]++')
+                            link_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')
+                            memory_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f9 |awk '!a[$0]++')
+                            total_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
+                            avg_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f15 |awk '!a[$0]++')
+                            fst_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f16 |awk '!a[$0]++')
+                            p90_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f17 |awk '!a[$0]++')
+                        fi
+                        generate_llm_core
+                    done
+                done
+            done
+        done
+    done
+    cat >> ${WORKSPACE}/report.html << eof
+    </table>
+eof
 }
 
 function generate_tuning_core {
@@ -756,6 +839,83 @@ function generate_tuning_core {
             printf("</tr>\n");
         }
     ' >>${WORKSPACE}/report.html
+}
+
+
+function generate_llm_core {
+    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${input_token}</td><td rowspan=3>${output_token}</td><td rowspan=3>${batch_size}</td><td rowspan=3>${core_per_instance}</td><td rowspan=3>${precision}</td><td rowspan=3>${beam}</td><td>New</td>" >> ${WORKSPACE}/report.html
+
+    echo | awk -v al=${avg_latency} -v throughput=${throughput} -v link=${link} -v mem=${memory} -v tl=${total_latency} -v fl=${fst_latency} -v pl=${p90_latency} -v al_l=${avg_latency_last} -v throughput_l=${throughput_last} -v mem_l=${memory_last} -v tl_l=${total_latency_last} -v fl_l=${fst_latency_last} -v pl=${p90_latency_last} -v link_l=${link_last} '
+        function show_benchmark(a,b) {
+            if(a ~/[1-9]/) {
+                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
+            }else {
+                if(a == "") {
+                    printf("<td><a href=%s>%s</a></td>\n",b,a);
+                }else{
+                    printf("<td></td>\n");
+                }
+            }
+        }
+
+        function compare_new_last(a,b){
+            if(a ~/[1-9]/ && b ~/[1-9]/) {
+                target = a / b;
+                if(target >= 0.945) {
+                    status_png = "background-color:#90EE90";
+                }else {
+                    status_png = "background-color:#FFD2D2";
+                    job_status = "fail"
+                }
+                printf("<td style=\"%s\">%.2f</td>", status_png, target);
+            }else{
+                if(a == ""){
+                    job_status = "fail"
+                    status_png = "background-color:#FFD2D2";
+                    printf("<td style=\"%s\"></td>", status_png);
+                }else{
+                    printf("<td class=\"col-cell col-cell3\"></td>");
+                }
+            }
+        }
+        BEGIN {
+            job_status = "pass"
+        }{
+            // current
+            show_benchmark(al,link)
+            show_benchmark(throughput,link)
+            show_benchmark(mem,link)
+            show_benchmark(fl,link)
+            show_benchmark(pl,link)
+            show_benchmark(tl,link)
+
+            // Last
+            printf("</tr>\n<tr><td>Last</td>")
+            show_benchmark(al_l,link_l)
+            show_benchmark(throughput_l,link_l)
+            show_benchmark(mem_l,link_l)
+            show_benchmark(fl_l,link_l)
+            show_benchmark(pl_l,link_l)
+            show_benchmark(tl_l,link_l)
+
+            // current vs last
+            printf("</tr>\n<tr><td>New/Last</td>");
+            compare_new_last(al,al_l)
+            compare_new_last(throughput,throughput_l)
+            compare_new_last(mem,mem_l)
+            compare_new_last(fl,fl_l)
+            compare_new_last(pl,pl_l)
+            compare_new_last(tl,tl_l)
+            printf("</tr>\n");
+        } END{
+          printf("\n%s", job_status);
+        }
+    ' >> ${WORKSPACE}/report.html
+    job_state=$(tail -1 ${WORKSPACE}/report.html)
+    sed -i '$s/.*//' ${WORKSPACE}/report.html
+    if [ ${job_state} == 'fail' ]; then
+      echo "performance regression" >> ${WORKSPACE}/perf_regression.log
+    fi
 }
 
 function generate_html_head {

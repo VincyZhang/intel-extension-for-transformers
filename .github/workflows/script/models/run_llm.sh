@@ -30,36 +30,18 @@ done
 main() {
     ## prepare env
     prepare
-    ## run accuracy
-    if [[ $(echo "${mode}" | grep "accuracy") ]]; then
-        run_benchmark "accuracy"
-    fi
 
     # run latency
-    if [[ $(echo "${mode}" | grep "latency") ]] && [[ ${PERF_STABLE_CHECK} == "false" ]]; then
-        run_benchmark "latency"
-    elif [[ $(echo "${mode}" | grep "latency") ]]; then
-        max_loop=3
-        gap=(0.05 0.05 0.1)
-        for ((iter = 0; iter < ${max_loop}; iter++)); do
-            run_benchmark "latency"
-            {
-                check_perf_gap ${gap[${iter}]}
-                exit_code=$?
-            } || true
-
-            if [ ${exit_code} -ne 0 ]; then
-                $BOLD_RED && echo "FAILED with performance gap!!" && $RESET
-            else
-                $BOLD_GREEN && echo "SUCCEED!!" && $RESET
-                break
-            fi
-        done
-        exit ${exit_code}
-    fi
+    run_benchmark 
 }
 
 function prepare() {
+    [[ -d ${HOME}/anaconda3/bin ]] && export PATH=${HOME}/anaconda3/bin/:$PATH
+    [[ -d ${HOME}/miniconda3/bin ]] && export PATH=${HOME}/miniconda3/bin/:$PATH
+    export LD_LIBRARY_PATH=/lib64/libcrypto.so.1.1:${HOME}/miniconda3/envs/${conda_env_name}/lib/:$LD_LIBRARY_PATH
+    if [[ ${precision} == "fp8" ]]; then
+        export NE_WEIGHT_FP8_4E3M=1
+    fi
     if [[ ${model} == "gpt-j-6b" ]]|| [[ model == "gpt-j-6b-pruned" ]]; then
         working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-generation/deployment"
     fi
@@ -73,9 +55,6 @@ function prepare() {
     if [[ ${model} == "gpt-j-6b" ]] || [[ model == "gpt-j-6b-pruned" ]]; then
         conda install mkl mkl-include -y
         conda install gperftools jemalloc==5.2.1 -c conda-forge -y
-    fi
-    if [[ ${enable_fp8} != "false" ]]; then
-        export NE_WEIGHT_FP8_4E3M=1
     fi
     
     cd ${working_dir}
@@ -106,26 +85,7 @@ function prepare() {
 }
 
 function run_benchmark() {
-    local input_mode=$1
-    local batch_size=$2
-    if [[ ${model} == "gpt-j-6b" ]] || [[ model == "gpt-j-6b-pruned" ]]; then
-        benchmark_cmd="python run_llm.py --max-new-tokens=32 --model_path=${working_dir}/${precision}_ir"
-    fi
-    cd ${working_dir}
-    overall_log="${log_dir}/${framework}-${model}-${precision}-${input_mode}.log"
-    ${benchmark_cmd} 2>&1 | tee ${overall_log}
-}
-
-function check_perf_gap() {
-    python -u ${SCRIPTS_PATH}/collect_log_model.py \
-        --framework=${framework} \
-        --fwk_ver=${fwk_ver} \
-        --model=${model} \
-        --logs_dir="${log_dir}" \
-        --output_dir="${log_dir}" \
-        --build_id=${BUILD_BUILDID} \
-        --mode=${mode} \
-        --gap=$1
+    bash /intel-extension-for-transformers/.github/workflows/script/launch_llm.sh ${conda_env_name} ${model} ${working_dir} ${log_dir}
 }
 
 main
