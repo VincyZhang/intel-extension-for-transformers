@@ -70,7 +70,7 @@ jobs:
       - name: Env build
         run: |
           podman exec ${{ env.CONTAINER_NAME }} \
-          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
+          bash /intel-extension-for-transformers/.github/workflows/script/prepare_env_with_conda.sh
 
       - name: Binary build
         run: |
@@ -79,32 +79,22 @@ jobs:
           && bash install_binary.sh"
 
       - name: FP32 Benchmark
-        if: contains(${{ matrix.precision }}, "fp32")
         run: |
           podman exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
+          && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: INT8 Benchmark
-        if: contains(${{ matrix.precision }}, "int8")
         run: |
           podman exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
+          && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
       
-      - name: Dynamic INT8 Benchmark
-        if: contains(${{ matrix.precision }}, "dynamic_int8")
-        run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
-
       - name: BF16 Benchmark
-        if: contains(${{ matrix.precision }}, "bf16")
         run: |
           podman exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=bf16"
+          && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=bf16"
       
       - name: Collect Log
         run: |

@@ -38,13 +38,13 @@ on:
     secrets:
       USER:
         description: 'Enter User name for coverity server portal:'
-        required: true 
+        required: false
       PASSWORD:
         description: 'Enter passowrd for coverity server portal:'
-        required: true        
+        required: false        
       token:
         description: 'GITHUB_TOKEN or a repo scoped PAT.'
-        required: true
+        required: false
 
 jobs:
   scan_coverity:
