@@ -34,7 +34,7 @@ env:
   REPO_TAG: "py38"
   DOCKER_FILE_NAME: "devel"
   CONTAINER_NAME: "modelTest"
-  REF_ID: 5266389801
+  REF_ID: 5273737968
 
 
 jobs:
@@ -180,7 +180,7 @@ jobs:
         run: |
           echo "------ Generating final report.html ------"
           cd ${{ env.OUT_SCRIPT_PATH }}
-          /usr/bin/bash generate_report.sh
+          /usr/bin/bash generate_report.sh --workflow=optimize
         env:
           RUN_DISPLAY_URL: https://github.com/VincyZhang/intel-extension-for-transformers/actions/runs/${{ github.run_id }}
           BUILD_NUMBER: ${{ github.run_id }}
