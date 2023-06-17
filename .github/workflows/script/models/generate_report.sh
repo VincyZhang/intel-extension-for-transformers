@@ -7,6 +7,8 @@ summaryLog=${WORKSPACE}/summary.log
 summaryLogLast=${last_log_path}/summary.log
 tuneLog=${WORKSPACE}/tuning_info.log
 tuneLogLast=${last_log_path}/tuning_info.log
+llmsummaryLog=${WORKSPACE}/llm/llm_summary.log
+llmsummaryLogLast=${last_log_path}/llm/llm_summary.log
 PATTERN='[-a-zA-Z0-9_]*='
 
 for i in "$@"; do
@@ -29,13 +31,15 @@ function main {
 
     generate_html_head
     generate_html_overview
-    if [[ $workflow == "optimize" ]]; then
-        generate_optimize_results
-    elif [[ $workflow == "deploy" ]]; then
-        generate_deploy_results
-        if [[ -f ${llmsummaryLog} ]]; then
-            generate_llm_results
+    if [[ -f ${summaryLog} ]]; then
+        if [[ $workflow == "optimize" ]]; then
+            generate_optimize_results
+        elif [[ $workflow == "deploy" ]]; then
+            generate_deploy_results
         fi
+    fi
+    if [[ -f ${llmsummaryLog} ]]; then
+        generate_llm_results
     fi
     generate_html_footer
 }

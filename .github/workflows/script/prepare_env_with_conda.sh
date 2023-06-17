@@ -1,4 +1,4 @@
-cd /intel-extension-for-transformers
+cd ${WORKING_DIR}
 conda_env_name=$1
 python_version=$2
 if [[ -z "${conda_env_name}" ]] || [[ -z "${python_version}" ]]; then

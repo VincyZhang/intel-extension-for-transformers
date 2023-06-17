@@ -1,11 +1,11 @@
 #!/bin/bash
 set -eo pipefail
-source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
+source ${WORKING_DIR}/.github/workflows/script/change_color.sh
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
 PERF_STABLE_CHECK=false
-log_dir="/intel-extension-for-transformers"
+log_dir="${WORKING_DIR}"
 for i in "$@"; do
     case $i in
         --framework=*)
@@ -43,10 +43,10 @@ function prepare() {
         export NE_WEIGHT_FP8_4E3M=1
     fi
     if [[ ${model} == "gpt-j-6b" ]]|| [[ model == "gpt-j-6b-pruned" ]]; then
-        working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-generation/deployment"
+        working_dir="${WORKING_DIR}/examples/huggingface/pytorch/text-generation/deployment"
     fi
     $BOLD_YELLOW && echo "Running ---- ${framework}, ${model}----Prepare"
-    source activate ${conda_env_name}
+    source activate ${conda_env_name} || conda activate ${conda_env_name}
     if [[ ${cpu} == *"spr"* ]] || [[ ${cpu} == *"SPR"* ]] || [[ ${cpu} == *"Spr"* ]]; then
         export CC=/opt/rh/gcc-toolset-11/root/usr/bin/gcc
         export CXX=/opt/rh/gcc-toolset-11/root/usr/bin/g++
@@ -76,8 +76,8 @@ function prepare() {
     else
         echo "Not found requirements.txt file."
     fi
-    if [[ $precision == "fp32" ]]; then
-        prepare_cmd="python optimize_llm.py --pt_file=pt_fp32 --dtype=fp32 --model=/tf_dataset2/models/pytorch/gpt-j-6B --output_model=${working_dir}/fp32_ir"
+    if [[ $precision == "bf16" ]]; then
+        prepare_cmd="python optimize_llm.py --pt_file=pt_bf16 --dtype=bf16 --model=/tf_dataset2/models/pytorch/gpt-j-6B --output_model=${working_dir}/bf16_ir"
     elif [[ $precision == "int8" ]]; then
         prepare_cmd="python optimize_llm.py --pt_file=/tf_dataset2/models/nlp_toolkit/gpt-j/best_model_bk.pt --dtype=int8 --model=/tf_dataset2/models/pytorch/gpt-j-6B --output_model=${working_dir}/int8_ir"
     fi
@@ -85,7 +85,7 @@ function prepare() {
 }
 
 function run_benchmark() {
-    bash /intel-extension-for-transformers/.github/workflows/script/launch_llm.sh ${conda_env_name} ${model} ${working_dir} ${log_dir}
+    bash ${WORKING_DIR}/.github/workflows/script/launch_llm.sh ${conda_env_name} ${model} ${working_dir} ${log_dir} ${precision}
 }
 
 main
