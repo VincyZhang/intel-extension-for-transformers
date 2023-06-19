@@ -151,7 +151,7 @@ jobs:
           if_no_artifact_found: warn
 
       - name: Display structure of downloaded files
-        run: cd ${{ env.OUT_SCRIPT_PATH }}/log && ls -R
+        run: cd ${{ env.OUT_SCRIPT_PATH }} && ls -R
 
       - name: Generate report
         run: |
