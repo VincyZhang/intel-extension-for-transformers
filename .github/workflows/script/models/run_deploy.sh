@@ -106,7 +106,7 @@ function run_benchmark() {
 function run_inferencer() {
     if [[ ${model} == "bert_mini_sparse" ]]; then
         ir_path="${working_dir_fullpath}/sparse_${precision}_ir"
-        inference_cmd="bash -x /intel-extension-for-transformers/.github/workflows/script/launch_benchmark.sh "${model}" "${ir_path}" "28" "1" "${precision}" "${working_dir}" "0""
+        inference_cmd="bash -x /intel-extension-for-transformers/.github/workflows/script/launch_benchmark.sh "${model}" "${ir_path}" "8" "1" "${precision}" "${working_dir}" "0""
     fi
     overall_log="${log_dir}/inference_${model}.log"
     eval ${inference_cmd} 2>&1 | tee $overall_log
