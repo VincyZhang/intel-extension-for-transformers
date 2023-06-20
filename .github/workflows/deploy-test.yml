@@ -43,10 +43,10 @@ jobs:
             framework: "engine"
             mode: "accuracy,performance"
             precision: "int8"
-          # - modelName: "distilbert_base_squad_ipex"
-          #   framework: "ipex"
-          #   mode: "accuracy,performance"
-          #   precision: "int8"
+          - modelName: "distilbert_base_squad_ipex"
+            framework: "ipex"
+            mode: "accuracy,performance"
+            precision: "int8"
     steps:
       - name: Docker Clean Up
         run: |
