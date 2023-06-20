@@ -52,7 +52,7 @@ function generate_html_overview {
 
 <body>
     <div id="main">
-        <h1 align="center">intel-extension-for-transformers Tests
+        <h1 align="center">ITREX Tests
         [ <a href="${RUN_DISPLAY_URL}">Job-${BUILD_NUMBER}</a> ]</h1>
       <h1 align="center">Test Status: ${JOB_STATUS}</h1>
         <h2>Summary</h2>
