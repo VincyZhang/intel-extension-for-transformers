@@ -101,7 +101,6 @@ jobs:
       #    cd ${{ github.workspace }}/.github/workflows/script/models
       #    python collect_model_log.py --model=${{ matrix.modelName }} \
       #     --framework=${{ matrix.framework }} \
-      #     --fwk_ver=0 \
       #     --logs_dir=${{ github.workspace }}/${{matrix.framework}}_${{matrix.modelName}} \
       #     --output_dir=${{ github.workspace }}/${{matrix.framework}}_${{matrix.modelName}} \
       #     --build_id=${{ github.run_id }} \

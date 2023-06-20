@@ -1,5 +1,5 @@
 #!/bin/bash -x
-
+set -eo pipefail
 export GLOG_minloglevel=2
 export DNNL_MAX_CPU_ISA=AVX512_CORE_AMX
 
@@ -46,7 +46,7 @@ fi
 
 export OMP_NUM_THREADS=${ncores_per_instance}
 run_cmd=" neural_engine --config=${ir_path}/conf.yaml --weight=${ir_path}/model.bin -w=${warm_up_steps} --iterations=${iteration} --batch_size=${bs} --seq_len=${seq_len}"
-log_dir=${WORKSPACE}/engine-${model}/${seq_len}_${cores}_${ncores_per_instance}_${bs}
+log_dir=${WORKSPACE}/${framework}_${model}/${seq_len}_${cores}_${ncores_per_instance}_${bs}
 mkdir -p ${log_dir}
 memory_bind_opt=""
 if [[ $mono_socket = "1" ]]; then
@@ -62,4 +62,4 @@ wait
 cd ${log_dir}
 throughput=$(find . -name "${cores}_${ncores_per_instance}_${bs}_${precision}*" | xargs grep -rn "Throughput" | awk '{print $NF}' | awk '{ SUM += $1} END { print SUM }')
 echo "${framework},throughput,${model},${seq_len},${cores},${ncores_per_instance},${bs},${precision},${throughput}"
-echo "${framework},throughput,${model},${seq_len},${cores},${ncores_per_instance},${bs},${precision},${throughput},${logs_prefix_url}/engine-${model}" >> ${WORKSPACE}/inferencer_summary.log
+echo "${framework},throughput,${model},${seq_len},${cores},${ncores_per_instance},${bs},${precision},${throughput},${logs_prefix_url}/engine-${model}" >> ${WORKSPACE}/${framework}_${model}/inferencer_summary.log

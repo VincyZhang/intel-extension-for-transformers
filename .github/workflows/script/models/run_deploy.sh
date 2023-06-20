@@ -67,7 +67,7 @@ main() {
     fi
 
     ## run inferencer
-    if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${framework} == "engine" ]]; then
+    if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${framework} == "engine" ]] && [[ ${precision} != "dynamic_int8" ]]; then
         run_inferencer
     fi
     
@@ -108,7 +108,7 @@ function run_inferencer() {
         ir_path="${working_dir}/sparse_${precision}_ir"
         inference_cmd="bash -x /intel-extension-for-transformers/.github/workflows/script/launch_benchmark.sh "${model}" "${ir_path}" "8" "1" "${precision}" "${working_dir}" "0""
     fi
-    overall_log="${log_dir}/inference_${model}.log"
+    overall_log="${log_dir}/inference_${model}_${precision}.log"
     eval ${inference_cmd} 2>&1 | tee $overall_log
 }
 

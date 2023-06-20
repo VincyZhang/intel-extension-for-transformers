@@ -20,7 +20,6 @@ for i in "$@"; do
     esac
 done
 
-
 function main {
     echo "summaryLog: ${summaryLog}"
     echo "summaryLogLast: ${summaryLogLast}"
@@ -36,6 +35,7 @@ function main {
             generate_optimize_results
         elif [[ $workflow == "deploy" ]]; then
             generate_deploy_results
+            generate_deploy_benchmark
         fi
     fi
     if [[ -f ${llmsummaryLog} ]]; then
@@ -137,7 +137,6 @@ eof
 eof
 }
 
-
 function generate_deploy_results {
 
 cat >> ${WORKSPACE}/report.html << eof
@@ -232,6 +231,79 @@ eof
 eof
 }
 
+function generate_deploy_benchmark {
+
+cat >> ${WORKSPACE}/report.html << eof
+    <h2>Deploy Inferencer</h2>
+      <table class="features-table">
+        <tr>
+          <th rowspan="2">Model</th>
+          <th rowspan="2">Seq_len</th>
+          <th rowspan="2">VS</th>
+          <th rowspan="2">Full<br>Cores</th>
+          <th rowspan="2">NCores<br>per Instance</th>
+          <th rowspan="2">BS</th>
+          <th>INT8</th>
+          <th>FP32</th>
+          <th>BF16</th>
+          <th colspan="2" class="col-cell col-cell1 col-cellh">Ratio</th>
+        </tr>
+        <tr>
+          <th>throughput</th>
+          <th>throughput</th>
+          <th>throughput</th>
+          <th colspan="2" class="col-cell col-cell1"><font size="2px">FP32/INT8</font></th>
+        </tr>
+eof
+
+    mode='throughput'
+    models=$(cat ${inferencerSummaryLog} |grep "${mode}," |cut -d',' -f3 |awk '!a[$0]++')
+    for model in ${models[@]}
+    do
+        seq_lens=$(cat ${inferencerSummaryLog} |grep "${mode},${model}," |cut -d',' -f4 |awk '!a[$0]++')
+        for seq_len in ${seq_lens[@]}
+        do
+            full_cores=$(cat ${inferencerSummaryLog} |grep "${mode},${model},${seq_len}," |cut -d',' -f5 |awk '!a[$0]++')
+            for full_core in ${full_cores[@]}
+            do
+                core_per_inss=$(cat ${inferencerSummaryLog} |grep "${mode},${model},${seq_len},${full_core}," |cut -d',' -f6 |awk '!a[$0]++')
+                for core_per_ins in ${core_per_inss[@]}
+                do
+                    bss=$(cat ${inferencerSummaryLog} |grep "${mode},${model},${seq_len},${full_core},${core_per_ins}," |cut -d',' -f7 |awk '!a[$0]++')
+                    for bs in ${bss[@]}
+                    do
+                        benchmark_pattern="${mode},${model},${seq_len},${full_core},${core_per_ins},${bs}"
+                        benchmark_int8=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},int8" |cut -d',' -f9)
+                        benchmark_int8_url=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern}," | tail -1 | cut -d',' -f10)
+                        benchmark_fp32=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},fp32" |cut -d',' -f9)
+                        benchmark_fp32_url=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},fp32" |cut -d',' -f10)
+                        benchmark_bf16=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},bf16" |cut -d',' -f9)
+                        benchmark_bf16_url=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},bf16" |cut -d',' -f10)
+                        if [ $(cat ${inferencerSummaryLogLast} |grep -c "${benchmark_pattern},int8") == 0 ]; then
+                            benchmark_int8_last=nan
+                            benchmark_int8_url_last=nan
+                            benchmark_fp32_last=nan
+                            benchmark_fp32_url_last=nan
+                            benchmark_bf16_last=nan
+                            benchmark_bf16_url_last=nan
+                        else
+                            benchmark_int8_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},int8" |cut -d',' -f9)
+                            benchmark_int8_url_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},int8" |cut -d',' -f10)
+                            benchmark_fp32_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},fp32" |cut -d',' -f9)
+                            benchmark_fp32_url_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},fp32" |cut -d',' -f10)
+                            benchmark_bf16_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},bf16" |cut -d',' -f9)
+                            benchmark_bf16_url_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},bf16" |cut -d',' -f10)
+                        fi
+                        generate_perf_core
+                    done
+                done
+            done
+        done
+    done
+    cat >> ${WORKSPACE}/report.html << eof
+    </table>
+eof
+}
 
 function generate_inference {
     local workflow=$2

@@ -4,7 +4,6 @@ import re
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
 parser.add_argument("--framework", type=str, required=True)
-parser.add_argument("--fwk_ver", type=str, required=True)
 parser.add_argument("--model", type=str, required=True)
 parser.add_argument("--logs_dir", type=str, default=".")
 parser.add_argument("--output_dir", type=str, default=".")
@@ -19,15 +18,16 @@ PLATFORM = 'spr'
 URL = '_blank'
 
 patterns = {
-    "batch_size": re.compile(r"Batch size = ([0-9]+)"),
-    "accuracy": re.compile(r'Accuracy:\D+(\d+\.\d+)'),
-    "throughput": re.compile(r"Throughput:\D+(\d+\.\d+)"),
-    "benchmark_only": re.compile(r"Throughput sum\D+(\d+\.\d+)"),
+    "batch_size": re.compile(r"[B,b]atch size\s?[=,:] ([0-9]+)"),
+    "accuracy": re.compile(r'[A,a]ccuracy:\D+(\d+\.\d+)'),
+    "throughput": re.compile(r"[T,t]hroughput:\D+(\d+\.\d+)"),
+    "benchmark_only": re.compile(r"[T,t]hroughput sum\D+(\d+\.\d+)"),
 }
 
 
 def get_model_tuning_dict_results():
     tuning_result_dict = {}
+    framework_version = get_framework_version(args.framework)
 
     if os.path.exists(tuning_log):
         print('tuning log found')
@@ -40,7 +40,7 @@ def get_model_tuning_dict_results():
             "OS": OS,
             "Platform": PLATFORM,
             "Framework": args.framework,
-            "Version": args.fwk_ver,
+            "Version": framework_version,
             "Model": args.model,
             "Strategy": tmp.get('strategy', 'basic'),
             "Tune_time": tmp.get('tune_time'),
@@ -50,7 +50,7 @@ def get_model_tuning_dict_results():
                 "OS": OS,
                 "Platform": PLATFORM,
                 "Framework": args.framework,
-                "Version": args.fwk_ver,
+                "Version": framework_version,
                 "Model": args.model,
                 "Mode": "Inference",
                 "Type": "Accuracy",
@@ -62,7 +62,7 @@ def get_model_tuning_dict_results():
                 "OS": OS,
                 "Platform": PLATFORM,
                 "Framework": args.framework,
-                "Version": args.fwk_ver,
+                "Version": framework_version,
                 "Model": args.model,
                 "Mode": "Inference",
                 "Type": "Accuracy",
@@ -96,7 +96,7 @@ def get_model_benchmark_dict_results():
             "OS": OS,
             "Platform": PLATFORM,
             "Framework": args.framework,
-            "Version": args.fwk_ver,
+            "Version": get_framework_version(args.framework),
             "Model": args.model,
             "Mode": "Inference",
             "Type": "Performance",
@@ -131,6 +131,7 @@ def get_refer_data():
 def collect_log():
     results = []
     tuning_infos = []
+    framework_version = get_framework_version(args.framework)
     print(f"tuning log dir is {tuning_log}")
     # get model tuning results
     if os.path.exists(tuning_log):
@@ -140,12 +141,8 @@ def collect_log():
             for line in f:
                 parse_tuning_line(line, tmp)
 
-        # results.append('{};{};{};{};FP32;{};Inference;Accuracy;1;{};{}\n'.format(
-        #     OS, PLATFORM, args.framework, args.fwk_ver, args.model, tmp['fp32_acc'], "<url>"))
-        # results.append('{};{};{};{};INT8;{};Inference;Accuracy;1;{};{}\n'.format(
-        #     OS, PLATFORM, args.framework,  args.fwk_ver, args.model, tmp['int8_acc'], "<url>"))
         tuning_infos.append(';'.join([
-            OS, PLATFORM, args.model_test_type, args.framework, args.fwk_ver, args.model,
+            OS, PLATFORM, args.model_test_type, args.framework, framework_version, args.model,
             tmp.get('strategy', 'basic'),
             str(tmp.get('tune_time', 'na')),
             str(tmp['tuning_trials']), URL, '0' + '\n'
@@ -168,7 +165,7 @@ def collect_log():
                         throughput += result.get("throughput", 0.0)
                         bs = result.get("batch_size", bs)
         results.append(
-            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Performance;{bs};{throughput};{URL}\n'
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{framework_version};{precision.upper()};{args.model};Inference;Performance;{bs};{throughput};{URL}\n'
         )
 
     # get model accuracy results
@@ -182,10 +179,10 @@ def collect_log():
                     for line in open(file_name, "r"):
                         result = parse_acc_line(line)
                         accuracy = result.get("accuracy", accuracy)
-                        accuracy =  accuracy / 100 if (1 < accuracy <= 100) else accuracy
+                        accuracy = accuracy / 100 if (1 < accuracy <= 100) else accuracy
                         bs = result.get("batch_size", bs)
         results.append(
-            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Accuracy;{bs};{accuracy};{URL}\n'
+            f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{framework_version};{precision.upper()};{args.model};Inference;Accuracy;{bs};{accuracy};{URL}\n'
         )
 
     # get model benchmark_only results
@@ -202,7 +199,7 @@ def collect_log():
                             benchmark_only = result.get("throughput", benchmark_only)
                             bs = result.get("batch_size", bs)
             results.append(
-                f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{args.fwk_ver};{precision.upper()};{args.model};Inference;Benchmark;{bs};{benchmark_only};{URL}\n'
+                f'{OS};{PLATFORM};{args.model_test_type};{args.framework};{framework_version};{precision.upper()};{args.model};Inference;Benchmark;{bs};{benchmark_only};{URL}\n'
             )
 
     # write model logs
@@ -329,6 +326,25 @@ def check_status(precision, precision_upper, check_accuracy=False):
             f"current_accuracy_data = {current_accuracy:.3f}, refer_accuarcy_data = {refer_accuracy:.3f}"
         )
         assert abs(current_accuracy - refer_accuracy) <= 0.001
+
+
+def get_framework_version(framework: str) -> None:
+    print(f"Checking {framework} version...")
+    fw_modules = {
+        "tensorflow": "tensorflow",
+        "keras": "tensorflow",
+        "onnxrt": "onnxruntime",
+        "mxnet": "mxnet",
+        "pytorch": "torch"
+    }
+    fw_module_name = fw_modules.get(framework, None)
+    if fw_module_name is None:
+        return 'na'
+    import importlib
+    fw_module = importlib.import_module(fw_module_name)
+    version = fw_module.__version__
+    print(f"Framework version is {version}")
+    return version
 
 
 if __name__ == '__main__':
