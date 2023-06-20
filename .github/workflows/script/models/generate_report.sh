@@ -9,14 +9,19 @@ tuneLog=${WORKSPACE}/tuning_info.log
 tuneLogLast=${last_log_path}/tuning_info.log
 llmsummaryLog=${WORKSPACE}/llm/llm_summary.log
 llmsummaryLogLast=${last_log_path}/llm/llm_summary.log
+inferencerSummaryLog=${WORKSPACE}/inferencer.log
+inferencerSummaryLogLast=${last_log_path}/inferencer.log
 PATTERN='[-a-zA-Z0-9_]*='
 
 for i in "$@"; do
     case $i in
-        --workflow=*)
-            workflow=`echo $i | sed "s/${PATTERN}//"`;;
-        *)
-            echo "Parameter $i not recognized."; exit 1;;
+    --workflow=*)
+        workflow=$(echo $i | sed "s/${PATTERN}//")
+        ;;
+    *)
+        echo "Parameter $i not recognized."
+        exit 1
+        ;;
     esac
 done
 
@@ -139,7 +144,7 @@ eof
 
 function generate_deploy_results {
 
-cat >> ${WORKSPACE}/report.html << eof
+    cat >>${WORKSPACE}/report.html <<eof
     <h2>Deploy Result</h2>
       <table class="features-table">
           <tr>
@@ -195,22 +200,17 @@ cat >> ${WORKSPACE}/report.html << eof
           </tr>
 eof
 
-    oses=$(sed '1d' ${summaryLog} |cut -d';' -f1 | awk '!a[$0]++')
+    oses=$(sed '1d' ${summaryLog} | cut -d';' -f1 | awk '!a[$0]++')
 
-    for os in ${oses[@]}
-    do
-        platforms=$(sed '1d' ${summaryLog} |grep "^${os}" |cut -d';' -f2 | awk '!a[$0]++')
-        for platform in ${platforms[@]}
-        do
-            frameworks=$(sed '1d' ${summaryLog} |grep "^${os};${platform};deploy" |cut -d';' -f4 | awk '!a[$0]++')
-            for framework in ${frameworks[@]}
-            do
-                fw_versions=$(sed '1d' ${summaryLog} |grep "^${os};${platform};deploy;${framework}" |cut -d';' -f5 | awk '!a[$0]++')
-                for fw_version in ${fw_versions[@]}
-                do
-                    models=$(sed '1d' ${summaryLog} |grep "^${os};${platform};deploy;${framework};${fw_version}" |cut -d';' -f7 | awk '!a[$0]++')
-                    for model in ${models[@]}
-                    do
+    for os in ${oses[@]}; do
+        platforms=$(sed '1d' ${summaryLog} | grep "^${os}" | cut -d';' -f2 | awk '!a[$0]++')
+        for platform in ${platforms[@]}; do
+            frameworks=$(sed '1d' ${summaryLog} | grep "^${os};${platform};deploy" | cut -d';' -f4 | awk '!a[$0]++')
+            for framework in ${frameworks[@]}; do
+                fw_versions=$(sed '1d' ${summaryLog} | grep "^${os};${platform};deploy;${framework}" | cut -d';' -f5 | awk '!a[$0]++')
+                for fw_version in ${fw_versions[@]}; do
+                    models=$(sed '1d' ${summaryLog} | grep "^${os};${platform};deploy;${framework};${fw_version}" | cut -d';' -f7 | awk '!a[$0]++')
+                    for model in ${models[@]}; do
                         current_values=$(generate_inference ${summaryLog} "deploy")
                         last_values=$(generate_inference ${summaryLogLast} "deploy")
                         echo $last_values
@@ -226,14 +226,14 @@ eof
         done
     done
 
-    cat >> ${WORKSPACE}/report.html << eof
+    cat >>${WORKSPACE}/report.html <<eof
     </table>
 eof
 }
 
 function generate_deploy_benchmark {
 
-cat >> ${WORKSPACE}/report.html << eof
+    cat >>${WORKSPACE}/report.html <<eof
     <h2>Deploy Inferencer</h2>
       <table class="features-table">
         <tr>
@@ -245,11 +245,9 @@ cat >> ${WORKSPACE}/report.html << eof
           <th rowspan="2">BS</th>
           <th>INT8</th>
           <th>FP32</th>
-          <th>BF16</th>
           <th colspan="2" class="col-cell col-cell1 col-cellh">Ratio</th>
         </tr>
         <tr>
-          <th>throughput</th>
           <th>throughput</th>
           <th>throughput</th>
           <th colspan="2" class="col-cell col-cell1"><font size="2px">FP32/INT8</font></th>
@@ -257,42 +255,31 @@ cat >> ${WORKSPACE}/report.html << eof
 eof
 
     mode='throughput'
-    models=$(cat ${inferencerSummaryLog} |grep "${mode}," |cut -d',' -f3 |awk '!a[$0]++')
-    for model in ${models[@]}
-    do
-        seq_lens=$(cat ${inferencerSummaryLog} |grep "${mode},${model}," |cut -d',' -f4 |awk '!a[$0]++')
-        for seq_len in ${seq_lens[@]}
-        do
-            full_cores=$(cat ${inferencerSummaryLog} |grep "${mode},${model},${seq_len}," |cut -d',' -f5 |awk '!a[$0]++')
-            for full_core in ${full_cores[@]}
-            do
-                core_per_inss=$(cat ${inferencerSummaryLog} |grep "${mode},${model},${seq_len},${full_core}," |cut -d',' -f6 |awk '!a[$0]++')
-                for core_per_ins in ${core_per_inss[@]}
-                do
-                    bss=$(cat ${inferencerSummaryLog} |grep "${mode},${model},${seq_len},${full_core},${core_per_ins}," |cut -d',' -f7 |awk '!a[$0]++')
-                    for bs in ${bss[@]}
-                    do
+    models=$(cat ${inferencerSummaryLog} | grep "${mode}," | cut -d',' -f3 | awk '!a[$0]++')
+    for model in ${models[@]}; do
+        seq_lens=$(cat ${inferencerSummaryLog} | grep "${mode},${model}," | cut -d',' -f4 | awk '!a[$0]++')
+        for seq_len in ${seq_lens[@]}; do
+            full_cores=$(cat ${inferencerSummaryLog} | grep "${mode},${model},${seq_len}," | cut -d',' -f5 | awk '!a[$0]++')
+            for full_core in ${full_cores[@]}; do
+                core_per_inss=$(cat ${inferencerSummaryLog} | grep "${mode},${model},${seq_len},${full_core}," | cut -d',' -f6 | awk '!a[$0]++')
+                for core_per_ins in ${core_per_inss[@]}; do
+                    bss=$(cat ${inferencerSummaryLog} | grep "${mode},${model},${seq_len},${full_core},${core_per_ins}," | cut -d',' -f7 | awk '!a[$0]++')
+                    for bs in ${bss[@]}; do
                         benchmark_pattern="${mode},${model},${seq_len},${full_core},${core_per_ins},${bs}"
-                        benchmark_int8=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},int8" |cut -d',' -f9)
-                        benchmark_int8_url=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern}," | tail -1 | cut -d',' -f10)
-                        benchmark_fp32=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},fp32" |cut -d',' -f9)
-                        benchmark_fp32_url=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},fp32" |cut -d',' -f10)
-                        benchmark_bf16=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},bf16" |cut -d',' -f9)
-                        benchmark_bf16_url=$(cat ${inferencerSummaryLog} |grep "${benchmark_pattern},bf16" |cut -d',' -f10)
-                        if [ $(cat ${inferencerSummaryLogLast} |grep -c "${benchmark_pattern},int8") == 0 ]; then
+                        benchmark_int8=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},int8" | cut -d',' -f9)
+                        benchmark_int8_url=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern}," | tail -1 | cut -d',' -f10)
+                        benchmark_fp32=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},fp32" | cut -d',' -f9)
+                        benchmark_fp32_url=$(cat ${inferencerSummaryLog} | grep "${benchmark_pattern},fp32" | cut -d',' -f10)
+                        if [ $(cat ${inferencerSummaryLogLast} | grep -c "${benchmark_pattern},int8") == 0 ]; then
                             benchmark_int8_last=nan
                             benchmark_int8_url_last=nan
                             benchmark_fp32_last=nan
                             benchmark_fp32_url_last=nan
-                            benchmark_bf16_last=nan
-                            benchmark_bf16_url_last=nan
                         else
-                            benchmark_int8_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},int8" |cut -d',' -f9)
-                            benchmark_int8_url_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},int8" |cut -d',' -f10)
-                            benchmark_fp32_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},fp32" |cut -d',' -f9)
-                            benchmark_fp32_url_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},fp32" |cut -d',' -f10)
-                            benchmark_bf16_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},bf16" |cut -d',' -f9)
-                            benchmark_bf16_url_last=$(cat ${inferencerSummaryLogLast} |grep "${benchmark_pattern},bf16" |cut -d',' -f10)
+                            benchmark_int8_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},int8" | cut -d',' -f9)
+                            benchmark_int8_url_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},int8" | cut -d',' -f10)
+                            benchmark_fp32_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},fp32" | cut -d',' -f9)
+                            benchmark_fp32_url_last=$(cat ${inferencerSummaryLogLast} | grep "${benchmark_pattern},fp32" | cut -d',' -f10)
                         fi
                         generate_perf_core
                     done
@@ -300,9 +287,95 @@ eof
             done
         done
     done
-    cat >> ${WORKSPACE}/report.html << eof
+    cat >>${WORKSPACE}/report.html <<eof
     </table>
 eof
+}
+
+function generate_perf_core {
+    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${seq_len}</td><td>New</td><td rowspan=2>${full_core}</td><td rowspan=2>${core_per_ins}</td><td rowspan=2>${bs}</td>" >>${WORKSPACE}/report.html
+
+    echo | awk -v b_int8=${benchmark_int8} -v b_int8_url=${benchmark_int8_url} -v b_fp32=${benchmark_fp32} -v b_fp32_url=${benchmark_fp32_url} -v b_int8_l=${benchmark_int8_last} -v b_int8_url_l=${benchmark_int8_url_last} -v b_fp32_l=${benchmark_fp32_last} -v b_fp32_url_l=${benchmark_fp32_url_last} '
+        function show_benchmark(a,b) {
+            if(a ~/[1-9]/) {
+                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
+            }else {
+                if(a == "") {
+                    printf("<td><a href=%s>%s</a></td>\n",b,a);
+                }else{
+                    printf("<td></td>\n");
+                }
+            }
+        }
+
+        function compare_current(a,b) {
+
+            if(a ~/[1-9]/ && b ~/[1-9]/) {
+                target = a / b;
+                if(target >= 2) {
+                   printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
+                }else if(target < 1) {
+                   printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
+                }else{
+                   printf("<td rowspan=3>%.2f</td>", target);
+                }
+            }else{
+                printf("<td rowspan=3></td>");
+            }
+
+        }
+
+        function compare_new_last(a,b){
+            if(a ~/[1-9]/ && b ~/[1-9]/) {
+                target = a / b;
+                if(target >= 0.945) {
+                    status_png = "background-color:#90EE90";
+                }else {
+                    status_png = "background-color:#FFD2D2";
+                    job_status = "fail"
+                }
+                printf("<td style=\"%s\">%.2f</td>", status_png, target);
+            }else{
+                if(a == ""){
+                    job_status = "fail"
+                    status_png = "background-color:#FFD2D2";
+                    printf("<td style=\"%s\"></td>", status_png);
+                }else{
+                    printf("<td class=\"col-cell col-cell3\"></td>");
+                }
+            }
+        }
+
+
+        BEGIN {
+            job_status = "pass"
+        }{
+            // current
+            show_benchmark(b_int8,b_int8_url)
+            show_benchmark(b_fp32,b_fp32_url)
+
+            // current comparison
+            compare_current(b_int8,b_fp32)
+
+            // Last
+            printf("</tr>\n<tr><td>Last</td>")
+            show_benchmark(b_int8_l,b_int8_url_l)
+            show_benchmark(b_fp32_l,b_fp32_url_l)
+
+            // current vs last
+            printf("</tr>\n<tr><td>New/Last</td><td colspan=3 class=\"col-cell3\"></td>");
+            compare_new_last(b_int8,b_int8_l)
+            compare_new_last(b_fp32,b_fp32_l)
+            printf("</tr>\n");
+        } END{
+          printf("\n%s", job_status);
+        }
+    ' >>${WORKSPACE}/report.html
+    job_state=$(tail -1 ${WORKSPACE}/report.html)
+    sed -i '$s/.*//' ${WORKSPACE}/report.html
+    if [ ${job_state} == 'fail' ]; then
+        echo "performance regression" >>${WORKSPACE}/perf_regression.log
+    fi
 }
 
 function generate_inference {
@@ -470,7 +543,7 @@ function generate_inference {
 }
 
 function generate_llm_results {
-    cat >> ${WORKSPACE}/report.html << eof
+    cat >>${WORKSPACE}/report.html <<eof
     <h2>LLM Inferencer</h2>
       <table class="features-table">
         <tr>
@@ -492,34 +565,29 @@ function generate_llm_results {
 eof
 
     mode='latency'
-    models=$(cat ${llmsummaryLog} |grep "${mode}," |cut -d',' -f3 |awk '!a[$0]++')
-    for model in ${models[@]}
-    do
-        precisions=$(cat ${llmsummaryLog} |grep "${mode},${model}," |cut -d',' -f4 |awk '!a[$0]++')
-        for precision in ${precisions[@]}
-        do
-            batch_size_list=$(cat ${llmsummaryLog} |grep "${mode},${model},${precision}," |cut -d',' -f5 |awk '!a[$0]++')
-            for batch_size in ${batch_size_list[@]}
-            do
-                input_token_list=$(cat ${llmsummaryLog} |grep "${mode},${model},${precision},${batch_size}," |cut -d',' -f6 |awk '!a[$0]++')
-                for input_token in ${input_token_list[@]}
-                do
-                    beam_search=$(cat ${llmsummaryLog} |grep "${mode},${model},${precision},${batch_size},${input_token}," |cut -d',' -f8 |awk '!a[$0]++')
-                    for beam in ${beam_search[@]}
-                    do
+    models=$(cat ${llmsummaryLog} | grep "${mode}," | cut -d',' -f3 | awk '!a[$0]++')
+    for model in ${models[@]}; do
+        precisions=$(cat ${llmsummaryLog} | grep "${mode},${model}," | cut -d',' -f4 | awk '!a[$0]++')
+        for precision in ${precisions[@]}; do
+            batch_size_list=$(cat ${llmsummaryLog} | grep "${mode},${model},${precision}," | cut -d',' -f5 | awk '!a[$0]++')
+            for batch_size in ${batch_size_list[@]}; do
+                input_token_list=$(cat ${llmsummaryLog} | grep "${mode},${model},${precision},${batch_size}," | cut -d',' -f6 | awk '!a[$0]++')
+                for input_token in ${input_token_list[@]}; do
+                    beam_search=$(cat ${llmsummaryLog} | grep "${mode},${model},${precision},${batch_size},${input_token}," | cut -d',' -f8 | awk '!a[$0]++')
+                    for beam in ${beam_search[@]}; do
                         benchmark_pattern="${mode},${model},${precision},${batch_size},${input_token},"
-                        output_token=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f7 |awk '!a[$0]++')
-                        cores_per_instance=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f10 |awk '!a[$0]++')
-                        count=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f11 |awk '!a[$0]++')
-                        throughput=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f12 |awk '!a[$0]++')
-                        link=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')
-                        memory=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f9 |awk '!a[$0]++')
-                        total_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
-                        avg_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f15 |awk '!a[$0]++')
-                        fst_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f16 |awk '!a[$0]++')
-                        p90_latency=$(cat ${llmsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f17 |awk '!a[$0]++')
-                        
-                        if [ $(cat ${llmsummaryLogLast} |grep -c "${benchmark_pattern}") == 0 ]; then
+                        output_token=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f7 | awk '!a[$0]++')
+                        cores_per_instance=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f10 | awk '!a[$0]++')
+                        count=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f11 | awk '!a[$0]++')
+                        throughput=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f12 | awk '!a[$0]++')
+                        link=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f13 | awk '!a[$0]++')
+                        memory=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f9 | awk '!a[$0]++')
+                        total_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f14 | awk '!a[$0]++')
+                        avg_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f15 | awk '!a[$0]++')
+                        fst_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f16 | awk '!a[$0]++')
+                        p90_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f17 | awk '!a[$0]++')
+
+                        if [ $(cat ${llmsummaryLogLast} | grep -c "${benchmark_pattern}") == 0 ]; then
                             throughput_last=nan
                             link_last=nan
                             memory_last=nan
@@ -528,13 +596,13 @@ eof
                             fst_latency_last=nan
                             p90_latency_last=nan
                         else
-                            throughput_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f12 |awk '!a[$0]++')
-                            link_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')
-                            memory_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f9 |awk '!a[$0]++')
-                            total_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
-                            avg_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f15 |awk '!a[$0]++')
-                            fst_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f16 |awk '!a[$0]++')
-                            p90_latency_last=$(cat ${llmsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f17 |awk '!a[$0]++')
+                            throughput_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f12 | awk '!a[$0]++')
+                            link_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f13 | awk '!a[$0]++')
+                            memory_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f9 | awk '!a[$0]++')
+                            total_latency_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f14 | awk '!a[$0]++')
+                            avg_latency_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f15 | awk '!a[$0]++')
+                            fst_latency_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f16 | awk '!a[$0]++')
+                            p90_latency_last=$(cat ${llmsummaryLogLast} | grep "${benchmark_pattern}" | cut -d',' -f17 | awk '!a[$0]++')
                         fi
                         generate_llm_core
                     done
@@ -542,7 +610,7 @@ eof
             done
         done
     done
-    cat >> ${WORKSPACE}/report.html << eof
+    cat >>${WORKSPACE}/report.html <<eof
     </table>
 eof
 }
@@ -917,9 +985,8 @@ function generate_tuning_core {
     ' >>${WORKSPACE}/report.html
 }
 
-
 function generate_llm_core {
-    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${input_token}</td><td rowspan=3>${output_token}</td><td rowspan=3>${batch_size}</td><td rowspan=3>${core_per_instance}</td><td rowspan=3>${precision}</td><td rowspan=3>${beam}</td><td>New</td>" >> ${WORKSPACE}/report.html
+    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${input_token}</td><td rowspan=3>${output_token}</td><td rowspan=3>${batch_size}</td><td rowspan=3>${core_per_instance}</td><td rowspan=3>${precision}</td><td rowspan=3>${beam}</td><td>New</td>" >>${WORKSPACE}/report.html
 
     echo | awk -v al=${avg_latency} -v throughput=${throughput} -v link=${link} -v mem=${memory} -v tl=${total_latency} -v fl=${fst_latency} -v pl=${p90_latency} -v al_l=${avg_latency_last} -v throughput_l=${throughput_last} -v mem_l=${memory_last} -v tl_l=${total_latency_last} -v fl_l=${fst_latency_last} -v pl=${p90_latency_last} -v link_l=${link_last} '
         function show_benchmark(a,b) {
@@ -986,11 +1053,11 @@ function generate_llm_core {
         } END{
           printf("\n%s", job_status);
         }
-    ' >> ${WORKSPACE}/report.html
+    ' >>${WORKSPACE}/report.html
     job_state=$(tail -1 ${WORKSPACE}/report.html)
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
-      echo "performance regression" >> ${WORKSPACE}/perf_regression.log
+        echo "performance regression" >>${WORKSPACE}/perf_regression.log
     fi
 }
 
