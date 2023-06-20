@@ -6,8 +6,8 @@ on:
     paths:
       - intel_extension_for_transformers/backends/neural_engine/kernels
       - intel_extension_for_transformers/backends/neural_engine/test/kernels/benchmark
-      #- .github/workflows/unit-test-kernel.yml
-      #- .github/workflows/script/unitTest
+      - .github/workflows/unit-test-kernel.yml
+      - .github/workflows/script/unitTest
   workflow_dispatch:
 
 # If there is a new commit, the previous jobs will be canceled
