@@ -51,6 +51,8 @@ add_library(host_operators STATIC
     ${HOST_SRC_DIR}/src/llga_operators/llga_op_creator.cpp
     ${HOST_SRC_DIR}/src/operators/rmsnorm.cpp
     ${HOST_SRC_DIR}/src/weight_compression.cpp
+    ${HOST_SRC_DIR}/src/activation_dag.cpp
+    ${HOST_SRC_DIR}/src/memory_allocator.cpp
     ${HOST_SRC_DIR}/src/operators/multi_head_attention.cpp
 )
 
@@ -92,7 +94,6 @@ target_link_libraries(host_operators
         yaml-cpp
         glog
         xbyak::xbyak
-        Eigen3::Eigen
 )
 if(NE_WITH_SPARSELIB)
 target_link_libraries(host_operators
