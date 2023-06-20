@@ -26,10 +26,14 @@ jobs:
   unit-test:
     runs-on: [self-hosted, linux, X64, itrex-node]
     steps:
-      - name: Clean workspace     
+      - name: Docker Clean Up
         run: |
-          rm -fr ${{ github.workspace }} || sudo rm -fr ${{ github.workspace }} || true
-          echo y | docker system prune
+          docker ps -a
+          if [[ $(docker ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+              docker start $(docker ps -aq)
+              echo "remove left files through container ..."
+              docker exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          fi
 
       - name: Checkout out Repo
         uses: actions/checkout@v3
