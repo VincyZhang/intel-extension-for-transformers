@@ -2246,3 +2246,7 @@ chatbot
 peft
 dlsa
 cfefb
+itrex
+bibtex
+CompVis
+decapoda
