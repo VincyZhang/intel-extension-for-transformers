@@ -32,7 +32,7 @@ function pytest() {
     coverage html -d ${coverage_log_dir}/htmlcov --rcfile=${COVERAGE_RCFILE}
     coverage xml -o ${coverage_log_dir}/coverage.xml --rcfile=${COVERAGE_RCFILE}
 
-    check UT status
+    # check UT status
     if [ $(grep -c "FAILED" ${ut_log_name}) != 0 ] || [ $(grep -c "OK" ${ut_log_name}) == 0 ]; then
         $BOLD_RED && echo "Find errors in UT test, please check the output..." && $RESET
         exit 1
