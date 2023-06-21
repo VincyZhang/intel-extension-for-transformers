@@ -13,7 +13,7 @@ pyspelling -c ${VAL_REPO}/pyspelling_conf.yaml >${log_dir}/pyspelling.log
 
 exit_code=$?
 if [ ${exit_code} -ne 0 ]; then
-    echo "Pyspelling exited with non-zero exit code."
+    $BOLD_RED && echo "Pyspelling exited with non-zero exit code." && $RESET
     exit 1
 fi
 $BOLD_PURPLE && echo "Congratulations, check passed!" && $LIGHT_PURPLE && echo "You can click on the artifact button to see the log details." && $RESET
