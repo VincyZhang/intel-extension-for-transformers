@@ -20,11 +20,11 @@ if [ "$precision" = "fp32" ]; then
     iteration=20
 fi
 sockets=$(lscpu | grep 'Socket(s)' | cut -d: -f2 | xargs echo -n)
-ncores_per_socket=$( lscpu | grep 'Core(s) per socket' | cut -d: -f2 | xargs echo -n)
-if [[ $mono_socket = "1" ]]; then 
+ncores_per_socket=$(lscpu | grep 'Core(s) per socket' | cut -d: -f2 | xargs echo -n)
+if [[ $mono_socket = "1" ]]; then
     sockets=1
 fi
-cores=$(($sockets*$ncores_per_socket))
+cores=$(($sockets * $ncores_per_socket))
 if [[ "$bs" = "1" ]]; then
     iteration=1000
 fi
@@ -52,14 +52,13 @@ memory_bind_opt=""
 if [[ $mono_socket = "1" ]]; then
     memory_bind_opt="-m 0"
 fi
-for((j=0;$(($j + $ncores_per_instance))<=${cores};j=$(($j + $ncores_per_instance))));
-do
-    numactl -C "$j-$((j + ncores_per_instance -1))" $memory_bind_opt \
-    ${run_cmd} 2>&1|tee ${log_dir}/${cores}_${ncores_per_instance}_${bs}_${precision}_${j}.log &
+for ((j = 0; $(($j + $ncores_per_instance)) <= ${cores}; j = $(($j + $ncores_per_instance)))); do
+    numactl -C "$j-$((j + ncores_per_instance - 1))" $memory_bind_opt \
+        ${run_cmd} 2>&1 | tee ${log_dir}/${cores}_${ncores_per_instance}_${bs}_${precision}_${j}.log &
 done
 wait
 
 cd ${log_dir}
 throughput=$(find . -name "${cores}_${ncores_per_instance}_${bs}_${precision}*" | xargs grep -rn "Throughput" | awk '{print $NF}' | awk '{ SUM += $1} END { print SUM }')
 echo "${framework},throughput,${model},${seq_len},${cores},${ncores_per_instance},${bs},${precision},${throughput}"
-echo "${framework},throughput,${model},${seq_len},${cores},${ncores_per_instance},${bs},${precision},${throughput},${logs_prefix_url}/engine-${model}" >> ${WORKSPACE}/${framework}_${model}/inferencer_summary.log
+echo "${framework},throughput,${model},${seq_len},${cores},${ncores_per_instance},${bs},${precision},${throughput},${logs_prefix_url}/engine-${model}" >>${WORKSPACE}/${framework}_${model}/inferencer_summary.log

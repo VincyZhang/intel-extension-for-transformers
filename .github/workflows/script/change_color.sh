@@ -2,9 +2,9 @@
 
 # -------------- general approach start----------------
 
-# 1. import this file: 
+# 1. import this file:
 #     source path/change_color.sh
-# 2. use COLOR/BG: 
+# 2. use COLOR/BG:
 #     $VARIABLE_NAME && out_put_content && $RESET
 # 3. COLOR + BG:
 #     $COLOR/BG_VARIABLE_NAME && $BG/COLOR_VARIABLE_NAME && out_put_content && $RESET
@@ -17,7 +17,6 @@
 #         e.g - BG_GRAY+LIGHT_RED = "echo -en \\E[47;31m"
 
 # -------------- general approach end----------------==
-
 
 # general setting
 # ------------- light_color start----------------
@@ -77,5 +76,5 @@ BG_CYAN="echo -en \\E[46m"
 BG_GRAY="echo -en \\E[47m"
 # ------------- background_color end----------------
 
-# close 
+# close
 RESET="echo -en \\E[0m"

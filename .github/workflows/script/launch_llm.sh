@@ -1,6 +1,6 @@
-
 #!/bin/bash
 set -x
+set -eo pipefail
 
 cores_list=(56)
 batch_size_list=(1 4)
@@ -26,7 +26,7 @@ function main() {
         model_type="llama_7b"
     fi
 
-    # init conda 
+    # init conda
     . $(dirname ${CONDA_EXE})/../etc/profile.d/conda.sh
     conda activate $conda_env
     # setup conda env for LLM
@@ -43,30 +43,27 @@ function main() {
     export GLOG_minloglevel=2
 
     # launch benchmark
-    for cores_per_instance in ${cores_list[@]}
-    do
-        for batch_size in ${batch_size_list[@]}
-        do
-            for input in ${input_list[@]}
-            do
+    for cores_per_instance in ${cores_list[@]}; do
+        for batch_size in ${batch_size_list[@]}; do
+            for input in ${input_list[@]}; do
                 [[ "${input}" == "32" ]] && output=32 || output=128
                 sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
                 logs_file="${model}-${precision}-${cores_per_instance}-${batch_size}-${input}-${output}.log"
                 ir_path="${working_dir}/${precision}_ir"
                 python ${WORKING_DIR}/.github/workflows/script/py_task_injection.py --task=get_ITREX_cpu_memory_info --file_name=${script}
-                numactl -m 1 -C 56-111 python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path} --model_type ${model_type} 2>&1 |tee ${WORKING_DIR}/${logs_file} || true
+                numactl -m 1 -C 56-111 python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path} --model_type ${model_type} 2>&1 | tee ${WORKING_DIR}/${logs_file} || true
                 collect_perf_logs_llm ${logs_file} ${precision}
             done
         done
     done
 
-    conda deactivate > /dev/null 2>&1
+    conda deactivate >/dev/null 2>&1
 }
 
 function collect_perf_logs_llm {
     # latency
     log_dir="${WORKING_DIR}/$1"
-    latency=($(grep -i 'inference latency:' ${log_dir} |sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' |awk '
+    latency=($(grep -i 'inference latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
         BEGIN {
             num = 0;
             sum = 0;
@@ -81,7 +78,7 @@ function collect_perf_logs_llm {
             }
         }
     '))
-    first_latency=($(grep -i 'First token average latency:' ${log_dir} |sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' |awk '
+    first_latency=($(grep -i 'First token average latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
         BEGIN {
             num = 0;
             sum = 0;
@@ -96,7 +93,7 @@ function collect_perf_logs_llm {
             }
         }
     '))
-    avg_latency=($(grep -i 'Average 2... latency:' ${log_dir} |sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' |awk '
+    avg_latency=($(grep -i 'Average 2... latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
         BEGIN {
             num = 0;
             sum = 0;
@@ -111,7 +108,7 @@ function collect_perf_logs_llm {
             }
         }
     '))
-    p90_latency=($(grep -i 'P90 2... latency:' ${log_dir} |sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' |awk '
+    p90_latency=($(grep -i 'P90 2... latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
         BEGIN {
             num = 0;
             sum = 0;
@@ -131,7 +128,7 @@ function collect_perf_logs_llm {
     beam_search=4
     # throughput
     throughput=($(
-        echo |awk -v bs=$batch_size -v it=$input -v sec=${latency[1]} -v i=${latency[0]} '{
+        echo | awk -v bs=$batch_size -v it=$input -v sec=${latency[1]} -v i=${latency[0]} '{
             if(sec <= 0) {
                 print "0";
             }else {
@@ -140,22 +137,19 @@ function collect_perf_logs_llm {
         }'
     ) 0)
     # memory usage
-    used_memory=$(grep 'memory used total:' ${log_dir} |tail -n 1 |head -n 1 |awk '{print $(NF-1)}')
+    used_memory=$(grep 'memory used total:' ${log_dir} | tail -n 1 | head -n 1 | awk '{print $(NF-1)}')
     # summary
     framework="engine"
     mode_name="latency"
     precision=$2
     link="${log_prefix}/$1"
-    printf "${framework},${mode_name},${model_name},${precision},${batch_size}," |tee -a ${WORKING_DIR}/llm_summary.log
-    printf "${input_tokens},${max_new_tokens},${beam_search},${used_memory}," |tee -a ${WORKING_DIR}/llm_summary.log
-    printf "${cores_per_instance},${latency[0]},${throughput[0]},${link} ," |tee -a ${WORKING_DIR}/llm_summary.log
-    printf "${latency[1]},${first_latency},${avg_latency},${p90_latency},$(hostname)\n" |tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${framework},${mode_name},${model_name},${precision},${batch_size}," | tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${input_tokens},${max_new_tokens},${beam_search},${used_memory}," | tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${cores_per_instance},${latency[0]},${throughput[0]},${link} ," | tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${latency[1]},${first_latency},${avg_latency},${p90_latency},$(hostname)\n" | tee -a ${WORKING_DIR}/llm_summary.log
     set +x
     echo -e "\n\n-------- Summary --------"
-    sed -n '1p;$p' ${WORKING_DIR}/llm_summary.log |column -t -s ','
+    sed -n '1p;$p' ${WORKING_DIR}/llm_summary.log | column -t -s ','
 }
 
-
-main $@ 2>&1 |tee ${WORKING_DIR}/launch.log
-
-
+main $@ 2>&1 | tee ${WORKING_DIR}/launch.log
