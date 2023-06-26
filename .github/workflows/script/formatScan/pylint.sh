@@ -5,12 +5,15 @@ source /intel-extension-for-transformers/.github/workflows/script/change_color.s
 cd /intel-extension-for-transformers
 log_dir=/intel-extension-for-transformers/.github/workflows/script/formatScan
 
+# install packages
+pip install accelerate intel_extension_for_pytorch
+
 python -m pylint -f json --disable=R,C,W,E1129 \
     --enable=line-too-long \
     --max-line-length=120 \
     --extension-pkg-whitelist=numpy \
     --ignored-classes=TensorProto,NodeProto \
-    --ignored-modules=tensorflow,torch,torch.quantization,torch.tensor,torchvision,mxnet,onnx,onnxruntime,neural_compressor,engine_py,neural_engine_py \
+    --ignored-modules=tensorflow,torch,torch.quantization,torch.tensor,torchvision,mxnet,onnx,onnxruntime,neural_compressor,engine_py,neural_engine_py,intel_extension_for_transformers.neural_engine_py \
     /intel-extension-for-transformers/intel_extension_for_transformers >${log_dir}/pylint.json
 exit_code=$?
 
