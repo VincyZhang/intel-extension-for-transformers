@@ -33,4 +33,4 @@ class Shape(Operator):
         """Extract the node attr."""
         if framework == 'torch':
             self._attr['start'] = node.inputsAt(1).toIValue()
-            self._attr['end'] = node.inputsAt(1).toIValue()
+            self._attr['end'] = node.inputsAt(1).toIValue() + 1
