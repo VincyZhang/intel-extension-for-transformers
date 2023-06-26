@@ -6,7 +6,7 @@ cd /intel-extension-for-transformers
 log_dir=/intel-extension-for-transformers/.github/workflows/script/formatScan
 
 # install packages
-pip install accelerate intel_extension_for_pytorch
+pip install accelerate intel_extension_for_pytorch nlpaug
 
 python -m pylint -f json --disable=R,C,W,E1129 \
     --enable=line-too-long \
