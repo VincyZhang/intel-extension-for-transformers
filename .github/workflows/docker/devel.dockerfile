@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     bc \
     gawk \
     jq \
+    python3.10-venv \
     vim
 
 RUN ln -sf $(which python3) /usr/bin/python

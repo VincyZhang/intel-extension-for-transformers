@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     python3-distutils \
     build-essential \
     cloc \
+    python3.10-venv \
     git
 
 RUN ln -sf $(which python3) /usr/bin/python
