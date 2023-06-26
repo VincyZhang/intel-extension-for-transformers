@@ -9,7 +9,7 @@ git submodule update --init --recursive
 $BOLD_YELLOW && echo "---------------- run python setup.py sdist bdist_wheel -------------" && $RESET
 # python setup.py sdist bdist_wheel
 pip install build --upgrade
-python -m build -s -w
+python3 -m build -s -w
 
 $BOLD_YELLOW && echo "---------------- pip install binary -------------" && $RESET
 pip install dist/intel_extension_for_transformers*.whl
