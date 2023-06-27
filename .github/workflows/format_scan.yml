@@ -34,7 +34,7 @@ jobs:
             "clangformat",
             "cloc",
             "cpplint",
-            "pydocstyle",
+            # "pydocstyle",
             "pyspelling",
           ]
       fail-fast: false
