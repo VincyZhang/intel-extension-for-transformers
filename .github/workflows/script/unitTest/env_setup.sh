@@ -18,5 +18,8 @@ else
     echo "Not found requirements.txt file."
 fi
 
+# same as jenkins ci
+pip instrall scipy==1.10.1
+
 pip install coverage
 pip install pytest

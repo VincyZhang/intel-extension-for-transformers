@@ -49,6 +49,7 @@ function gtest() {
 
     mkdir build && cd build && cmake .. -DNE_WITH_SPARSELIB=ON -DNE_WITH_TESTS=ON -DPYTHON_EXECUTABLE=$(which python) && make -j 2>&1 |
         tee -a ${LOG_DIR}/gtest_cmake_build.log
+    cp /tf_dataset2/inc-ut/nlptoolkit_ut_model/*.yaml test/gtest/
 
     if [[ ${test_install_backend} == "true" ]]; then
         ut_log_name=${LOG_DIR}/unit_test_gtest_backend_only.log
