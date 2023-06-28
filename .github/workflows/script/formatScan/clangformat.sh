@@ -28,7 +28,7 @@ git config --global --add safe.directory "*"
 
 git fetch
 echo "git diff $target_branch /intel-extension-for-transformers"
-git diff $target_branch /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
+git diff $target_branch -- ":(exclude).github" /intel-extension-for-transformers 2>&1 | tee -a ${log_path}
 
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
     exit 1

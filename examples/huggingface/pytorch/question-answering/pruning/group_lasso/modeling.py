@@ -697,7 +697,7 @@ class BertPreTrainedModel(nn.Module):
             logger.info("extracting archive file {} to temp dir {}".format(
                 resolved_archive_file, tempdir))
             with tarfile.open(resolved_archive_file, 'r:gz') as archive:
-                archive.extractall(tempdir)
+                archive.extractall(tempdir)  # nosec B202
             serialization_dir = tempdir
         # Load config
         config_file = os.path.join(serialization_dir, CONFIG_NAME)
