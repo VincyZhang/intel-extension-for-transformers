@@ -1,17 +1,4 @@
 #!/bin/bash
-PATTERN='[-a-zA-Z0-9_]*='
-for i in "$@"; do
-    case $i in
-    --target_branch=*)
-        target_branch=$(echo $i | sed "s/${PATTERN}//")
-        ;;
-    *)
-        echo "Parameter $i not recognized."
-        exit 1
-        ;;
-    esac
-done
-
 source /intel-extension-for-transformers/.github/workflows/script/change_color.sh
 
 pip install clang-format
@@ -26,7 +13,7 @@ clang-format --style=file -i include/**/*.hpp
 clang-format --style=file -i src/**/*.hpp
 clang-format --style=file -i src/**/*.cpp
 
-echo "git diff"
+echo "run git diff"
 git diff 2>&1 | tee -a ${log_path}
 
 if [[ ! -f ${log_path} ]] || [[ $(grep -c "diff" ${log_path}) != 0 ]]; then
