@@ -375,7 +375,7 @@ function generate_perf_core {
     job_state=$(tail -1 ${WORKSPACE}/report.html)
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
-        echo "performance regression" >>${WORKSPACE}/perf_regression.log
+        echo "::set-env name=is_perf_reg::true"
     fi
 }
 
@@ -992,6 +992,11 @@ function generate_tuning_core {
           printf("\n%s", job_status);
         }
     ' >>${WORKSPACE}/report.html
+    job_state=$(tail -1 ${WORKSPACE}/report.html)
+    sed -i '$s/.*//' ${WORKSPACE}/report.html
+    if [ ${job_state} == 'fail' ]; then
+        echo "::set-env name=is_perf_reg::true"
+    fi
 }
 
 function generate_llm_core {
@@ -1066,7 +1071,7 @@ function generate_llm_core {
     job_state=$(tail -1 ${WORKSPACE}/report.html)
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
-        echo "performance regression" >>${WORKSPACE}/perf_regression.log
+        echo "::set-env name=is_perf_reg::true"
     fi
 }
 
