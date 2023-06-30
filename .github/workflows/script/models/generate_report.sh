@@ -316,6 +316,7 @@ function generate_perf_core {
                    printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
                 }else if(target < 1) {
                    printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
+                   job_status = "fail"
                 }else{
                    printf("<td rowspan=3>%.2f</td>", target);
                 }
@@ -665,6 +666,7 @@ function generate_tuning_core {
                        printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f%</td>", target*100);
                     }else if(target < -0.05) {
                        printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f%</td>", target*100);
+                       job_status = "fail"
                     }else{
                        printf("<td rowspan=3>%.2f%</td>", target*100);
                     }
@@ -674,6 +676,7 @@ function generate_tuning_core {
                        printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
                     }else if(target < 1) {
                        printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
+                       job_status = "fail"
                     }else{
                        printf("<td rowspan=3>%.2f</td>", target);
                     }
@@ -684,6 +687,7 @@ function generate_tuning_core {
                        printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
                     }else if(target < 1) {
                        printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
+                       job_status = "fail"
                     }else{
                        printf("<td rowspan=3>%.2f</td>", target);
                     }
@@ -702,6 +706,7 @@ function generate_tuning_core {
                         status_png = "background-color:#90EE90";
                     } else {
                         status_png = "background-color:#FFD2D2";
+                        job_status = "fail"
                     }
                     if (new_result <= 1){
                         printf("<td style=\"%s\" colspan=2>%.2f%</td>", status_png, target*100);
@@ -714,6 +719,7 @@ function generate_tuning_core {
                         status_png = "background-color:#90EE90";
                     } else {
                         status_png = "background-color:#FFD2D2";
+                        job_status = "fail"
                     }
                     printf("<td style=\"%s\" colspan=2>%.2f</td>", status_png, target);
                 } else {
@@ -722,6 +728,7 @@ function generate_tuning_core {
                         status_png = "background-color:#90EE90";
                     } else {
                         status_png = "background-color:#FFD2D2";
+                        job_status = "fail"
                     }
                     printf("<td style=\"%s\" colspan=2>%.2f</td>", status_png, target);
                 }
@@ -981,6 +988,8 @@ function generate_tuning_core {
                 compare_result(dint8_acc_value, last_dint8_acc_value, "acc");
             }
             printf("</tr>\n");
+        } END{
+          printf("\n%s", job_status);
         }
     ' >>${WORKSPACE}/report.html
 }
