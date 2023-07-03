@@ -189,6 +189,7 @@ jobs:
           path: ${{ env.OUT_SCRIPT_PATH }}/generated
 
       - name: Specify performance regression
+        if: ${{ !cancelled() }}
         run: |
           if [ $(is_perf_reg) == 'true' ]; then
             echo "[Performance Regression] Some model performance regression occurred, please check artifacts and reports."

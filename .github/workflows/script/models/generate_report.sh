@@ -375,7 +375,7 @@ function generate_perf_core {
     job_state=$(tail -1 ${WORKSPACE}/report.html)
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
-        echo "::set-env name=is_perf_reg::true"
+        echo "is_perf_reg=true" >> "$GITHUB_ENV"
     fi
 }
 
@@ -995,7 +995,7 @@ function generate_tuning_core {
     job_state=$(tail -1 ${WORKSPACE}/report.html)
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
-        echo "::set-env name=is_perf_reg::true"
+        echo "is_perf_reg=true" >> "$GITHUB_ENV"
     fi
 }
 
@@ -1071,7 +1071,7 @@ function generate_llm_core {
     job_state=$(tail -1 ${WORKSPACE}/report.html)
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
-        echo "::set-env name=is_perf_reg::true"
+        echo "is_perf_reg=true" >> "$GITHUB_ENV"
     fi
 }
 
