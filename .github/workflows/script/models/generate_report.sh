@@ -33,6 +33,8 @@ function main {
     echo "summaryLog: ${llmsummaryLog}"
     echo "summaryLogLast: ${llmsummaryLogLast}"
 
+    echo "is_perf_reg=false" >> "$GITHUB_ENV"
+
     generate_html_head
     generate_html_overview
     if [[ -f ${summaryLog} ]]; then
@@ -743,6 +745,7 @@ function generate_tuning_core {
         }
 
         BEGIN {
+            job_status = "pass"
         }{
             // Current values
             split(current_values,current_value,";");
