@@ -52,8 +52,13 @@ memory_bind_opt=""
 if [[ $mono_socket = "1" ]]; then
     memory_bind_opt="-m 0"
 fi
+
+core_list=$(python ${SCRIPTS_PATH}/new_benchmark.py --cores_per_instance=${ncores_per_instance} --num_of_instance=$(expr $ncores_per_socket / $ncores_per_instance))
+core_list=($(echo $core_list | tr ';' ' '))
+
 for ((j = 0; $(($j + $ncores_per_instance)) <= ${cores}; j = $(($j + $ncores_per_instance)))); do
-    numactl -C "$j-$((j + ncores_per_instance - 1))" $memory_bind_opt \
+    $BOLD_GREEN && echo "physcpubind=${core_list[${j}]}" && $RESET
+    numactl --localalloc --physcpubind=${core_list[${j}]} $memory_bind_opt \
         ${run_cmd} 2>&1 | tee ${log_dir}/${cores}_${ncores_per_instance}_${bs}_${precision}_${j}.log &
 done
 wait
