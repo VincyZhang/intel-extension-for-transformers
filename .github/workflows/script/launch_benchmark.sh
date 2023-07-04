@@ -56,7 +56,7 @@ fi
 core_list=$(python /intel-extension-for-transformers/.github/workflows/script/new_benchmark.py --cores_per_instance=${ncores_per_instance} --num_of_instance=$(expr $ncores_per_socket / $ncores_per_instance))
 core_list=($(echo $core_list | tr ';' ' '))
 
-for ((j = 0; $(($j + $ncores_per_instance)) <= ${cores}; j = $(($j + $ncores_per_instance)))); do
+for ((j = 0; $j < $(expr $ncores_per_socket / $ncores_per_instance); j = $(($j + 1)))); do
     $BOLD_GREEN && echo "physcpubind=${core_list[${j}]}" && $RESET
     numactl --localalloc --physcpubind=${core_list[${j}]} $memory_bind_opt \
         ${run_cmd} 2>&1 | tee ${log_dir}/${cores}_${ncores_per_instance}_${bs}_${precision}_${j}.log &
