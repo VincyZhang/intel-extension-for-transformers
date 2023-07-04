@@ -53,7 +53,7 @@ if [[ $mono_socket = "1" ]]; then
     memory_bind_opt="-m 0"
 fi
 
-core_list=$(python ${SCRIPTS_PATH}/new_benchmark.py --cores_per_instance=${ncores_per_instance} --num_of_instance=$(expr $ncores_per_socket / $ncores_per_instance))
+core_list=$(python /intel-extension-for-transformers/.github/workflows/script/new_benchmark.py --cores_per_instance=${ncores_per_instance} --num_of_instance=$(expr $ncores_per_socket / $ncores_per_instance))
 core_list=($(echo $core_list | tr ';' ' '))
 
 for ((j = 0; $(($j + $ncores_per_instance)) <= ${cores}; j = $(($j + $ncores_per_instance)))); do
