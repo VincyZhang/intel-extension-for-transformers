@@ -84,6 +84,7 @@ def config_instance(cores_per_instance, num_of_instance):
         raise OSError('Currently no support on AMD with hyperthreads')
     else:
         bounded_threads = get_bounded_threads(get_core_ids(), get_threads(), get_physical_ids())
+        bounded_threads = bounded_threads[::-1]
 
     for i in range(0, num_of_instance):
         if get_architecture() == 'x86_64':
