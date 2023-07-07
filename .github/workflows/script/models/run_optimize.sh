@@ -4,7 +4,7 @@ source /intel-extension-for-transformers/.github/workflows/script/change_color.s
 
 # get parameters
 PATTERN='[-a-zA-Z0-9_]*='
-PERF_STABLE_CHECK=false
+PERF_STABLE_CHECK=true
 for i in "$@"; do
     case $i in
         --framework=*)
@@ -144,7 +144,6 @@ function run_benchmark() {
 function check_perf_gap() {
     python -u /intel-extension-for-transformers/.github/workflows/script/models/collect_model_log.py \
         --framework=${framework} \
-        --fwk_ver='na' \
         --model=${model} \
         --logs_dir="${log_dir}" \
         --output_dir="${log_dir}" \

@@ -86,6 +86,21 @@ jobs:
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
           && bash install_binary.sh"
 
+      - name: Download Reference Artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: deploy-test.yml
+          name: FinalReport
+          run_id: ${{ env.REF_ID }}
+          path: ${{ github.workspace }}/${{ matrix.framework }}_${{ matrix.modelName }}_refer_log
+          name_is_regexp: true
+          repo: ${{ github.repository }}
+          check_artifacts: false
+          search_artifacts: false
+          skip_unpack: false
+          if_no_artifact_found: warn
+
       - name: FP32 Benchmark
         run: |
           podman exec ${{ env.CONTAINER_NAME }} \
