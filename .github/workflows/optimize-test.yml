@@ -1,7 +1,7 @@
 name: Optimize Model Test
 
 on:
-  pull_request:
+  [pull_request, workflow_dispatch]:
     branches: [main]
     paths:
       - 'intel_extension_for_transformers/optimization'
@@ -18,8 +18,6 @@ on:
       - '!examples/huggingface/pytorch/text-generation/deployment'
       - '!examples/huggingface/pytorch/text-to-image/deployment'
       - '!examples/huggingface/pytorch/neural_engine_utils'
-
-  workflow_dispatch:
 
 # If there is a new commit, the previous jobs will be canceled
 concurrency:

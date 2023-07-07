@@ -335,7 +335,7 @@ function generate_perf_core {
                     status_png = "background-color:#90EE90";
                 }else {
                     status_png = "background-color:#FFD2D2";
-                    job_status = "fail"
+                    perf_status = "fail"
                 }
                 printf("<td style=\"%s\">%.2f</td>", status_png, target);
             }else{
@@ -349,9 +349,38 @@ function generate_perf_core {
             }
         }
 
+        function compare_ratio(int8_perf_value, fp32_perf_value, last_int8_perf_value, last_fp32_perf_value) {
+            if (int8_perf_value ~/[1-9]/ && fp32_perf_value ~/[1-9]/ && last_int8_perf_value ~/[1-9]/ && last_fp32_perf_value ~/[1-9]/) {
+                new_result = int8_perf_value / fp32_perf_value
+                previous_result = last_int8_perf_value / last_fp32_perf_value
+                target = new_result / previous_result;
+                if (target <= 1.054 && target >= 0.945) {
+                    status_png = "background-color:#90EE90";
+                } else {
+                    status_png = "background-color:#FFD2D2";
+                    ratio_status = "fail"
+                }
+                printf("<td style=\"%s\">%.2f</td>", status_png, target);
+            } else {
+                if (new_result == nan && previous_result == nan) {
+                    printf("<td class=\"col-cell col-cell3\"></td>");
+                } else {
+                    if (new_result == nan) {
+                        ratio_status = "fail"
+                        status_png = "background-color:#FFD2D2";
+                        printf("<td style=\"%s\"></td>", status_png);
+                    } else {
+                        printf("<td class=\"col-cell col-cell3\"></td>");
+                    }
+                }
+            }
+        }
+
 
         BEGIN {
             job_status = "pass"
+            perf_status = "pass"
+            ratio_status = "pass"
         }{
             // current
             show_benchmark(b_int8,b_int8_url)
@@ -369,9 +398,17 @@ function generate_perf_core {
             printf("</tr>\n<tr><td>New/Last</td><td colspan=3 class=\"col-cell3\"></td>");
             compare_new_last(b_int8,b_int8_l)
             compare_new_last(b_fp32,b_fp32_l)
+
+
+            // Compare INT8 FP32 Performance ratio
+            compare_ratio(b_int8, b_fp32, b_int8_l, b_fp32_l);
+
             printf("</tr>\n");
+
+            status = (perf_status == "fail" && ratio_status == "fail") ? "fail" : "pass"
+            status = (job_status == "fail") ? "fail" : status
         } END{
-          printf("\n%s", job_status);
+          printf("\n%s", status);
         }
     ' >>${WORKSPACE}/report.html
     job_state=$(tail -1 ${WORKSPACE}/report.html)
@@ -717,11 +754,11 @@ function generate_tuning_core {
                     }
                 } else if (metric == "perf" || metric == "bench"){
                     target = new_result / previous_result;
-                    if(target >= 0.95) {
+                    if(target <= 1.084 && target >= 0.915) {
                         status_png = "background-color:#90EE90";
                     } else {
                         status_png = "background-color:#FFD2D2";
-                        job_status = "fail"
+                        perf_status = "fail"
                     }
                     printf("<td style=\"%s\" colspan=2>%.2f</td>", status_png, target);
                 } else {
@@ -744,8 +781,37 @@ function generate_tuning_core {
             }
         }
 
+        function compare_ratio(int8_perf_value, fp32_perf_value, last_int8_perf_value, last_fp32_perf_value) {
+            if (int8_perf_value ~/[1-9]/ && fp32_perf_value ~/[1-9]/ && last_int8_perf_value ~/[1-9]/ && last_fp32_perf_value ~/[1-9]/) {
+                new_result = int8_perf_value / fp32_perf_value
+                previous_result = last_int8_perf_value / last_fp32_perf_value
+                target = new_result / previous_result;
+                if (target <= 1.084 && target >= 0.915) {
+                    status_png = "background-color:#90EE90";
+                } else {
+                    status_png = "background-color:#FFD2D2";
+                    ratio_status = "fail"
+                }
+                printf("<td style=\"%s\">%.2f</td>", status_png, target);
+            } else {
+                if (new_result == nan && previous_result == nan) {
+                    printf("<td class=\"col-cell col-cell3\"></td>");
+                } else {
+                    if (new_result == nan) {
+                        ratio_status = "fail"
+                        status_png = "background-color:#FFD2D2";
+                        printf("<td style=\"%s\"></td>", status_png);
+                    } else {
+                        printf("<td class=\"col-cell col-cell3\"></td>");
+                    }
+                }
+            }
+        }
+
         BEGIN {
             job_status = "pass"
+            perf_status = "pass"
+            ratio_status = "pass"
         }{
             // Current values
             split(current_values,current_value,";");
@@ -991,8 +1057,14 @@ function generate_tuning_core {
                 compare_result(dint8_acc_value, last_dint8_acc_value, "acc");
             }
             printf("</tr>\n");
+
+            // Compare INT8 FP32 Performance ratio
+            compare_ratio(int8_perf_value, fp32_perf_value, last_int8_perf_value, last_fp32_perf_value);
+
+            status = (perf_status == "fail" && ratio_status == "fail") ? "fail" : "pass"
+            status = (job_status == "fail") ? "fail" : status
         } END{
-          printf("\n%s", job_status);
+          printf("\n%s", status);
         }
     ' >>${WORKSPACE}/report.html
     job_state=$(tail -1 ${WORKSPACE}/report.html)
@@ -1008,7 +1080,7 @@ function generate_llm_core {
     echo | awk -v al=${avg_latency} -v throughput=${throughput} -v link=${link} -v mem=${memory} -v tl=${total_latency} -v fl=${fst_latency} -v pl=${p90_latency} -v al_l=${avg_latency_last} -v throughput_l=${throughput_last} -v mem_l=${memory_last} -v tl_l=${total_latency_last} -v fl_l=${fst_latency_last} -v pl=${p90_latency_last} -v link_l=${link_last} '
         function show_benchmark(a,b) {
             if(a ~/[1-9]/) {
-                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
+                printf("<td><a href=%s>%.2f</a></td>\n",b,a);
             }else {
                 if(a == "") {
                     printf("<td><a href=%s>%s</a></td>\n",b,a);
