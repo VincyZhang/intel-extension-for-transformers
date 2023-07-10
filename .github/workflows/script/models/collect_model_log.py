@@ -110,6 +110,7 @@ def get_model_benchmark_dict_results():
 
 def get_refer_data():
     refer_log = os.path.join(f"{args.logs_dir}_refer_log",
+                             f"{args.framework}_{args.model}",
                              f"{args.framework}_{args.model}_summary.log")
     result = {}
     if os.path.exists(refer_log):

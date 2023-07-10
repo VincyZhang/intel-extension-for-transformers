@@ -33,7 +33,7 @@ function main {
     echo "summaryLog: ${llmsummaryLog}"
     echo "summaryLogLast: ${llmsummaryLogLast}"
 
-    # echo "is_perf_reg=false" >> "$GITHUB_ENV"
+    echo "is_perf_reg=false" >> "$GITHUB_ENV"
 
     generate_html_head
     generate_html_overview
@@ -1158,20 +1158,22 @@ function generate_html_head {
 
     cat >${WORKSPACE}/report.html <<eof
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Tests - TensorFlow - Jenkins</title>
-    <style type="text/css">
-        body
-        {
+    <style>
+        body {
             margin: 0;
             padding: 0;
             background: white no-repeat left top;
         }
-        #main
-        {
+
+        #main {
             // width: 100%;
             margin: 20px auto 10px auto;
             background: white;
@@ -1182,70 +1184,73 @@ function generate_html_head {
             -moz-box-shadow: 0 2px 2px #9c9c9c;
             -webkit-box-shadow: 0 2px 2px #9c9c9c;
         }
-        .features-table
-        {
-          width: 100%;
-          margin: 0 auto;
-          border-collapse: separate;
-          border-spacing: 0;
-          text-shadow: 0 1px 0 #fff;
-          color: #2a2a2a;
-          background: #fafafa;
-          background-image: -moz-linear-gradient(top, #fff, #eaeaea, #fff); /* Firefox 3.6 */
-          background-image: -webkit-gradient(linear,center bottom,center top,from(#fff),color-stop(0.5, #eaeaea),to(#fff));
-          font-family: Verdana,Arial,Helvetica
+
+        .features-table {
+            width: 100%;
+            margin: 0 auto;
+            border-collapse: separate;
+            border-spacing: 0;
+            text-shadow: 0 1px 0 #fff;
+            color: #2a2a2a;
+            background: #fafafa;
+            background-image: -moz-linear-gradient(top, #fff, #eaeaea, #fff);
+            /* Firefox 3.6 */
+            background-image: -webkit-gradient(linear, center bottom, center top, from(#fff), color-stop(0.5, #eaeaea), to(#fff));
+            font-family: Verdana, Arial, Helvetica
         }
-        .features-table th,td
-        {
-          text-align: center;
-          height: 25px;
-          line-height: 25px;
-          padding: 0 8px;
-          border: 1px solid #cdcdcd;
-          box-shadow: 0 1px 0 white;
-          -moz-box-shadow: 0 1px 0 white;
-          -webkit-box-shadow: 0 1px 0 white;
-          white-space: nowrap;
+
+        .features-table th,
+        td {
+            text-align: center;
+            height: 25px;
+            line-height: 25px;
+            padding: 0 8px;
+            border: 1px solid #cdcdcd;
+            box-shadow: 0 1px 0 white;
+            -moz-box-shadow: 0 1px 0 white;
+            -webkit-box-shadow: 0 1px 0 white;
+            white-space: nowrap;
         }
-        .no-border th
-        {
-          box-shadow: none;
-          -moz-box-shadow: none;
-          -webkit-box-shadow: none;
+
+        .no-border th {
+            box-shadow: none;
+            -moz-box-shadow: none;
+            -webkit-box-shadow: none;
         }
-        .col-cell
-        {
-          text-align: center;
-          width: 150px;
-          font: normal 1em Verdana, Arial, Helvetica;
+
+        .col-cell {
+            text-align: center;
+            width: 150px;
+            font: normal 1em Verdana, Arial, Helvetica;
         }
-        .col-cell3
-        {
-          background: #efefef;
-          background: rgba(144,144,144,0.15);
+
+        .col-cell3 {
+            background: #efefef;
+            background: rgba(144, 144, 144, 0.15);
         }
-        .col-cell1, .col-cell2
-        {
-          background: #B0C4DE;
-          background: rgba(176,196,222,0.3);
+
+        .col-cell1,
+        .col-cell2 {
+            background: #B0C4DE;
+            background: rgba(176, 196, 222, 0.3);
         }
-        .col-cellh
-        {
-          font: bold 1.3em 'trebuchet MS', 'Lucida Sans', Arial;
-          -moz-border-radius-topright: 10px;
-          -moz-border-radius-topleft: 10px;
-          border-top-right-radius: 10px;
-          border-top-left-radius: 10px;
-          border-top: 1px solid #eaeaea !important;
+
+        .col-cellh {
+            font: bold 1.3em 'trebuchet MS', 'Lucida Sans', Arial;
+            -moz-border-radius-topright: 10px;
+            -moz-border-radius-topleft: 10px;
+            border-top-right-radius: 10px;
+            border-top-left-radius: 10px;
+            border-top: 1px solid #eaeaea !important;
         }
-        .col-cellf
-        {
-          font: bold 1.4em Georgia;
-          -moz-border-radius-bottomright: 10px;
-          -moz-border-radius-bottomleft: 10px;
-          border-bottom-right-radius: 10px;
-          border-bottom-left-radius: 10px;
-          border-bottom: 1px solid #dadada !important;
+
+        .col-cellf {
+            font: bold 1.4em Georgia;
+            -moz-border-radius-bottomright: 10px;
+            -moz-border-radius-bottomleft: 10px;
+            border-bottom-right-radius: 10px;
+            border-bottom-left-radius: 10px;
+            border-bottom: 1px solid #dadada !important;
         }
     </style>
 </head>

@@ -90,9 +90,6 @@ jobs:
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
           && bash install_binary.sh"
 
-      - name: Display structure of downloaded files
-        run: ls -R
-
       - name: Download Reference Artifact
         id: download-artifact
         uses: dawidd6/action-download-artifact@v2
@@ -107,6 +104,9 @@ jobs:
           search_artifacts: false
           skip_unpack: false
           if_no_artifact_found: warn
+
+      - name: Display structure of downloaded files
+        run: ls -R
 
       - name: Tuning
         run: |
