@@ -205,11 +205,11 @@ def collect_log():
 
     # write model logs
     f = open(args.output_dir + '/' + args.framework + '_' + args.model + '_summary.log', "a")
-    f.writelines("OS;Platform;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")
+    f.writelines("OS;Platform;Model_test_type;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")
     for result in results:
         f.writelines(str(result))
     f2 = open(args.output_dir + '/' + args.framework + '_' + args.model + '_tuning_info.log', "a")
-    f2.writelines("OS;Platform;Framework;Version;Model;Strategy;Tune_time\n")
+    f2.writelines("OS;Platform;Model_test_type;Framework;Version;Model;Strategy;Tune_time\n")
     for tuning_info in tuning_infos:
         f2.writelines(str(tuning_info))
 
@@ -314,6 +314,7 @@ def check_status(precision, precision_upper, check_accuracy=False):
     performance_result = get_model_benchmark_dict_results()
     current_performance = performance_result.get(precision).get("Value")
     refer_performance = refer.get(f"{precision_upper}_Performance")
+
     print(
         f"current_performance_data = {current_performance:.3f}, refer_performance_data = {refer_performance:.3f}"
     )
