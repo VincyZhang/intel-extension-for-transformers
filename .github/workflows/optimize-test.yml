@@ -97,8 +97,8 @@ jobs:
         id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: deploy-test.yml
-          name: FinalReport
+          workflow: optimize-test.yml
+          name: ${{ matrix.framework }}-${{ matrix.modelName }}
           run_id: ${{ env.REF_ID }}
           path: ${{ github.workspace }}/${{ matrix.framework }}_${{ matrix.modelName }}_refer_log
           name_is_regexp: true

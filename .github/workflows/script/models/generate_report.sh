@@ -33,7 +33,7 @@ function main {
     echo "summaryLog: ${llmsummaryLog}"
     echo "summaryLogLast: ${llmsummaryLogLast}"
 
-    echo "is_perf_reg=false" >> "$GITHUB_ENV"
+    # echo "is_perf_reg=false" >> "$GITHUB_ENV"
 
     generate_html_head
     generate_html_overview
@@ -315,15 +315,15 @@ function generate_perf_core {
             if(a ~/[1-9]/ && b ~/[1-9]/) {
                 target = a / b;
                 if(target >= 2) {
-                   printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
+                   printf("<td style=\"background-color:#90EE90\">%.2f</td>", target);
                 }else if(target < 1) {
-                   printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
+                   printf("<td style=\"background-color:#FFD2D2\">%.2f</td>", target);
                    job_status = "fail"
                 }else{
-                   printf("<td rowspan=3>%.2f</td>", target);
+                   printf("<td>%.2f</td>", target);
                 }
             }else{
-                printf("<td rowspan=3></td>");
+                printf("<td></td>");
             }
 
         }
@@ -393,6 +393,8 @@ function generate_perf_core {
             printf("</tr>\n<tr><td>Last</td>")
             show_benchmark(b_int8_l,b_int8_url_l)
             show_benchmark(b_fp32_l,b_fp32_url_l)
+
+            compare_current(b_int8_l,b_fp32_l)
 
             // current vs last
             printf("</tr>\n<tr><td>New/Last</td><td colspan=3 class=\"col-cell3\"></td>");
@@ -712,12 +714,12 @@ function generate_tuning_core {
                 } else if(metric == "perf" || metric == "bench") {
                     target = int8_result / fp32_result;
                     if(target >= 2) {
-                       printf("<td rowspan=3 style=\"background-color:#90EE90\">%.2f</td>", target);
+                       printf("<td style=\"background-color:#90EE90\">%.2f</td>", target);
                     }else if(target < 1) {
-                       printf("<td rowspan=3 style=\"background-color:#FFD2D2\">%.2f</td>", target);
+                       printf("<td style=\"background-color:#FFD2D2\">%.2f</td>", target);
                        job_status = "fail"
                     }else{
-                       printf("<td rowspan=3>%.2f</td>", target);
+                       printf("<td>%.2f</td>", target);
                     }
                 } else {
                     // latency mode
@@ -1002,6 +1004,8 @@ function generate_tuning_core {
                 show_new_last(last_dint8_acc_batch, last_dint8_acc_url, last_dint8_acc_value, "acc");
             }
 
+            compare_current(last_int8_perf_value,last_fp32_perf_value,"perf")
+
             // current vs last
             printf("</tr>\n<tr><td>New/Last</td><td colspan=2 class=\"col-cell3\"></td>");
 
@@ -1056,10 +1060,10 @@ function generate_tuning_core {
                 // Compare dynamic int8 Performance results
                 compare_result(dint8_acc_value, last_dint8_acc_value, "acc");
             }
-            printf("</tr>\n");
-
+            
             // Compare INT8 FP32 Performance ratio
             compare_ratio(int8_perf_value, fp32_perf_value, last_int8_perf_value, last_fp32_perf_value);
+            printf("</tr>\n");
 
             status = (perf_status == "fail" && ratio_status == "fail") ? "fail" : "pass"
             status = (job_status == "fail") ? "fail" : status

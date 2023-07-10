@@ -63,14 +63,14 @@ main() {
                 break
             fi
         done
-        exit ${exit_code}
     fi
 
     ## run inferencer
     if [[ $(echo "${mode}" | grep "performance") ]] && [[ ${framework} == "engine" ]] && [[ ${precision} != "dynamic_int8" ]]; then
         run_inferencer
     fi
-    
+
+     exit ${exit_code}
 }
 
 function check_perf_gap() {
