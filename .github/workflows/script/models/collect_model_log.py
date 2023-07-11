@@ -77,8 +77,8 @@ def get_model_tuning_dict_results():
 
 
 def get_model_benchmark_dict_results():
-    benchmark_performance_result_dict = {"int8": {}, "fp32": {}}
-    for precision in ["int8", "fp32"]:
+    benchmark_performance_result_dict = {"int8": {}, "fp32": {}, "dynamic_int8": {}}
+    for precision in ["int8", "fp32", "dynamic_int8"]:
         throughput = 0.0
         bs = 1
         for root, dirs, files in os.walk(args.logs_dir):
@@ -359,6 +359,8 @@ if __name__ == '__main__':
         check_status("int8", "INT8")
     elif args.stage == "fp32_benchmark" and refer:
         check_status("fp32", "FP32")
+    elif args.stage == "dynamic_int8_benchmark" and refer:
+        check_status("dynamic_int8", "DYNAMIC_INT8")
     elif not refer:
         print("skip check status")
     else:
