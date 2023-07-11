@@ -84,7 +84,7 @@ def get_model_benchmark_dict_results():
         for root, dirs, files in os.walk(args.logs_dir):
             for name in files:
                 file_name = os.path.join(root, name)
-                if ("throughput" in name and precision in name):
+                if (("throughput" in name or "performance" in name) and precision in name):
                     for line in open(file_name, "r"):
                         result = parse_perf_line(line)
                         if result.get("throughput"):
