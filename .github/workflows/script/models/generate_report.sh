@@ -890,7 +890,6 @@ function generate_tuning_core {
                 show_new_last(dint8_acc_batch, dint8_acc_url, dint8_acc_value, "acc");
             }
             
-
             // Compare Current
             if (mode == "performance") {
                 compare_current(int8_perf_value, fp32_perf_value, "perf");
@@ -1005,6 +1004,16 @@ function generate_tuning_core {
             }
 
             compare_current(last_int8_perf_value,last_fp32_perf_value,"perf")
+            if (workflow == "optimize") {
+                compare_current(last_int8_bench_value, last_fp32_bench_value, "bench")
+            }
+            if (workflow == "deploy" && dint8_perf_value!="") {
+                if (mode == "performance") {
+                    compare_current(dint8_perf_value, fp32_perf_value, "perf");
+                } else {
+                    compare_current(dint8_perf_value, fp32_perf_value, "latency");
+                }
+            }
 
             // current vs last
             printf("</tr>\n<tr><td>New/Last</td><td colspan=2 class=\"col-cell3\"></td>");
@@ -1063,6 +1072,7 @@ function generate_tuning_core {
             
             // Compare INT8 FP32 Performance ratio
             compare_ratio(int8_perf_value, fp32_perf_value, last_int8_perf_value, last_fp32_perf_value);
+            compare_ratio(int8_bench_value, fp32_bench_value, last_int8_bench_value, last_fp32_bench_value);
             printf("</tr>\n");
 
             status = (perf_status == "fail" && ratio_status == "fail") ? "fail" : "pass"
