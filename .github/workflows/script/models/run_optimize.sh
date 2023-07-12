@@ -161,17 +161,27 @@ function multiInstance() {
     logFile="${log_dir}/${framework}-${model}-${precision}-performance"
     benchmark_pids=()
     export OMP_NUM_THREADS=${ncores_per_instance}
-    
-    for((j=0;$j<${ncores_per_socket};j=$(($j + ${ncores_per_instance}))));
-    do
-        end_core_num=$((j + ncores_per_instance -1))
-        if [ ${end_core_num} -ge ${ncores_per_socket} ]; then
-            end_core_num=$((ncores_per_socket-1))
-        fi
-        numactl -m 0 -C "$j-$end_core_num" \
+
+    core_list=$(python /intel-extension-for-transformers/.github/workflows/script/new_benchmark.py --cores_per_instance=${ncores_per_instance} --num_of_instance=$(expr $ncores_per_socket / $ncores_per_instance))
+    core_list=($(echo $core_list | tr ';' ' '))
+
+    for ((j = 0; $j < $(expr $ncores_per_socket / $ncores_per_instance); j = $(($j + 1)))); do
+        $BOLD_GREEN && echo "physcpubind=${core_list[${j}]}" && $RESET
+        numactl --localalloc --physcpubind=${core_list[${j}]} $memory_bind_opt \
             ${benchmark_cmd} 2>&1|tee ${logFile}-${ncores_per_socket}-${ncores_per_instance}-${j}.log &
             benchmark_pids+=($!)
     done
+
+    # for((j=0;$j<${ncores_per_socket};j=$(($j + ${ncores_per_instance}))));
+    # do
+    #     end_core_num=$((j + ncores_per_instance -1))
+    #     if [ ${end_core_num} -ge ${ncores_per_socket} ]; then
+    #         end_core_num=$((ncores_per_socket-1))
+    #     fi
+    #     numactl -m 0 -C "$j-$end_core_num" \
+    #         ${benchmark_cmd} 2>&1|tee ${logFile}-${ncores_per_socket}-${ncores_per_instance}-${j}.log &
+    #         benchmark_pids+=($!)
+    # done
 
     status="SUCCESS"
     for pid in "${benchmark_pids[@]}"; do
