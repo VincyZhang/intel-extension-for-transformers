@@ -318,7 +318,7 @@ def check_status(precision, precision_upper, check_accuracy=False):
     print(
         f"current_performance_data = {current_performance:.3f}, refer_performance_data = {refer_performance:.3f}"
     )
-    assert (refer_performance - current_performance) / refer_performance <= args.gap
+    assert abs((refer_performance - current_performance) / refer_performance) <= args.gap
 
     if check_accuracy:
         _, accuracy_result = get_model_tuning_dict_results()
