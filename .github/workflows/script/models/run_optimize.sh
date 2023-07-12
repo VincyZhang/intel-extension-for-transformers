@@ -167,7 +167,7 @@ function multiInstance() {
 
     for ((j = 0; $j < $(expr $ncores_per_socket / $ncores_per_instance); j = $(($j + 1)))); do
         $BOLD_GREEN && echo "physcpubind=${core_list[${j}]}" && $RESET
-        numactl --localalloc --physcpubind=${core_list[${j}]} $memory_bind_opt \
+        numactl --localalloc --physcpubind=${core_list[${j}]} \
             ${benchmark_cmd} 2>&1|tee ${logFile}-${ncores_per_socket}-${ncores_per_instance}-${j}.log &
             benchmark_pids+=($!)
     done
