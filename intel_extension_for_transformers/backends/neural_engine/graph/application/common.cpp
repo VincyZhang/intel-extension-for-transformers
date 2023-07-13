@@ -1,3 +1,16 @@
+//  Copyright (c) 2023 Intel Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 #include "common.h"
 
 #include <ext/alloc_traits.h>
@@ -22,8 +35,6 @@
 #include <locale>
 #include <codecvt>
 #include <sstream>
-
-#include "dr_wav.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -65,7 +76,34 @@ int32_t get_num_physical_cores() {
     return n_threads > 0 ? (n_threads <= 4 ? n_threads : n_threads / 2) : 4;
 }
 
-bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
+void gpt_print_usage(int /*argc*/, char ** argv, const common_params & params) {
+    fprintf(stderr, "usage: %s [options]\n", argv[0]);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "options:\n");
+    fprintf(stderr, "  -h, --help            show this help message and exit\n");
+    fprintf(stderr, "  -s SEED, --seed SEED  RNG seed (default: -1)\n");
+    fprintf(stderr, "  -t N, --threads N     number of threads to use during computation (default: %d)\n", params.n_threads);
+    fprintf(stderr, "  -p PROMPT, --prompt PROMPT\n");
+    fprintf(stderr, "                        prompt to start generation with (default: random)\n");
+    fprintf(stderr, "  -f FNAME, --file FNAME\n");
+    fprintf(stderr, "                        load prompt from a file\n");
+    fprintf(stderr, "  -tt TOKEN_TEST, --token_test TOKEN_TEST\n");
+    fprintf(stderr, "                        test tokenization\n");
+    fprintf(stderr, "  -n N, --n_predict N   number of tokens to predict (default: %d)\n", params.n_predict);
+    fprintf(stderr, "  --top_k N             top-k sampling (default: %d, 0 = n_vocab)\n", params.top_k);
+    fprintf(stderr, "  --top_p N             top-p sampling (default: %.2f)\n", params.top_p);
+    fprintf(stderr, "  --temp N              temperature (default: %.2f)\n", params.temp);
+    fprintf(stderr, "  --repeat-last-n N     last n tokens to consider for penalize (default: %d, 0 = disabled, -1 = ctx_size)\n", params.repeat_last_n);
+    fprintf(stderr, "  --repeat-penalty N    penalize repeat sequence of tokens (default: %.2f, 1.0 = disabled)\n", (double)params.repeat_penalty);
+    fprintf(stderr, "  --perplexity          compute perplexity over the prompt\n");
+    fprintf(stderr, "  -c N, --ctx-size N    size of the prompt context (default: %d)\n", params.n_ctx);
+    fprintf(stderr, "  -b N, --batch_size N  batch size for prompt processing (default: %d)\n", params.n_batch);
+    fprintf(stderr, "  -m FNAME, --model FNAME\n");
+    fprintf(stderr, "                        model path (default: %s)\n", params.model.c_str());
+    fprintf(stderr, "\n");
+}
+
+bool common_params_parse(int argc, char ** argv, common_params & params) {
     for (int i = 1; i < argc; i++) {
         std::string arg = argv[i];
 
@@ -83,6 +121,14 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
             params.top_p = std::stof(argv[++i]);
         } else if (arg == "--temp") {
             params.temp = std::stof(argv[++i]);
+        } else if (arg == "--repeat-last-n") {
+            params.repeat_last_n = std::stof(argv[++i]);
+        } else if (arg == "--repeat-penalty") {
+            params.repeat_penalty = std::stof(argv[++i]);
+        } else if (arg == "--perplexity") {
+            params.perplexity = true;
+        } else if (arg == "-c" || arg == "--ctx-size") {
+            params.n_ctx = std::stoi(argv[++i]);
         } else if (arg == "-b" || arg == "--batch_size") {
             params.n_batch = std::stoi(argv[++i]);
         } else if (arg == "-m" || arg == "--model") {
@@ -100,14 +146,14 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
                 fprintf(stderr, "error: failed to open file '%s'\n", argv[i]);
                 break;
             }
+            params.prompt.clear();
             std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.prompt));
             if (params.prompt.back() == '\n') {
                 params.prompt.pop_back();
             }
         } else if (arg == "-tt" || arg == "--token_test") {
             params.token_test = argv[++i];
-        }
-        else {
+        } else {
             fprintf(stderr, "error: unknown argument: %s\n", arg.c_str());
             gpt_print_usage(argc, argv, params);
             exit(0);
@@ -115,29 +161,6 @@ bool gpt_params_parse(int argc, char ** argv, gpt_params & params) {
     }
 
     return true;
-}
-
-void gpt_print_usage(int /*argc*/, char ** argv, const gpt_params & params) {
-    fprintf(stderr, "usage: %s [options]\n", argv[0]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "options:\n");
-    fprintf(stderr, "  -h, --help            show this help message and exit\n");
-    fprintf(stderr, "  -s SEED, --seed SEED  RNG seed (default: -1)\n");
-    fprintf(stderr, "  -t N, --threads N     number of threads to use during computation (default: %d)\n", params.n_threads);
-    fprintf(stderr, "  -p PROMPT, --prompt PROMPT\n");
-    fprintf(stderr, "                        prompt to start generation with (default: random)\n");
-    fprintf(stderr, "  -f FNAME, --file FNAME\n");
-    fprintf(stderr, "                        load prompt from a file\n");
-    fprintf(stderr, "  -tt TOKEN_TEST, --token_test TOKEN_TEST\n");
-    fprintf(stderr, "                        test tokenization\n");
-    fprintf(stderr, "  -n N, --n_predict N   number of tokens to predict (default: %d)\n", params.n_predict);
-    fprintf(stderr, "  --top_k N             top-k sampling (default: %d)\n", params.top_k);
-    fprintf(stderr, "  --top_p N             top-p sampling (default: %.1f)\n", params.top_p);
-    fprintf(stderr, "  --temp N              temperature (default: %.1f)\n", params.temp);
-    fprintf(stderr, "  -b N, --batch_size N  batch size for prompt processing (default: %d)\n", params.n_batch);
-    fprintf(stderr, "  -m FNAME, --model FNAME\n");
-    fprintf(stderr, "                        model path (default: %s)\n", params.model.c_str());
-    fprintf(stderr, "\n");
 }
 
 std::string gpt_random_prompt(std::mt19937 & rng) {
@@ -614,164 +637,6 @@ gpt_vocab::id gpt_sample_top_k_top_p_repeat(
 
     return logits_id[idx].second;
 
-}
-
-bool read_wav(const std::string & fname, std::vector<float>& pcmf32, std::vector<std::vector<float>>& pcmf32s, bool stereo) {
-    drwav wav;
-    std::vector<uint8_t> wav_data; // used for pipe input from stdin
-
-    if (fname == "-") {
-        {
-            uint8_t buf[1024];
-            while (true)
-            {
-                const size_t n = fread(buf, 1, sizeof(buf), stdin);
-                if (n == 0) {
-                    break;
-                }
-                wav_data.insert(wav_data.end(), buf, buf + n);
-            }
-        }
-
-        if (drwav_init_memory(&wav, wav_data.data(), wav_data.size(), nullptr) == false) {
-            fprintf(stderr, "error: failed to open WAV file from stdin\n");
-            return false;
-        }
-
-        fprintf(stderr, "%s: read %zu bytes from stdin\n", __func__, wav_data.size());
-    }
-    else if (drwav_init_file(&wav, fname.c_str(), nullptr) == false) {
-        fprintf(stderr, "error: failed to open '%s' as WAV file\n", fname.c_str());
-        return false;
-    }
-
-    if (wav.channels != 1 && wav.channels != 2) {
-        fprintf(stderr, "%s: WAV file '%s' must be mono or stereo\n", __func__, fname.c_str());
-        return false;
-    }
-
-    if (stereo && wav.channels != 2) {
-        fprintf(stderr, "%s: WAV file '%s' must be stereo for diarization\n", __func__, fname.c_str());
-        return false;
-    }
-
-    if (wav.sampleRate != COMMON_SAMPLE_RATE) {
-        fprintf(stderr, "%s: WAV file '%s' must be %i kHz\n", __func__, fname.c_str(), COMMON_SAMPLE_RATE/1000);
-        return false;
-    }
-
-    if (wav.bitsPerSample != 16) {
-        fprintf(stderr, "%s: WAV file '%s' must be 16-bit\n", __func__, fname.c_str());
-        return false;
-    }
-
-    const uint64_t n = wav_data.empty() ? wav.totalPCMFrameCount : wav_data.size()/(wav.channels*wav.bitsPerSample/8);
-
-    std::vector<int16_t> pcm16;
-    pcm16.resize(n*wav.channels);
-    drwav_read_pcm_frames_s16(&wav, n, pcm16.data());
-    drwav_uninit(&wav);
-
-    // convert to mono, float
-    pcmf32.resize(n);
-    if (wav.channels == 1) {
-        for (uint64_t i = 0; i < n; i++) {
-            pcmf32[i] = float(pcm16[i])/32768.0f;
-        }
-    } else {
-        for (uint64_t i = 0; i < n; i++) {
-            pcmf32[i] = float(pcm16[2*i] + pcm16[2*i + 1])/65536.0f;
-        }
-    }
-
-    if (stereo) {
-        // convert to stereo, float
-        pcmf32s.resize(2);
-
-        pcmf32s[0].resize(n);
-        pcmf32s[1].resize(n);
-        for (uint64_t i = 0; i < n; i++) {
-            pcmf32s[0][i] = float(pcm16[2*i])/32768.0f;
-            pcmf32s[1][i] = float(pcm16[2*i + 1])/32768.0f;
-        }
-    }
-
-    return true;
-}
-
-void high_pass_filter(std::vector<float> & data, float cutoff, float sample_rate) {
-    const float rc = 1.0f / (2.0f * M_PI * cutoff);
-    const float dt = 1.0f / sample_rate;
-    const float alpha = dt / (rc + dt);
-
-    float y = data[0];
-
-    for (size_t i = 1; i < data.size(); i++) {
-        y = alpha * (y + data[i] - data[i - 1]);
-        data[i] = y;
-    }
-}
-
-bool vad_simple(std::vector<float> & pcmf32, int sample_rate, int last_ms, float vad_thold, float freq_thold, bool verbose) {
-    const int n_samples      = pcmf32.size();
-    const int n_samples_last = (sample_rate * last_ms) / 1000;
-
-    if (n_samples_last >= n_samples) {
-        // not enough samples - assume no speech
-        return false;
-    }
-
-    if (freq_thold > 0.0f) {
-        high_pass_filter(pcmf32, freq_thold, sample_rate);
-    }
-
-    float energy_all  = 0.0f;
-    float energy_last = 0.0f;
-
-    for (int i = 0; i < n_samples; i++) {
-        energy_all += fabsf(pcmf32[i]);
-
-        if (i >= n_samples - n_samples_last) {
-            energy_last += fabsf(pcmf32[i]);
-        }
-    }
-
-    energy_all  /= n_samples;
-    energy_last /= n_samples_last;
-
-    if (verbose) {
-        fprintf(stderr, "%s: energy_all: %f, energy_last: %f, vad_thold: %f, freq_thold: %f\n", __func__, energy_all, energy_last, vad_thold, freq_thold);
-    }
-
-    if (energy_last > vad_thold*energy_all) {
-        return false;
-    }
-
-    return true;
-}
-
-float similarity(const std::string & s0, const std::string & s1) {
-    const size_t len0 = s0.size() + 1;
-    const size_t len1 = s1.size() + 1;
-
-    std::vector<int> col(len1, 0);
-    std::vector<int> prevCol(len1, 0);
-
-    for (size_t i = 0; i < len1; i++) {
-        prevCol[i] = i;
-    }
-
-    for (size_t i = 0; i < len0; i++) {
-        col[0] = i;
-        for (size_t j = 1; j < len1; j++) {
-            col[j] = std::min(std::min(1 + col[j - 1], 1 + prevCol[j]), prevCol[j - 1] + (i > 0 && s0[i - 1] == s1[j - 1] ? 0 : 1));
-        }
-        col.swap(prevCol);
-    }
-
-    const float dist = prevCol[len1 - 1];
-
-    return 1.0f - (dist / std::max(s0.size(), s1.size()));
 }
 
 

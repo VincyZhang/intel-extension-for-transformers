@@ -1,3 +1,16 @@
+//  Copyright (c) 2023 Intel Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 // Defines CLOCK_MONOTONIC on Linux
 #define _GNU_SOURCE
 
@@ -85,10 +98,15 @@ static int sched_yield(void) {
 typedef void* thread_ret_t;
 #endif
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 static_assert(sizeof(block_q4_0) == sizeof(ne_fp16_t) + QK4_0 / 2, "wrong q4_0 block size/padding");
 static_assert(sizeof(block_q4_1) == 2 * sizeof(ne_fp16_t) + QK4_1 / 2, "wrong q4_1 block size/padding");
 static_assert(sizeof(block_q5_0) == sizeof(ne_fp16_t) + sizeof(uint32_t) + QK5_0 / 2, "wrong q5_0 block size/padding");
-static_assert(sizeof(block_q5_1) == 2 * sizeof(ne_fp16_t) + sizeof(uint32_t) + QK5_1 / 2, "wrong q5_1 block size/padding");
+static_assert(sizeof(block_q5_1) == 2 * sizeof(ne_fp16_t) + sizeof(uint32_t) + QK5_1 / 2,
+              "wrong q5_1 block size/padding");
 static_assert(sizeof(block_q8_0) == sizeof(ne_fp16_t) + QK8_0, "wrong q8_0 block size/padding");
 static_assert(sizeof(block_q8_1) == 2 * sizeof(float) + QK8_1, "wrong q8_1 block size/padding");
 
@@ -415,6 +433,8 @@ static const char* NE_OP_LABEL[NE_OP_COUNT] = {
     "CONV_1D_1S",
     "CONV_1D_2S",
 
+    "MUL_QKV",
+    "FFN_SILU",
     "FLASH_ATTN",
     "FLASH_FF",
 
@@ -422,7 +442,7 @@ static const char* NE_OP_LABEL[NE_OP_COUNT] = {
     "MAP_BINARY",
 };
 
-static_assert(NE_OP_COUNT == 51, "NE_OP_COUNT != 51");
+static_assert(NE_OP_COUNT == 53, "NE_OP_COUNT != 53");
 
 static const char* NE_OP_SYMBOL[NE_OP_COUNT] = {
     "none",
@@ -476,14 +496,14 @@ static const char* NE_OP_SYMBOL[NE_OP_COUNT] = {
     "conv_1d_1s(x)",
     "conv_1d_2s(x)",
 
+    "QKV(x)",
+    "ffn_silu(x)",
     "flash_attn(x)",
     "flash_ff(x)",
 
     "f(x)",
     "f(x,y)",
 };
-
-static_assert(NE_OP_COUNT == 51, "NE_OP_COUNT != 51");
 
 static_assert(sizeof(struct ne_object) % NE_MEM_ALIGN == 0, "ne_object size must be a multiple of NE_MEM_ALIGN");
 static_assert(sizeof(struct ne_tensor) % NE_MEM_ALIGN == 0, "ne_tensor size must be a multiple of NE_MEM_ALIGN");
@@ -1934,6 +1954,66 @@ struct ne_tensor* ne_mul_mat(struct ne_context* ctx, struct ne_tensor* a, struct
   return result;
 }
 
+// ne_mul_qkv
+
+struct ne_tensor* ne_mul_qkv(struct ne_context* ctx, struct ne_tensor* qw, struct ne_tensor* kw, struct ne_tensor* vw,
+                             struct ne_tensor* src) {
+  NE_ASSERT(ne_can_mul_mat(src, qw));
+  NE_ASSERT(ne_can_mul_mat(src, kw));
+  NE_ASSERT(ne_can_mul_mat(src, vw));
+  NE_ASSERT(ne_are_same_shape(qw, kw));
+  NE_ASSERT(ne_are_same_shape(qw, vw));
+  NE_ASSERT(!ne_is_transposed(src));
+
+  bool is_node = false;
+
+  if (src->grad || qw->grad || vw->grad || kw->grad) {
+    is_node = true;
+  }
+
+  const int64_t ne[4] = {qw->ne[1], src->ne[1], src->ne[2] * 3, src->ne[3]};
+  struct ne_tensor* result = ne_new_tensor(ctx, NE_TYPE_F32, MIN(src->n_dims, qw->n_dims), ne);
+
+  result->op = NE_OP_MUL_QKV;
+  result->grad = is_node ? ne_dup_tensor(ctx, result) : NULL;
+  result->src0 = src;
+  result->src1 = qw;
+  result->opt[0] = kw;
+  result->opt[1] = vw;
+
+  return result;
+}
+
+// src -w1-> tmp -> silu -> tmp
+//     -w3-> tmp1               -mul->tmp -w2-> dst
+struct ne_tensor* ne_ffn_silu(struct ne_context* ctx, struct ne_tensor* w1, struct ne_tensor* w2, struct ne_tensor* w3,
+                              struct ne_tensor* src) {
+  NE_ASSERT(ne_are_same_shape(w1, w3));
+  NE_ASSERT(w2->ne[0] == w1->ne[1]);
+
+  bool is_node = false;
+
+  if (src->grad || w1->grad || w2->grad || w3->grad) {
+    is_node = true;
+  }
+
+  const int64_t ne[4] = {w2->ne[1], src->ne[1], src->ne[2], src->ne[3]};
+  struct ne_tensor* result = ne_new_tensor(ctx, NE_TYPE_F32, src->n_dims, ne);
+  const int64_t tne[4] = {w1->ne[1], src->ne[1], src->ne[2], src->ne[3]};
+  struct ne_tensor* tmp = ne_new_tensor(ctx, NE_TYPE_F32, src->n_dims, tne);
+  struct ne_tensor* tmp1 = ne_new_tensor(ctx, NE_TYPE_F32, src->n_dims, tne);
+
+  result->op = NE_OP_MUL_FFN_SILU;
+  result->grad = is_node ? ne_dup_tensor(ctx, result) : NULL;
+  result->src0 = src;
+  result->src1 = w1;
+  result->opt[0] = w2;
+  result->opt[1] = w3;
+  result->opt[2] = tmp;
+  result->opt[3] = tmp1;
+  return result;
+}
+
 // ne_scale
 
 struct ne_tensor* ne_scale_impl(struct ne_context* ctx, struct ne_tensor* a, struct ne_tensor* b, bool inplace) {
@@ -3108,6 +3188,7 @@ static void ne_compute_forward_dup_f16(const struct ne_compute_params* params, c
             const char* src0_ptr = ((char*)src0->data + i00 * nb00 + i01 * nb01 + i02 * nb02 + i03 * nb03);
             char* dst_ptr = ((char*)dst->data + i10 * nb0 + i11 * nb1 + i12 * nb2 + i13 * nb3);
 
+            NE_ASSERT(dst_ptr != NULL);
             memcpy(dst_ptr, src0_ptr, sizeof(ne_fp16_t));
 
             if (++i10 == ne00) {
@@ -3387,6 +3468,7 @@ static void ne_compute_forward_dup_f32(const struct ne_compute_params* params, c
             const char* src0_ptr = ((char*)src0->data + i00 * nb00 + i01 * nb01 + i02 * nb02 + i03 * nb03);
             char* dst_ptr = ((char*)dst->data + i10 * nb0 + i11 * nb1 + i12 * nb2 + i13 * nb3);
 
+            NE_ASSERT(dst_ptr != NULL);
             memcpy(dst_ptr, src0_ptr, sizeof(float));
 
             if (++i10 == ne0) {
@@ -5942,6 +6024,40 @@ static void ne_compute_forward_mul_mat(const struct ne_compute_params* params, c
       NE_ASSERT(false);
     } break;
   }
+}
+
+static void ne_compute_forward_mul_qkv(const struct ne_compute_params* params, const struct ne_tensor* src,
+                                       const struct ne_tensor* qw, const struct ne_tensor* kw, struct ne_tensor* vw,
+                                       struct ne_tensor* dst) {
+  if (params->type == NE_TASK_INIT) {
+    return;
+  }
+
+  if (params->type == NE_TASK_FINALIZE) {
+    return;
+  }
+  const int n = dst->ne[0];
+  const int m = dst->ne[1];
+  const int k = src->ne[0];
+  jblas_weightcomp_QKV_f32_forward((float*)src->data, qw->data, kw->data, vw->data, (float*)dst->data, m, n, k, k, n);
+}
+
+static void ne_compute_forward_ffn_silu(const struct ne_compute_params* params, const struct ne_tensor* src,
+                                        const struct ne_tensor* w1, const struct ne_tensor* w2, struct ne_tensor* w3,
+                                        const struct ne_tensor* tmp, struct ne_tensor* tmp1, struct ne_tensor* dst) {
+  if (params->type == NE_TASK_INIT) {
+    return;
+  }
+
+  if (params->type == NE_TASK_FINALIZE) {
+    return;
+  }
+  const int fin = src->ne[0];
+  const int fout = dst->ne[0];
+  const int fmid = w1->ne[1];
+  const int seq = dst->ne[1];
+  jblas_weightcomp_FFN_SiLu_f32_forward((float*)src->data, w1->data, w2->data, w3->data, (float*)tmp->data,
+                                        (float*)tmp1->data, (float*)dst->data, seq, fin, fmid, fout);
 }
 
 // ne_compute_forward_scale
@@ -8542,6 +8658,13 @@ static void ne_compute_forward(struct ne_compute_params* params, struct ne_tenso
     case NE_OP_MUL_MAT: {
       ne_compute_forward_mul_mat(params, tensor->src0, tensor->src1, tensor);
     } break;
+    case NE_OP_MUL_QKV: {
+      ne_compute_forward_mul_qkv(params, tensor->src0, tensor->src1, tensor->opt[0], tensor->opt[1], tensor);
+    } break;
+    case NE_OP_MUL_FFN_SILU: {
+      ne_compute_forward_ffn_silu(params, tensor->src0, tensor->src1, tensor->opt[0], tensor->opt[1], tensor->opt[2],
+                                  tensor->opt[3], tensor);
+    } break;
     case NE_OP_SCALE: {
       ne_compute_forward_scale(params, tensor->src0, tensor->src1, tensor);
     } break;
@@ -9382,12 +9505,9 @@ static thread_ret_t ne_graph_compute_thread(void* data) {
 
   return 0;
 }
-#define OMP_THREAD
-#ifdef OMP_THREAD
-#include <omp.h>
-#endif
+
 void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
-  const int n_threads = cgraph->n_threads;
+  int n_threads = cgraph->n_threads;
 
   struct ne_compute_state_shared state_shared = {
       /*.spin      =*/NE_LOCK_INITIALIZER,
@@ -9397,7 +9517,7 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
       /*.stop      =*/false,
   };
   struct ne_compute_state* workers = n_threads > 1 ? alloca(sizeof(struct ne_compute_state) * (n_threads - 1)) : NULL;
-#ifndef OMP_THREAD
+#ifndef _OPENMP
   // create thread pool
   if (n_threads > 1) {
     ne_lock_init(&state_shared.spin);
@@ -9425,9 +9545,9 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
     }
   }
 #else
+  n_threads = jblas_set_threads(n_threads);  // prevent from using two sockets
   omp_set_num_threads(n_threads);
 #endif
-
   // initialize tasks + work buffer
   {
     size_t work_size = 0;
@@ -9437,7 +9557,15 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
       struct ne_tensor* node = cgraph->nodes[i];
 
       switch (node->op) {
-        case NE_OP_CPY:
+        case NE_OP_CPY: {
+          node->n_tasks = node->ne[0] == 1 ? n_threads : 1;
+
+          size_t cur = 0;
+          if (ne_is_quantized(node->type)) {
+            cur = NE_TYPE_SIZE[NE_TYPE_F32] * node->ne[0] * n_threads;
+          }
+          work_size = MAX(work_size, cur);
+        } break;
         case NE_OP_DUP: {
           node->n_tasks = n_threads;
 
@@ -9450,7 +9578,7 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
         } break;
         case NE_OP_ADD:
         case NE_OP_ADD1: {
-          node->n_tasks = n_threads;
+          node->n_tasks = 1;
 
           size_t cur = 0;
 
@@ -9484,15 +9612,15 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
         case NE_OP_SGN:
         case NE_OP_NEG:
         case NE_OP_STEP:
+        case NE_OP_MUL:
+        case NE_OP_RMS_NORM:
         case NE_OP_RELU: {
           node->n_tasks = 1;
         } break;
-        case NE_OP_MUL:
         case NE_OP_GELU:
         case NE_OP_SILU:
         case NE_OP_SILU_BACK:
         case NE_OP_NORM:
-        case NE_OP_RMS_NORM:
         case NE_OP_RMS_NORM_BACK: {
           node->n_tasks = n_threads;
         } break;
@@ -9526,8 +9654,12 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
 
           work_size = MAX(work_size, cur);
         } break;
+        case NE_OP_MUL_FFN_SILU:
+        case NE_OP_MUL_QKV: {
+          node->n_tasks = 1;
+        } break;
         case NE_OP_SCALE: {
-          node->n_tasks = n_threads;
+          node->n_tasks = 1;
         } break;
         case NE_OP_SET:
         case NE_OP_CONT:
@@ -9544,6 +9676,8 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
         case NE_OP_DIAG_MASK_INF:
         case NE_OP_SOFT_MAX:
         case NE_OP_ROPE:
+          node->n_tasks = 1;
+          break;
         case NE_OP_ROPE_BACK: {
           node->n_tasks = n_threads;
         } break;
@@ -9652,7 +9786,10 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
 
     const int64_t perf_node_start_cycles = ne_perf_cycles();
     const int64_t perf_node_start_time_us = ne_perf_time_us();
-#ifndef OMP_THREAD
+#if NE_DEBUG
+    jblas_timer(true);
+#endif
+#ifndef _OPENMP
     // INIT
     struct ne_compute_params params = {
         /*.type  =*/NE_TASK_INIT,
@@ -9810,6 +9947,10 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
     }
 
 #endif
+#if NE_DEBUG
+    printf("Node %d ",node->op);
+    jblas_timer(false);
+#endif
     // performance stats (node)
     {
       int64_t perf_cycles_cur = ne_perf_cycles() - perf_node_start_cycles;
@@ -9822,7 +9963,7 @@ void ne_graph_compute(struct ne_context* ctx, struct ne_cgraph* cgraph) {
   }
 
   // join thread pool
-#ifndef OMP_THREAD
+#ifndef _OPENMP
   if (n_threads > 1) {
     atomic_store(&state_shared.stop, true);
     atomic_store(&state_shared.has_work, true);

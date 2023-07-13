@@ -1,3 +1,16 @@
+//  Copyright (c) 2023 Intel Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 // Various helper functions and utilities
 
 #pragma once
@@ -21,26 +34,31 @@
 
 int32_t get_num_physical_cores();
 
-struct gpt_params {
-    int32_t seed      = -1; // RNG seed
+struct common_params {
     int32_t n_threads = get_num_physical_cores();
-    int32_t n_predict = 200; // new tokens to predict
 
-    // sampling parameters
-    int32_t top_k = 40;
-    float   top_p = 0.9f;
-    float   temp  = 0.9f;
+    int32_t seed           = -1; // RNG seed
+    int32_t n_predict      = 200; // new tokens to predict
+    int32_t n_batch        = 8; // batch size for prompt processing
+    int32_t n_ctx          = 512;
 
-    int32_t n_batch = 8; // batch size for prompt processing
-
-    std::string model      = "models/gpt-2-117M/ggml-model.bin"; // model path
+    std::string model      = ""; // model path
     std::string prompt     = "";
     std::string token_test = "";
+
+    bool    perplexity     = false;
+
+    // sampling parameters
+    int32_t top_k          = 0;
+    float   top_p          = 1.0f;
+    float   temp           = 0.8f;
+    int32_t repeat_last_n  = 64;
+    float   repeat_penalty = 1.02f;
 };
 
-bool gpt_params_parse(int argc, char ** argv, gpt_params & params);
+bool common_params_parse(int argc, char ** argv, common_params & params);
 
-void gpt_print_usage(int argc, char ** argv, const gpt_params & params);
+void gpt_print_usage(int argc, char ** argv, const common_params & params);
 
 std::string gpt_random_prompt(std::mt19937 & rng);
 
@@ -125,37 +143,6 @@ gpt_vocab::id gpt_sample_top_k_top_p_repeat(
         float repeat_penalty,
         std::mt19937 & rng);
 
-//
-// Audio utils
-//
-
-// Read WAV audio file and store the PCM data into pcmf32
-// The sample rate of the audio must be equal to COMMON_SAMPLE_RATE
-// If stereo flag is set and the audio has 2 channels, the pcmf32s will contain 2 channel PCM
-bool read_wav(
-        const std::string & fname,
-        std::vector<float> & pcmf32,
-        std::vector<std::vector<float>> & pcmf32s,
-        bool stereo);
-
-// Apply a high-pass frequency filter to PCM audio
-// Suppresses frequencies below cutoff Hz
-void high_pass_filter(
-        std::vector<float> & data,
-        float cutoff,
-        float sample_rate);
-
-// Basic voice activity detection (VAD) using audio energy adaptive threshold
-bool vad_simple(
-        std::vector<float> & pcmf32,
-        int   sample_rate,
-        int   last_ms,
-        float vad_thold,
-        float freq_thold,
-        bool  verbose);
-
-// compute similarity between two strings using Levenshtein distance
-float similarity(const std::string & s0, const std::string & s1);
 
 enum ne_ftype ne_parse_ftype(const char * str);
 
