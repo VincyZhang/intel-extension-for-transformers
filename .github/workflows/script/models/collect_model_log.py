@@ -32,12 +32,13 @@ def get_cpu_name():
     return 'Unknown'
 
 
-def extract_cpu_number(cpu_string):
-    pattern = r'\b(\d+)\b'
-    match = re.search(pattern, cpu_string)
+def extract_cpu_number(cpu_name):
+    pattern = r'\d+'
+    match = re.search(pattern, cpu_name)
     if match:
-        return match.group(1)
-    return None
+        return match.group()
+    else:
+        return None
 
 
 cpu_name = get_cpu_name()
