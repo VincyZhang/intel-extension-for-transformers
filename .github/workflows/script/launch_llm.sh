@@ -51,7 +51,7 @@ function main() {
                 logs_file="${model}-${precision}-${cores_per_instance}-${batch_size}-${input}-${output}.log"
                 ir_path="${working_dir}/${precision}_ir"
                 python ${WORKING_DIR}/.github/workflows/script/py_task_injection.py --task=get_ITREX_cpu_memory_info --file_name=${script}
-                numactl -m 1 -C 56-111 python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path} --model_type ${model_type} 2>&1 | tee ${WORKING_DIR}/${logs_file} || true
+                numactl -m 1 -C 56-111 python ${script} --input-tokens $input --max-new-tokens $output --batch-size $batch_size --model_path ${ir_path} --model ${model_name} 2>&1 | tee ${WORKING_DIR}/${logs_file} || true
                 collect_perf_logs_llm ${logs_file} ${precision}
             done
         done
