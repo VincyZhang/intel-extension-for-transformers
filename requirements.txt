@@ -1,5 +1,6 @@
 # dependencies required for development
 neural-compressor
+intel-extension-for-transformers
 numpy
 packaging
 protobuf --no-binary=protobuf
