@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      # - '.github/workflows/llm-test.yml'
+       - '.github/workflows/llm-test.yml'
       # - '.github/workflows/script/models/run_llm.sh'
       # - 'examples/huggingface/pytorch/text-generation/deployment'
       # - 'intel_extension_for_transformers/backends'
@@ -86,16 +86,10 @@ jobs:
           cd ${{ github.workspace }}/.github/workflows/script/models
           bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=bf16
 
-      - name: INT8 Benchmark
-        run: |
-          cd ${{ github.workspace }}/.github/workflows/script/models
-          bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=int8
-      
-      #- name: BF16 Benchmark
+      #- name: INT8 Benchmark
       #  run: |
-      #    podman exec ${{ env.CONTAINER_NAME }} \
-      #    bash -c "cd ${{ github.workspace }}/.github/workflows/script/models
-      #    && bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=bf16"
+      #    cd ${{ github.workspace }}/.github/workflows/script/models
+      #    bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=int8
       
       #- name: Collect Log
       #  run: |
@@ -159,7 +153,7 @@ jobs:
           cd ${{ env.OUT_SCRIPT_PATH }}
           /usr/bin/bash generate_report.sh --workflow=deploy
         env:
-          RUN_DISPLAY_URL: https://github.com/VincyZhang${{ github.workspace }}/actions/runs/${{ github.run_id }}
+          RUN_DISPLAY_URL: https://github.com/VincyZhang/intel-extension-for-transformers/actions/runs/${{ github.run_id }}
           BUILD_NUMBER: ${{ github.run_id }}
           JOB_STATUS: succeed
           MR_source_branch: ${{ github.head_ref }}
