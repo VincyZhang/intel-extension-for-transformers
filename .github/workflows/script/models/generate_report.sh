@@ -7,8 +7,8 @@ summaryLog=${WORKSPACE}/summary.log
 summaryLogLast=${last_log_path}/summary.log
 tuneLog=${WORKSPACE}/tuning_info.log
 tuneLogLast=${last_log_path}/tuning_info.log
-llmsummaryLog=${WORKSPACE}/llm/llm_summary.log
-llmsummaryLogLast=${last_log_path}/llm/llm_summary.log
+llmsummaryLog=${WORKSPACE}/log/llm_summary.log
+llmsummaryLogLast=${last_log_path}/log/llm_summary.log
 inferencerSummaryLog=${WORKSPACE}/inferencer.log
 inferencerSummaryLogLast=${last_log_path}/inferencer.log
 PATTERN='[-a-zA-Z0-9_]*='
