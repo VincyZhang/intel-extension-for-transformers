@@ -36,9 +36,47 @@ python generate.py \
         --base_model_path "mosaicml/mpt-7b-chat" \
         --peft_model_path "./mpt_peft_finetuned_model" \
         --tokenizer_name "EleutherAI/gpt-neox-20b" \
+        --use_kv_cache \
         --trust_remote_code \
         --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
 ```
+
+If you want to accelerate the generation, you can use the key/value cache for decoding by adding the flag `--use_kv_cache`, and use jit trace by `pip install optimum-intel` and adding the flag `--jit`.
+
+```bash
+python generate.py \
+        --base_model_path "mosaicml/mpt-7b-chat" \
+        --trust_remote_code \
+        --instructions "Transform the following sentence into one that shows contrast. The tree is rotten." \
+        --use_kv_cache \
+        --jit
+```
+
+The [generate.py](./generate.py) script accepts different arguments to set the inference behavior of the model.
+
+```bash
+python generate.py  \
+          --temperature 0.2 \
+          --top_p 0.8 \
+          --top_k 45 \
+          --num_beams 1 \
+          --repetition_penalty 1.2 \
+          --max_new_tokens 512 \
+          --base_model_path "mosaicml/mpt-7b-chat" \
+          --tokenizer_name "EleutherAI/gpt-neox-20b" \
+          --use_kv_cache \
+          --trust_remote_code \
+          --instructions "Tell me about Intel Xeon."
+```
+
+Here are the explanations of each parameter:
+`--temperature`: Controls the diversity of generated text. Lower values result in more deterministic outputs. The default value is 0.1.
+`--top_p`: During text generation, only consider tokens with cumulative probability up to this value. This parameter helps to avoid extremely low probability tokens. The default value is 0.75.
+`--top_k`: The number of highest probability vocabulary tokens to consider for each step of text generation. The default value is 40.
+`--num_beams`: The number of beams to use for beam search decoding. This parameter helps to generate multiple possible completions. The default value is 1.
+`--repetition_penalty`: This value controls the penalty for repeating tokens in the generated text. Higher values encourage the model to produce more diverse outputs. The default value is 1.1.
+`--max_new_tokens`: The maximum number of tokens allowed in the generated output. This parameter helps to limit the length of the generated text. The default value is 128.
+
 
 For Llama, use the below command line to chat with it.
 If you encounter a failure with the Llama fast tokenizer while using the latest transformers, add the option "--use_slow_tokenizer".
@@ -51,6 +89,18 @@ python generate.py \
         --peft_model_path "./llama_peft_finetuned_model" \
         --use_slow_tokenizer \
         --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
+```
+
+```bash
+python generate.py \
+        --temperature 0.2 \
+        --top_p 0.8 \
+        --top_k 45 \
+        --num_beams 1 \
+        --repetition_penalty 1.2 \
+        --base_model_path "decapoda-research/llama-7b-hf" \
+        --use_slow_tokenizer \
+        --instructions "Tell me about China."
 ```
 
 ## Deployment on Xeon SPR
@@ -88,22 +138,23 @@ Use this [link](https://docs.habana.ai/en/latest/AWS_EC2_DL1_and_PyTorch_Quick_S
 ### Setup Habana Environment
 
 ```bash
-git clone https://github.com/huggingface/optimum-habana.git
-cd ./optimum-habana/examples/text-generation/
+git clone https://github.com/intel/intel-extension-for-transformers.git
+cd ./intel-extension-for-transformers/
 apt-get update
 apt-get install git-lfs
 git-lfs install
-git clone https://huggingface.co/mosaicml/mpt-7b-chat
 ```
 
-Copy the [generation_habana.py](./generation_habana.py) script to Gaudi instance and place it in the current directory.
+Copy the [generate.py](./generate.py) script to Gaudi instance and place it in the current directory.
 Run the Docker container with Habana runtime and necessary environment variables:
 
 ```bash
-docker run -it --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --net=host --ipc=host -v $(pwd):/optimum-habana vault.habana.ai/gaudi-docker/1.10.0/ubuntu22.04/habanalabs/pytorch-installer-2.0.1:latest
-cd /optimum-habana/examples/text-generation/
-pip install -r requirements.txt
+docker run -it --runtime=habana -e HABANA_VISIBLE_DEVICES=all -e OMPI_MCA_btl_vader_single_copy_mechanism=none --cap-add=sys_nice --net=host --ipc=host -v $(pwd):/intel-extension-for-transformers vault.habana.ai/gaudi-docker/1.10.0/ubuntu22.04/habanalabs/pytorch-installer-2.0.1:latest
+cd /intel-extension-for-transformers/workflows/chatbot/inference/
+git clone https://huggingface.co/mosaicml/mpt-7b-chat
+pip install datasets
 pip install optimum
+pip install git+https://github.com/huggingface/optimum-habana.git
 pip install peft
 pip install einops
 pip install git+https://github.com/HabanaAI/DeepSpeed.git@1.10.0
@@ -111,19 +162,21 @@ pip install git+https://github.com/HabanaAI/DeepSpeed.git@1.10.0
 
 ### Run the inference
 
-We provide the [generation_habana.py](./generation_habana.py) script for performing direct inference on Habana Gaudi instance. We have enabled BF16 to speed up the inference. Please use the following command for inference.
+You can use the [generate.py](./generate.py) script for performing direct inference on Habana Gaudi instance. We have enabled BF16 to speed up the inference. Please use the following command for inference.
 
 ```bash
-python generation_habana.py --base_model_path "./mpt-7b-chat" --use_kv_cache --bf16 --use_slow_tokenizer --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
+python generate.py --base_model_path "./mpt-7b-chat" \
+             --habana \
+             --tokenizer_name "EleutherAI/gpt-neox-20b" \
+             --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
 ```
 
 And you can use `deepspeed` to speedup the inference.
 
 ```bash
-python ../gaudi_spawn.py --use_deepspeed --world_size 8 generation_habana.py \
+python ../gaudi_spawn.py --use_deepspeed --world_size 8 generate.py \
         --base_model_path "./mpt-7b-chat" \
-        --use_kv_cache \
-        --bf16 \
-        --use_slow_tokenizer \
+        --habana \
+        --tokenizer_name "EleutherAI/gpt-neox-20b" \
         --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
 ```
