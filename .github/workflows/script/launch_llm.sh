@@ -76,51 +76,6 @@ function collect_perf_logs_llm {
             }
         }
     '))
-    first_latency=($(grep -i 'First token average latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
-        BEGIN {
-            num = 0;
-            sum = 0;
-        }{
-            num ++;
-            sum += $1;
-        }END {
-            if(num > 0) {
-                printf("%.6f", sum / num);
-            }else {
-                printf("0");
-            }
-        }
-    '))
-    avg_latency=($(grep -i 'Average 2... latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
-        BEGIN {
-            num = 0;
-            sum = 0;
-        }{
-            num ++;
-            sum += $1;
-        }END {
-            if(num > 0) {
-                printf("%.6f", sum / num);
-            }else {
-                printf("0");
-            }
-        }
-    '))
-    p90_latency=($(grep -i 'P90 2... latency:' ${log_dir} | sed -e 's/.*atency://;s/[^0-9.]//g;s/\.$//' | awk '
-        BEGIN {
-            num = 0;
-            sum = 0;
-        }{
-            num ++;
-            sum += $1;
-        }END {
-            if(num > 0) {
-                printf("%.6f", sum / num);
-            }else {
-                printf("0");
-            }
-        }
-    '))
     input_tokens=$input
     max_new_tokens=$output
     beam_search=4
