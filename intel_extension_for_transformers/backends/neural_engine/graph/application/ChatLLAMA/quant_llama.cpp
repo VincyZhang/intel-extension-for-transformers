@@ -1,3 +1,16 @@
+//  Copyright (c) 2023 Intel Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 // Defines sigaction on msys:
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -22,6 +35,9 @@ static const std::map<std::string, model_ftype> NE_FTYPE_MAP = {
     {"q4_j_b128", MODEL_FTYPE_MOSTLY_Q4_JBLAS_B128},
     {"q4_j_b1024", MODEL_FTYPE_MOSTLY_Q4_JBLAS_B1024},
     {"q4_j_bf16_b32", MODEL_FTYPE_MOSTLY_Q4_JBLAS_BF16_B32},
+    {"q4_j_vnni_b32", MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B32},
+    {"q4_j_vnni_b128", MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B128},
+    {"q4_j_vnni_bf16_b32", MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_BF16_B32},
 
 };
 

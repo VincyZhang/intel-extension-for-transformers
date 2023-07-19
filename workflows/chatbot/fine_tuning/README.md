@@ -43,6 +43,7 @@ For FLAN-T5, use the below command line for finetuning on the Alpaca dataset.
 ```bash
 python finetune_seq2seq.py \
         --model_name_or_path "google/flan-t5-xl" \
+        --bf16 True \
         --train_file "stanford_alpaca/alpaca_data.json" \
         --per_device_train_batch_size 2 \
         --per_device_eval_batch_size 2 \
@@ -65,6 +66,7 @@ For LLaMA, use the below command line for finetuning on the Alpaca dataset.
 ```bash
 python finetune_clm.py \
         --model_name_or_path "decapoda-research/llama-7b-hf" \
+        --bf16 True \
         --train_file "/path/to/alpaca_data.json" \
         --dataset_concatenation \
         --per_device_train_batch_size 8 \
@@ -88,6 +90,7 @@ For [MPT](https://huggingface.co/mosaicml/mpt-7b), use the below command line fo
 ```bash
 python finetune_clm.py \
         --model_name_or_path "mosaicml/mpt-7b" \
+        --bf16 True \
         --train_file "/path/to/alpaca_data.json" \
         --dataset_concatenation \
         --per_device_train_batch_size 8 \
@@ -117,7 +120,7 @@ Add option **"--use_fast_tokenizer False"** when using latest transformers if yo
 
 ## 2. Multi-node Fine-tuning
 
-We also supported Distributed Data Parallel finetuning on single node and multi nodes settings. To use Distributed Data Parallel to speedup training, the bash command needs a small adjustment.
+We also supported Distributed Data Parallel finetuning on single node and multi-node settings. To use Distributed Data Parallel to speedup training, the bash command needs a small adjustment.
 <br>
 For example, to finetune FLAN-T5 through Distributed Data Parallel training, bash command will look like the following, where
 <br>
@@ -129,12 +132,13 @@ For example, to finetune FLAN-T5 through Distributed Data Parallel training, bas
 <br>
 *`<NODE_RANK>`* is the rank of the current node, rank starts from 0 to *`<NUM_NODES>`*`-1`.
 <br>
-> Also please note that to use CPU for training in each node with multi nodes settings, argument `--no_cuda` is mandatory, and `--xpu_backend ccl` is required if to use ccl as the distributed backend. In multi nodes setting, following command needs to be launched in each node, and all the commands should be the same except for *`<NODE_RANK>`*, which should be integer from 0 to *`<NUM_NODES>`*`-1` assigned to each node.
+> Also please note that to use CPU for training in each node with multi-node settings, argument `--no_cuda` is mandatory, and `--xpu_backend ccl` is required if to use ccl as the distributed backend. In multi-node setting, following command needs to be launched in each node, and all the commands should be the same except for *`<NODE_RANK>`*, which should be integer from 0 to *`<NUM_NODES>`*`-1` assigned to each node.
 
 ``` bash
 python -m torch.distributed.launch --master_addr=<MASTER_ADDRESS> --nproc_per_node=<NUM_PROCESSES_PER_NODE> --nnodes=<NUM_NODES> --node_rank=<NODE_RANK> \
     finetune_seq2seq.py \
         --model_name_or_path "google/flan-t5-xl" \
+        --bf16 True \
         --train_file "stanford_alpaca/alpaca_data.json" \
         --per_device_train_batch_size 2 \
         --per_device_eval_batch_size 2 \

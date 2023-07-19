@@ -1,3 +1,16 @@
+//  Copyright (c) 2023 Intel Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 // Defines fileno on msys:
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -428,10 +441,14 @@ struct model_model_loader {
   struct ne_tensor* get_tensor_for(model_load_tensor& lt, ne_backend backend) {
     struct ne_tensor* tensor;
     if (lt.ne.size() == 2) {
-      tensor = ne_new_tensor_2d(ne_ctx, lt.type, lt.ne.at(0), lt.ne.at(1));
+      if (lt.type == NE_TYPE_Q4_JBLAS) {
+        tensor = ne_new_tensor_2d(ne_ctx, lt.type, lt.ne.at(0), lt.ne.at(1), lt.size);
+      } else {
+        tensor = ne_new_tensor_2d(ne_ctx, lt.type, lt.ne.at(0), lt.ne.at(1), NE_SIZE_CALC);
+      }
     } else {
       MODEL_ASSERT(lt.ne.size() == 1);
-      tensor = ne_new_tensor_1d(ne_ctx, lt.type, lt.ne.at(0));
+      tensor = ne_new_tensor_1d(ne_ctx, lt.type, lt.ne.at(0), NE_SIZE_CALC);
     }
     ne_set_name(tensor, lt.name.c_str());
     MODEL_ASSERT(lt.ne_tensor == NULL);  // if this fails, we called get_tensor twice on the same tensor
@@ -569,8 +586,8 @@ static bool kv_cache_init(const struct model_hparams& hparams, struct model_kv_c
     return false;
   }
 
-  cache.k = ne_new_tensor_1d(cache.ctx, wtype, n_elements);
-  cache.v = ne_new_tensor_1d(cache.ctx, wtype, n_elements);
+  cache.k = ne_new_tensor_1d(cache.ctx, wtype, n_elements, NE_SIZE_CALC);
+  cache.v = ne_new_tensor_1d(cache.ctx, wtype, n_elements, NE_SIZE_CALC);
   ne_set_name(cache.k, "cache_k");
   ne_set_name(cache.v, "cache_v");
 
@@ -1458,6 +1475,9 @@ static void model_model_quantize_internal(const std::string& fname_inp, const st
     case MODEL_FTYPE_MOSTLY_Q4_JBLAS_B128:
     case MODEL_FTYPE_MOSTLY_Q4_JBLAS_B1024:
     case MODEL_FTYPE_MOSTLY_Q4_JBLAS_BF16_B32:
+    case MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B32:
+    case MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_BF16_B32:
+    case MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B128:
       quantized_type = NE_TYPE_Q4_JBLAS;
       break;
     default:
@@ -1535,30 +1555,59 @@ static void model_model_quantize_internal(const std::string& fname_inp, const st
       printf("quantizing .. ");
       fflush(stdout);
       if (quantized_type == NE_TYPE_Q4_JBLAS) {
-        if (!embedd) {//emedding of Q4 is not supported now
+        if (!embedd) {  // emedding of Q4 is not supported now
+          using CompType = jblas::prologue::weight_comp::gemm::WeightCompType;
           using GemmKernel = jblas::wrapper::gemm_default::weight_comp::avx512f::GemmKernelS4KBlock;
-          using PrologueB = GemmKernel::WeightType;
+          using GemmVnniKernel = jblas::wrapper::gemm_default::weight_comp::avx512_vnni::GemmKernelDynamicQuantS4KBlock;
           GemmKernel kernel;
+          GemmVnniKernel vnnikernel;
           int k_ = tensor.ne.at(0);
           int n_ = tensor.ne.at(1);
-          jblas::prologue::weight_comp::PackedWeight* packedw = NULL;
+          jblas::prologue::PackedWeight* packedw = NULL;
           int blocksize = 32;
-          auto type = PrologueB::S4Type::S4_F32;
+          auto type = CompType::S4_F32;
           if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_B32) {
             blocksize = 32;
-            type = PrologueB::S4Type::S4_F32;
+            type = CompType::S4_F32;
           } else if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_B128) {
             blocksize = 128;
-            type = PrologueB::S4Type::S4_F32;
+            type = CompType::S4_F32;
           } else if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_B1024) {
             blocksize = 1024;
-            type = PrologueB::S4Type::S4_F32;
+            type = CompType::S4_F32;
           } else if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_BF16_B32) {
             blocksize = 32;
-            type = PrologueB::S4Type::S4_Bf16;
+            type = CompType::S4_Bf16;
+          } else if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B32) {
+            blocksize = 32;
+            type = CompType::S4_F32;
+          } else if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B128) {
+            blocksize = 128;
+            type = CompType::S4_F32;
+          } else if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_BF16_B32) {
+            blocksize = 32;
+            type = CompType::S4_Bf16;
           }
-          packedw = kernel.getWeightPtr()->compressWeightTranspose<JblasAVX512F>(n_, k_, (float*)tensor.data, k_,
-                                                                                 blocksize, type);
+          auto cd = jblas::utils::parallel::CpuDevice::getInstance();
+          if (ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B32 || ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_B128 ||
+              ftype == MODEL_FTYPE_MOSTLY_Q4_JBLAS_VNNI_BF16_B32) {
+            if (cd->AVX512F()) {
+              packedw = vnnikernel.getWeightPtr()->compressWeightTranspose<JblasAVX512F>(n_, k_, (float*)tensor.data,
+                                                                                         k_, blocksize, type);
+            } else {
+              packedw = vnnikernel.getWeightPtr()->compressWeightTranspose<JblasNoSIMD>(n_, k_, (float*)tensor.data, k_,
+                                                                                        blocksize, type);
+            }
+          } else {
+            if (cd->AVX512F()) {
+              packedw = kernel.getWeightPtr()->compressWeightTranspose<JblasAVX512F>(n_, k_, (float*)tensor.data, k_,
+                                                                                     blocksize, type);
+            } else {
+              packedw = kernel.getWeightPtr()->compressWeightTranspose<JblasNoSIMD>(n_, k_, (float*)tensor.data, k_,
+                                                                                    blocksize, type);
+            }
+          }
+
           auto tsize = packedw->getSerializedSize();
           work.resize(tsize);  // upper bound on size
           packedw->serializeToBuffer((int8_t*)work.addr);
@@ -1889,7 +1938,7 @@ int model_apply_lora_from_file_internal(struct model_context* ctx, const char* p
     }
     ne_tensor* lora_tensor;
     if (n_dims == 2) {
-      lora_tensor = ne_new_tensor_2d(lora_ctx, wtype, ne[0], ne[1]);
+      lora_tensor = ne_new_tensor_2d(lora_ctx, wtype, ne[0], ne[1], NE_SIZE_CALC);
     } else {
       fprintf(stderr, "%s: unsupported tensor dimension %d\n", __func__, n_dims);
       return 1;
@@ -2110,11 +2159,11 @@ size_t model_copy_state_data(struct model_context* ctx, uint8_t* dst) {
       ne_cgraph gf{};
       gf.n_threads = 1;
 
-      ne_tensor* kout3d = ne_new_tensor_3d(cpy_ctx, kv_self.k->type, n_embd, kv_ntok, n_layer);
+      ne_tensor* kout3d = ne_new_tensor_3d(cpy_ctx, kv_self.k->type, n_embd, kv_ntok, n_layer, NE_SIZE_CALC);
       kout3d->data = out;
       out += ne_nbytes(kout3d);
 
-      ne_tensor* vout3d = ne_new_tensor_3d(cpy_ctx, kv_self.v->type, kv_ntok, n_embd, n_layer);
+      ne_tensor* vout3d = ne_new_tensor_3d(cpy_ctx, kv_self.v->type, kv_ntok, n_embd, n_layer, NE_SIZE_CALC);
       vout3d->data = out;
       out += ne_nbytes(vout3d);
 
@@ -2223,11 +2272,11 @@ size_t model_set_state_data(struct model_context* ctx, uint8_t* src) {
       ne_cgraph gf{};
       gf.n_threads = 1;
 
-      ne_tensor* kin3d = ne_new_tensor_3d(cpy_ctx, kv_self.k->type, n_embd, kv_ntok, n_layer);
+      ne_tensor* kin3d = ne_new_tensor_3d(cpy_ctx, kv_self.k->type, n_embd, kv_ntok, n_layer, NE_SIZE_CALC);
       kin3d->data = (void*)inp;
       inp += ne_nbytes(kin3d);
 
-      ne_tensor* vin3d = ne_new_tensor_3d(cpy_ctx, kv_self.v->type, kv_ntok, n_embd, n_layer);
+      ne_tensor* vin3d = ne_new_tensor_3d(cpy_ctx, kv_self.v->type, kv_ntok, n_embd, n_layer, NE_SIZE_CALC);
       vin3d->data = (void*)inp;
       inp += ne_nbytes(vin3d);
 
@@ -2393,6 +2442,10 @@ void model_print_timings(struct model_context* ctx) {
   fprintf(stderr, "%s:        eval time = %8.2f ms / %5d runs   (%8.2f ms per token)\n", __func__,
           1e-3 * ctx->t_eval_us, n_eval, 1e-3 * ctx->t_eval_us / n_eval);
   fprintf(stderr, "%s:       total time = %8.2f ms\n", __func__, (t_end_us - ctx->t_start_us) / 1000.0);
+  printf("========== eval time log of each prediction ==========\n");
+  for (int i = 0; i < ctx->eval_times.size(); ++i) {
+    printf("prediction %3d, time: %.2fms\n", i, ctx->eval_times[i] / 1000.0f);
+  }
 }
 
 void model_reset_timings(struct model_context* ctx) {
