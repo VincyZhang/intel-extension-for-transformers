@@ -1,10 +1,10 @@
-name: LLM Model Test
+name: CPP Graph Test
 
 on:
   pull_request:
     branches: [main]
     paths:
-       - '.github/workflows/llm-test.yml'
+       - '.github/workflows/cpp-graph-test.yml'
       # - '.github/workflows/script/models/run_llm.sh'
       # - 'examples/huggingface/pytorch/text-generation/deployment'
       # - 'intel_extension_for_transformers/backends'
@@ -25,12 +25,12 @@ env:
 
 
 jobs:
-  LLM-Workflow:
+  CPP-Graph-Workflow:
     runs-on: spr
     strategy:
       matrix:
         include:
-          - modelName: "gpt-j-6b"
+          - modelName: "llama-7b-hf"
             framework: "engine"
             mode: "latency"
             precision: "bf16,int8"
@@ -42,12 +42,12 @@ jobs:
 
       - name: Env build
         run: |
-          bash ${{ github.workspace }}/.github/workflows/script/prepare_env_with_conda.sh "llm-test" "3.8"
+          bash ${{ github.workspace }}/.github/workflows/script/prepare_env_with_conda.sh "cpp-graph-test" "3.8"
 
       - name: Binary build
         run: |
           cd ${{ github.workspace }}
-          conda activate llm-test || source activate llm-test 
+          conda activate cpp-graph-test || source activate cpp-graph-test 
           pip install build --upgrade
           python -m build -s -w
           pip install dist/intel_extension_for_transformers*.whl
@@ -56,26 +56,20 @@ jobs:
       - name: BF16 Benchmark
         run: |
           cd ${{ github.workspace }}/.github/workflows/script/models
-          bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=bf16
-
-      #- name: INT8 Benchmark
-      #  run: |
-      #    cd ${{ github.workspace }}/.github/workflows/script/models
-      #    bash run_llm.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --conda_env_name=llm-test --precision=int8
-      
+          bash cpp_graph_inference.sh cpp-graph-test ${{ matrix.modelName }} 12.0.0
   
       - name: Publish pipeline artifact
         uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}
         with:
-          name: llm
-          path: ${{ github.workspace }}/llm_summary.log
+          name: cpp_graph
+          path: ${{ github.workspace }}/cpp_graph_summary.log
           if-no-files-found: ignore # 'warn' or 'ignore' are also available, defaults to `warn`
           retention-days: 60 # 1 <= retention-days <= 90
 
   Genreate-Report:
     runs-on: ubuntu-latest
-    needs: [LLM-Workflow]
+    needs: [CPP-Graph-Workflow]
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -91,7 +85,7 @@ jobs:
         id: download-artifact
         uses: dawidd6/action-download-artifact@v2
         with:
-          workflow: llm-test.yml
+          workflow: cpp-graph-test.yml
           name: FinalReport
           run_id: ${{ env.REF_ID }}
           path: ${{ env.OUT_SCRIPT_PATH }}

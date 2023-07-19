@@ -7,8 +7,10 @@ summaryLog=${WORKSPACE}/summary.log
 summaryLogLast=${last_log_path}/summary.log
 tuneLog=${WORKSPACE}/tuning_info.log
 tuneLogLast=${last_log_path}/tuning_info.log
-llmsummaryLog=${WORKSPACE}/log/llm_summary.log
-llmsummaryLogLast=${last_log_path}/log/llm_summary.log
+llmsummaryLog=${WORKSPACE}/log/llm/llm_summary.log
+llmsummaryLogLast=${last_log_path}/log/llm/llm_summary.log
+cppsummaryLog=${WORKSPACE}/log/cpp_graph/cpp_graph_summary.log
+cppsummaryLogLast=${last_log_path}/log/cpp_graph/cpp_graph_summary.log
 inferencerSummaryLog=${WORKSPACE}/inferencer.log
 inferencerSummaryLogLast=${last_log_path}/inferencer.log
 PATTERN='[-a-zA-Z0-9_]*='
@@ -30,9 +32,10 @@ function main {
     echo "summaryLogLast: ${summaryLogLast}"
     echo "tunelog: ${tuneLog}"
     echo "last tunelog: ${tuneLogLast}"
-    echo "summaryLog: ${llmsummaryLog}"
-    echo "summaryLogLast: ${llmsummaryLogLast}"
-
+    echo "llmsummaryLog: ${llmsummaryLog}"
+    echo "llmsummaryLogLast: ${llmsummaryLogLast}"
+    echo "cppsummaryLog: ${cppsummaryLog}"
+    echo "cppsummaryLogLast: ${cppsummaryLogLast}"
     echo "is_perf_reg=false" >> "$GITHUB_ENV"
 
     generate_html_head
@@ -47,6 +50,9 @@ function main {
     fi
     if [[ -f ${llmsummaryLog} ]]; then
         generate_llm_results
+    fi
+    if [[ -f ${cppsummaryLog} ]]; then
+        generate_cpp_graph_benchmark
     fi
     generate_html_footer
 }
@@ -1161,6 +1167,155 @@ function generate_llm_core {
     sed -i '$s/.*//' ${WORKSPACE}/report.html
     if [ ${job_state} == 'fail' ]; then
         echo "is_perf_reg=true" >> "$GITHUB_ENV"
+    fi
+}
+
+function generate_cpp_graph_benchmark {
+
+cat >> ${WORKSPACE}/report.html << eof
+    <h2>CPP Graph</h2>
+      <table class="features-table">
+        <tr>
+          <th>Model</th>
+          <th>Input</th>
+          <th>Output</th>
+          <th>Batchsize</th>
+          <th>Cores/Instance</th>
+          <th>Precision</th>
+          <th>Beam</th>
+          <th>VS</th>
+          <th>Eval Time per Token</th>
+          <th>Memory</th>
+          <th>1st Latency</th>
+          <th>Total Time</th>
+          <th>P90 Latency Time</th>
+          <th>P99 Latency Time</th>
+        </tr>
+eof
+
+    mode='latency'
+    models=$(cat ${cppsummaryLog} |grep "${mode}," |cut -d',' -f3 |awk '!a[$0]++')
+    for model in ${models[@]}
+    do
+        precisions=$(cat ${cppsummaryLog} |grep "${mode},${model}," |cut -d',' -f4 |awk '!a[$0]++')
+        for precision in ${precisions[@]}
+        do
+            batch_size=$(cat ${cppsummaryLog} |grep "${mode},${model},${precision}," |cut -d',' -f5 |awk '!a[$0]++')
+            cores_per_instance_list=$(cat ${cppsummaryLog} |grep "${mode},${model},${precision},${batch_size}," |cut -d',' -f8 |awk '!a[$0]++')
+            for cores_per_instance in ${cores_per_instance_list[@]}
+            do
+                input_token_list=$(cat ${cppsummaryLog} |grep "${mode},${model},${precision},${batch_size}," |cut -d',' -f6 |awk '!a[$0]++')
+                for input_token in ${input_token_list[@]}
+                do
+                    output_token=$(cat ${cppsummaryLog} |grep "${mode},${model},${precision},${batch_size},${input_token}," |cut -d',' -f7 |awk '!a[$0]++')
+                    benchmark_pattern="${mode},${model},${precision},${batch_size},${input_token},${output_token},${cores_per_instance}"
+                    link=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
+                    memory=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')
+                    total_latency=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f12 |awk '!a[$0]++')
+                    evaltime=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f11 |awk '!a[$0]++')
+                    fst_latency=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f10 |awk '!a[$0]++')
+                    p90_latency=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f15 |awk '!a[$0]++')
+                    p99_latency=$(cat ${cppsummaryLog} |grep "${benchmark_pattern}" |cut -d',' -f16 |awk '!a[$0]++')
+                    if [ $(cat ${cppsummaryLogLast} |grep -c "${benchmark_pattern}") == 0 ]; then
+                        link_last=nan
+                        memory_last=nan
+                        total_latency_last=nan
+                        fst_latency_last=nan
+                        evaltime_last=nan
+                        p90_latency=nan
+                        p99_latency=nan
+                    else
+                        link_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
+                        memory_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')
+                        total_latency_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f12 |awk '!a[$0]++')
+                        evaltime_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f11 |awk '!a[$0]++')
+                        fst_latency_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f10 |awk '!a[$0]++')
+                        p90_latency_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f15 |awk '!a[$0]++')
+                        p99_latency_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f16 |awk '!a[$0]++')
+                    fi
+                    generate_graph_core
+                done
+            done
+        done
+    done
+    cat >> ${WORKSPACE}/report.html << eof
+    </table>
+eof
+}
+
+function generate_graph_core {
+    echo "<tr><td rowspan=3>${model}</td><td rowspan=3>${input_token}</td><td rowspan=3>${output_token}</td><td rowspan=3>${batch_size}</td><td rowspan=3>${cores_per_instance}</td><td rowspan=3>${precision}</td><td rowspan=3>${beam}</td><td>New</td>" >> ${WORKSPACE}/report.html
+
+    echo | awk -v evaltime=${evaltime} -v link=${link} -v mem=${memory} -v tl=${total_latency} -v fl=${fst_latency} -v p90=${p90_latency} -v p99=${p99_latency} -v p90_l=${p90_latency_last} -v p99_l=${p99_latency_last} -v evaltime_l=${evaltime_last} -v mem_l=${memory_last} -v tl_l=${total_latency_last} -v fl_l=${fst_latency_last} -v link_l=${link_last} '
+        function show_benchmark(a,b) {
+            if(a ~/[1-9]/) {
+                    printf("<td><a href=%s>%.2f</a></td>\n",b,a);
+            }else {
+                if(a == "") {
+                    printf("<td><a href=%s>%s</a></td>\n",b,a);
+                }else{
+                    printf("<td></td>\n");
+                }
+            }
+        }
+
+        function compare_new_last(a,b){
+            if(a ~/[1-9]/ && b ~/[1-9]/) {
+                target = b / a;
+                if(target >= 0.9) {
+                    status_png = "background-color:#90EE90";
+                }else {
+                    status_png = "background-color:#FFD2D2";
+                    job_status = "fail"
+                }
+                printf("<td style=\"%s\">%.2f</td>", status_png, target);
+            }else{
+                if(a == ""){
+                    job_status = "fail"
+                    status_png = "background-color:#FFD2D2";
+                    printf("<td style=\"%s\"></td>", status_png);
+                }else{
+                    printf("<td class=\"col-cell col-cell3\"></td>");
+                }
+            }
+        }
+        BEGIN {
+            job_status = "pass"
+        }{
+            // current
+            show_benchmark(evaltime,link)
+            show_benchmark(mem,link)
+            show_benchmark(fl,link)
+            show_benchmark(tl,link)
+            show_benchmark(p90,link)
+            show_benchmark(p99,link)
+
+            // Last
+            printf("</tr>\n<tr><td>Last</td>")
+            show_benchmark(evaltime_l,link_l)
+            show_benchmark(mem_l,link_l)
+            show_benchmark(fl_l,link_l)
+            show_benchmark(tl_l,link_l)
+            show_benchmark(p90_l,link)
+            show_benchmark(p99_l,link)
+
+            // current vs last
+            printf("</tr>\n<tr><td>New/Last</td>");
+            compare_new_last(evaltime,evaltime_l)
+            compare_new_last(mem,mem_l)
+            compare_new_last(fl,fl_l)
+            compare_new_last(tl,tl_l)
+            compare_new_last(p90,p90_l)
+            compare_new_last(p99,p99_l)
+            printf("</tr>\n");
+        } END{
+          printf("\n%s", job_status);
+        }
+    ' >> ${WORKSPACE}/report.html
+    job_state=$(tail -1 ${WORKSPACE}/report.html)
+    sed -i '$s/.*//' ${WORKSPACE}/report.html
+    if [[ ${job_state} == 'fail' ]]; then
+      echo "performance regression" >> ${WORKSPACE}/perf_regression.log
     fi
 }
 
