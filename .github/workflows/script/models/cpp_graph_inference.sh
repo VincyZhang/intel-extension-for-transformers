@@ -29,26 +29,26 @@ function main() {
         quant_script="./build/bin/quant_gptneox"
         infer_cmd="./build/bin/main_gptneox"
         input_model="/tf_dataset2/models/nlp_toolkit/gpt-neox-20b"
-        precision_list=("q8_0" "q4_0")
+        precision_list=("q4_j_b128" "q4_j_b32" "q4_0")
     elif [[ "${model}" == "mpt-7b" ]]; then
         convert_script="${working_dir}/scripts/convert_mpt.py"
         quant_script="./build/bin/quant_mpt"
         infer_cmd="./build/bin/main_mpt"
         input_model="/tf_dataset2/models/nlp_toolkit/mpt-7b"
-        precision_list=("q4_j_vnni_b128" "q4_j_vnni_bf16_b32" "q4_0")
+        precision_list=("q4_j_b128" "q4_j_b32" "q4_0")
     elif [[ "${model}" == "falcon-7b" ]]; then
         convert_script="${working_dir}/scripts/convert_falcon.py"
         quant_script="./build/bin/quant_falcon"
         infer_cmd="./build/bin/main_falcon"
         input_model="/tf_dataset2/models/nlp_toolkit/falcon-7b"
-        precision_list=("q4_j_vnni_b128" "q4_j_vnni_bf16_b32" "q4_0")
+        precision_list=("q4_j_b128" "q4_j_b32" "q4_0")
     elif [[ "${model}" == "gptj-6b" ]]; then
         convert_script="${working_dir}/scripts/convert_gptj.py"
         quant_script="./build/bin/quant_gptj"
         infer_cmd="./build/bin/main_gptj"
         model_name="EleutherAI/gpt-j-6b"
         input_model="/tf_dataset2/models/pytorch/gpt-j-6B"
-        precision_list=("q4_0")
+        precision_list=("q4_j_b128" "q4_j_b32" "q4_0")
     fi
 
 
@@ -112,6 +112,10 @@ function main() {
                         ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --scale_dtype bf16 --gemm_isa vnni
                     elif [[ ${precision} == "q4_j_vnni_b32" ]]; then
                         ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --gemm_isa vnni
+                    elif [[ ${precision} == "q4_j_b32" ]]; then
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32
+                    elif [[ ${precision} == "q4_j_b128" ]]; then
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 128
                     elif [[ ${precision} == "q4_0" ]]; then    
                         ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4
                     else
@@ -123,7 +127,7 @@ function main() {
                     OMP_NUM_THREADS=$[$cores_per_instance * 1] numactl -m 0 -C 0-$[$cores_per_instance * 1 - 1] \
                       $infer_cmd  --seed 1234 -t $cores_per_instance -c ${ctx} -n ${output} -m ${model}-${precision}.bin -p "$prompt" 2>&1 |tee ${WORKING_DIR}/${logs_file} || true&minitor
 
-		     python  ${WORKING_DIR}/lpot-validation/nlp-toolkit/scripts/calculate_percertiles.py ${WORKING_DIR}/${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
+		            python  ${WORKING_DIR}/lpot-validation/nlp-toolkit/scripts/calculate_percentage.py ${WORKING_DIR}/${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
                 done
 		#numactl -C 0 python calculate_percertiles.py ${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
             done
