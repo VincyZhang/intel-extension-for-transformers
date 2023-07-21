@@ -21,7 +21,7 @@ function main() {
     if [[ "${model}" == "gpt-j-6b" ]] || [[ "${model}" == "gpt-j-6b-pruned" ]]; then
         model_name="EleutherAI/gpt-j-6B"
     elif [[ "${model}" == "llama-7b-hf" ]]; then
-        model_name="decapoda-research/llama-7b-hf-hf"
+        model_name="decapoda-research/llama-7b-hf"
     fi
 
     # init conda

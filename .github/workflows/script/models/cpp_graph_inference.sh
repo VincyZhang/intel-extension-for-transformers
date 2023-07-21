@@ -49,6 +49,13 @@ function main() {
         model_name="EleutherAI/gpt-j-6b"
         input_model="/tf_dataset2/models/pytorch/gpt-j-6B"
         precision_list=("q4_j_b128" "q4_j_b32" "q4_0")
+    elif [[ "${model}" == "starcoder-3b" ]]; then
+        convert_script="${working_dir}/scripts/convert_starcoder.py"
+        quant_script="./build/bin/quant_starcoder"
+        infer_cmd="./build/bin/main_starcoder"
+        model_name="bigcode/starcoder"
+        input_model="/tf_dataset2/models/pytorch/starcode_3b"
+        precision_list=("q4_j_b128" "q4_j_b32" "q4_0")
     fi
 
 
@@ -107,19 +114,21 @@ function main() {
                     logs_file="${model}-${precision}-${cores_per_instance}-${batch_size}-${input}-${output}.log"
                     ## prepare model.bin
                     if [[ ${precision} == "q4_j_vnni_b128" ]]; then
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 128 --gemm_isa vnni
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 128 --scale_dtype fp32 --compute_type int8 --alg sym
                     elif [[ ${precision} == "q4_j_vnni_bf16_b32" ]]; then
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --scale_dtype bf16 --gemm_isa vnni
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --scale_dtype bf16 --compute_type int8 --alg sym
                     elif [[ ${precision} == "q4_j_vnni_b32" ]]; then
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --gemm_isa vnni
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --scale_dtype fp32 --compute_type int8 --alg sym
                     elif [[ ${precision} == "q4_j_b32" ]]; then
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --scale_dtype fp32 --compute_type fp32 --alg sym
                     elif [[ ${precision} == "q4_j_b128" ]]; then
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 128
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 128 --scale_dtype fp32 --compute_type fp32 --alg sym
                     elif [[ ${precision} == "q4_0" ]]; then    
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4
-                    else
-                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 8
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --compute_type ggml --alg sym
+                    elif [[ ${precision} == "q4_1" ]]; then    
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --compute_type ggml --alg asym
+                    elif [[ ${precision} == "q8_0" ]]; then
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 8 --block_size 32 --compute_type ggml --alg sym
                     fi
                     ## run inference
                     export LANG=en_US.UTF-8
@@ -129,7 +138,7 @@ function main() {
 
 		            python  ${WORKING_DIR}/lpot-validation/nlp-toolkit/scripts/calculate_percentage.py ${WORKING_DIR}/${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
                 done
-		#numactl -C 0 python calculate_percertiles.py ${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
+		        #numactl -C 0 python calculate_percertiles.py ${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
             done
         done
     done
