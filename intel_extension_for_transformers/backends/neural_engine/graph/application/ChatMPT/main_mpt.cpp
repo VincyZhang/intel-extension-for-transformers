@@ -178,7 +178,7 @@ bool mpt_model_load(const std::string& fname, mpt_model& model, gpt_vocab& vocab
     const size_t n_layer = hparams.n_layers;
     const size_t n_vocab = hparams.n_vocab;
 
-    ctx_size += n_embd * n_vocab * ne_type_sizef(wtype);  // wte_weight
+    ctx_size += n_embd * n_vocab * ne_type_sizef(NE_TYPE_F32);  // wte_weight
     ctx_size += n_embd * ne_type_sizef(NE_TYPE_F32);      // norm_f_weight
 
     ctx_size += n_layer * (n_embd * ne_type_sizef(NE_TYPE_F32));         // ln_1_weight
@@ -221,7 +221,7 @@ bool mpt_model_load(const std::string& fname, mpt_model& model, gpt_vocab& vocab
 
     model.layers.resize(n_layer);
 
-    model.wte_weight = ne_new_tensor_2d(ctx, wtype, n_embd, n_vocab, NE_SIZE_CALC);
+    model.wte_weight = ne_new_tensor_2d(ctx, NE_TYPE_F32, n_embd, n_vocab, NE_SIZE_CALC);
     model.norm_f_weight = ne_new_tensor_1d(ctx, NE_TYPE_F32, n_embd, NE_SIZE_CALC);
 
     // map by name
@@ -375,10 +375,10 @@ bool mpt_eval(const mpt_model& model, const int n_threads, const int n_past, con
 
   // use 2 scratch buffers
   // TODO: very hacky solution - reimplement in a more elegant way
-  static size_t scr0_size = 256u * 1024 * 1024;
+  static size_t scr0_size = 768ull * 1024 * 1024;
   static void* scr0 = malloc(scr0_size);
 
-  static size_t scr1_size = 256u * 1024 * 1024;
+  static size_t scr1_size = 768ull * 1024 * 1024;
   static void* scr1 = malloc(scr1_size);
 
   if (mem_per_token > 0 && mem_per_token * N > buf_size) {
@@ -402,7 +402,8 @@ bool mpt_eval(const mpt_model& model, const int n_threads, const int n_past, con
   };
 
   struct ne_context* ctx0 = ne_init(params);
-  struct ne_cgraph gf = {/* .n_threads =*/n_threads};
+  struct ne_cgraph gf = {};
+  gf.n_threads = n_threads;
 
   struct ne_tensor* embd = ne_new_tensor_1d(ctx0, NE_TYPE_I32, N, NE_SIZE_CALC);
   memcpy(embd->data, embd_inp.data(), N * ne_element_size(embd));
@@ -439,15 +440,15 @@ bool mpt_eval(const mpt_model& model, const int n_threads, const int n_past, con
 
       struct ne_tensor* Qcur = ne_view_2d(ctx0, cur, n_embd, N, cur->nb[1], 0 * sizeof(float) * n_embd);
       struct ne_tensor* Kcur = ne_view_2d(ctx0, cur, n_embd, N, cur->nb[1], 1 * sizeof(float) * n_embd);
-      struct ne_tensor* Vcur = ne_view_2d(ctx0, cur, n_embd, N, cur->nb[1], 2 * sizeof(float) * n_embd);
 
       // store key and value to memory
       {
-        struct ne_tensor* k = ne_view_1d(ctx0, model.memory_k, N * n_embd,
-                                         (ne_element_size(model.memory_k) * n_embd) * (il * n_ctx + n_past));
-        struct ne_tensor* v = ne_view_1d(ctx0, model.memory_v, N * n_embd,
-                                         (ne_element_size(model.memory_v) * n_embd) * (il * n_ctx + n_past));
-
+        struct ne_tensor * Vcur = ne_transpose(ctx0, ne_view_2d(ctx0, cur, n_embd, N, cur->nb[1], 2 * sizeof(float) * n_embd));
+        struct ne_tensor * k = ne_view_1d(ctx0, model.memory_k, N*n_embd, (ne_element_size(model.memory_k)*n_embd)*(il*n_ctx + n_past));
+        struct ne_tensor * v = ne_view_2d(ctx0, model.memory_v, N, n_embd,
+                                          (   n_ctx)*ne_element_size(model.memory_v),
+                                          (il*n_ctx)*ne_element_size(model.memory_v)*n_embd + n_past*ne_element_size(model.memory_v));
+        // important: storing RoPE-ed version of K in the KV cache!
         ne_build_forward_expand(&gf, ne_cpy(ctx0, Kcur, k));
         ne_build_forward_expand(&gf, ne_cpy(ctx0, Vcur, v));
       }
@@ -482,15 +483,12 @@ bool mpt_eval(const mpt_model& model, const int n_threads, const int n_past, con
 
       // V_trans = Vmem.view(n_embd/n_head, n_head, n_past + N).permute(1,
       // 2, 0, 3).contiguous() [n_past + N, 64, 12]
-      struct ne_tensor* V_trans =
-          ne_cpy(ctx0,
-                 ne_permute(ctx0,
-                            ne_reshape_3d(ctx0,
-                                          ne_view_1d(ctx0, model.memory_v, (n_past + N) * n_embd,
-                                                     il * n_ctx * ne_element_size(model.memory_v) * n_embd),
-                                          n_embd / n_head, n_head, n_past + N),
-                            1, 2, 0, 3),
-                 ne_new_tensor_3d(ctx0, model.memory_v->type, n_past + N, n_embd / n_head, n_head, NE_SIZE_CALC));
+      struct ne_tensor * V_trans =
+                ne_view_3d(ctx0, model.memory_v,
+                        n_past + N, n_embd/n_head, n_head,
+                        n_ctx*ne_element_size(model.memory_v),
+                        n_ctx*ne_element_size(model.memory_v)*n_embd/n_head,
+                        il*n_ctx*ne_element_size(model.memory_v)*n_embd);
 
       // KQV = transpose(V) * KQ_soft_max
       struct ne_tensor* KQV = ne_mul_mat(ctx0, V_trans, KQ_soft_max);
