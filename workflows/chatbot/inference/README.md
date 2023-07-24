@@ -114,7 +114,25 @@ Please refer to the [README](./backend/chat/README.md) for instructions on runni
 You can use the following command to trigger inference:
 
 ```bash
-curl -X POST -H "Content-Type: application/json" -d '{"model": "mpt-7b-chat", "prompt": "A chat between a curious human and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the human questions.\nHuman: What are the potential benefits and risks of cryptocurrency investments?\nAssistant:", "stop":"<|endoftext|>"}' http://localhost:80/worker_generate_stream
+curl -X POST -H "Content-Type: application/json" -d '{"model": "mpt-7b-chat", "prompt": "What are the potential benefits and risks of cryptocurrency investments?"}' http://localhost:80/worker_generate_stream
+```
+
+Please make sure to update the URL 'http://localhost:80/worker_generate_stream' with your server's IP address and port.
+
+If you prefer to use the Python API to access the service, you can use the code snippet below:
+
+```python
+import requests
+
+url = 'http://localhost:80/worker_generate_stream'
+headers = {'Content-Type': 'application/json'}
+data = {
+    'model': 'mpt-7b-chat',
+    'prompt': 'What are the potential benefits and risks of cryptocurrency investments?'
+}
+
+response = requests.post(url, headers=headers, json=data)
+print(response.json())
 ```
 
 You can also use [chatcli](../demo/chatcli/) to access the service.
@@ -168,15 +186,31 @@ You can use the [generate.py](./generate.py) script for performing direct infere
 python generate.py --base_model_path "./mpt-7b-chat" \
              --habana \
              --tokenizer_name "EleutherAI/gpt-neox-20b" \
+             --use_hpu_graphs \
+             --use_kv_cache \
              --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
 ```
 
-And you can use `deepspeed` to speedup the inference.
+And you can use `deepspeed` to speedup the inference. currently, TP is not supported for mpt
 
 ```bash
-python ../gaudi_spawn.py --use_deepspeed --world_size 8 generate.py \
+python ../habana/gaudi_spawn.py --use_deepspeed --world_size 8 generate.py \
         --base_model_path "./mpt-7b-chat" \
         --habana \
         --tokenizer_name "EleutherAI/gpt-neox-20b" \
+        --use_hpu_graphs \
+        --use_kv_cache \
         --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
 ```
+
+Habana supports HPU graph mode for inference speedup, which is available for bloom, gpt2, opt, gptj, gpt_neox. However, mpt and llama model have not supported this mode yet. You can use the parameter `use_hpu_graphs` to speed up the inference.
+
+```bash
+python generate.py --base_model_path "EleutherAI/gpt-j-6b" \
+             --habana \
+             --use_kv_cache \
+             --use_hpu_graphs \
+             --tokenizer_name "EleutherAI/gpt-j-6b" \
+             --instructions "Transform the following sentence into one that shows contrast. The tree is rotten."
+```
+
