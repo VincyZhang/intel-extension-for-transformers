@@ -147,7 +147,7 @@ function main() {
                     OMP_NUM_THREADS=$[$cores_per_instance * 1] numactl -m 0 -C 0-$[$cores_per_instance * 1 - 1] \
                       $infer_cmd  --seed 1234 -t $cores_per_instance -c ${ctx} -n ${output} -m ${model}-${precision}.bin -p "$prompt" 2>&1 |tee ${WORKING_DIR}/${logs_file} || true&minitor
 
-		            python  ${WORKING_DIR}/lpot-validation/nlp-toolkit/scripts/calculate_percentage.py ${WORKING_DIR}/${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
+		            python ${WORKING_DIR}/.github/workflows/script/models/calculate_percentage.py ${WORKING_DIR}/${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
                 done
 		        #numactl -C 0 python calculate_percertiles.py ${logs_file} ${model} ${precision} ${cores_per_instance} ${batch_size} ${input} ${output}
             done
