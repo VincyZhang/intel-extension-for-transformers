@@ -606,9 +606,6 @@ function generate_llm_results {
           <th>Avg Latency</th>
           <th>Throughput</th>
           <th>Memory</th>
-          <th>1st Latency</th>
-          <th>p90 Latency</th>
-          <th>Total Latency</th>
         </tr>
 eof
 
@@ -1134,30 +1131,23 @@ function generate_llm_core {
             job_status = "pass"
         }{
             // current
-            show_benchmark(al,link)
+            show_benchmark(tl,link)
             show_benchmark(throughput,link)
             show_benchmark(mem,link)
-            show_benchmark(fl,link)
-            show_benchmark(pl,link)
-            show_benchmark(tl,link)
+            
 
             // Last
             printf("</tr>\n<tr><td>Last</td>")
-            show_benchmark(al_l,link_l)
-            show_benchmark(throughput_l,link_l)
-            show_benchmark(mem_l,link_l)
-            show_benchmark(fl_l,link_l)
-            show_benchmark(pl_l,link_l)
             show_benchmark(tl_l,link_l)
+            show_benchmark(throughput_l,link_l)
+            show_benchmark(mem_l,link_l)            
 
             // current vs last
             printf("</tr>\n<tr><td>New/Last</td>");
-            compare_new_last(al,al_l)
+            compare_new_last(tl,tl_l)
             compare_new_last(throughput,throughput_l)
             compare_new_last(mem,mem_l)
-            compare_new_last(fl,fl_l)
-            compare_new_last(pl,pl_l)
-            compare_new_last(tl,tl_l)
+            
             printf("</tr>\n");
         } END{
           printf("\n%s", job_status);

@@ -98,7 +98,7 @@ function collect_perf_logs_llm {
     link="${log_prefix}/$1"
     printf "${framework},${mode_name},${model_name},${precision},${batch_size}," | tee -a ${WORKING_DIR}/llm_summary.log
     printf "${input_tokens},${max_new_tokens},${beam_search},${used_memory}," | tee -a ${WORKING_DIR}/llm_summary.log
-    printf "${cores_per_instance},${latency[0]},${throughput[0]},${link} ," | tee -a ${WORKING_DIR}/llm_summary.log
+    printf "${cores_per_instance},6,${throughput[0]},${link} ," | tee -a ${WORKING_DIR}/llm_summary.log
     printf "${latency[1]},${first_latency},${avg_latency},${p90_latency},$(hostname)\n" | tee -a ${WORKING_DIR}/llm_summary.log
     set +x
     echo -e "\n\n-------- Summary --------"

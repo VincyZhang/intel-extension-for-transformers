@@ -28,7 +28,7 @@ else
 fi
 
 # same as jenkins ci
-pip instrall scipy==1.10.1
+pip install scipy==1.10.1
 
 pip install coverage
 pip install pytest
