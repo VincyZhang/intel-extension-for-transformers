@@ -61,7 +61,7 @@ function main() {
 
     # init conda 
     # . $(dirname ${CONDA_EXE})/../etc/profile.d/conda.sh
-    conda activate $conda_env
+    conda activate $conda_env || source activate $conda_env
     pip install cmake ninja psutil
     if [["${compiler_version}" != "12.1.0"]]; then
       conda install --update-deps -c conda-forge gxx==${compiler_version} gcc==${compiler_version} gxx_linux-64==${compiler_version} libstdcxx-ng sysroot_linux-64 -y
