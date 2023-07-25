@@ -29,11 +29,11 @@ jobs:
     steps:
       - name: Docker Clean Up
         run: |
-          podman ps -a
-          if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
-              podman start $(podman ps -aq)
+          docker ps -a
+          if [[ $(docker ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+              docker start $(docker ps -aq)
               echo "remove left files through container ..."
-              podman exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+              docker exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
           fi
 
       - name: Checkout out Repo
@@ -43,23 +43,23 @@ jobs:
 
       - name: Docker Build
         run: |
-          podman build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
 
       - name: Docker Run
         run: |
-          podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           -v /tf_dataset2:/tf_dataset2 \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
       - name: Env build
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
 
       - name: Binary build
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
           && bash install_binary.sh \
           && pip install intel_extension_for_pytorch wget tensorflow sentencepiece \
@@ -67,20 +67,20 @@ jobs:
 
       - name: Run UT
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest \
           && bash run_unit_test_optimize.sh"
 
       - name: Calculte coverage
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/unitTest/coverage \
                 && bash calc_coverage.sh"
 
       - name: Collect log
         if: ${{ !cancelled() }}
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers && \
                    mv /log_dir . "
 
@@ -94,11 +94,11 @@ jobs:
       - name: Docker clean up
         if: ${{ always() }}
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
 
       - name: Clean docker container
         if: ${{ always() }}
         run: |
-          podman stop $(podman ps -aq)
-          podman rm -vf ${{ env.CONTAINER_NAME }} || true
-          echo y | podman system prune
+          docker stop $(docker ps -aq)
+          docker rm -vf ${{ env.CONTAINER_NAME }} || true
+          echo y | docker system prune
