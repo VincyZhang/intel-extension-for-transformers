@@ -51,13 +51,7 @@ function prepare() {
         export CC=/opt/rh/gcc-toolset-11/root/usr/bin/gcc
         export CXX=/opt/rh/gcc-toolset-11/root/usr/bin/g++
         gcc -v
-    fi
-    if [[ ${model} == "gpt-j-6b" ]] || [[ model == "gpt-j-6b-pruned" ]]; then
-        conda install mkl mkl-include -y
-        conda install gperftools jemalloc==5.2.1 -c conda-forge -y
-        pip install transformers==4.27.4
-    fi
-    
+    fi    
     cd ${working_dir}
     echo "Working in ${working_dir}"
     echo -e "\nInstalling model requirements..."
@@ -76,6 +70,11 @@ function prepare() {
         pip list
     else
         echo "Not found requirements.txt file."
+    fi
+    if [[ ${model} == "gpt-j-6b" ]] || [[ model == "gpt-j-6b-pruned" ]]; then
+        conda install mkl mkl-include -y
+        conda install gperftools jemalloc==5.2.1 -c conda-forge -y
+        pip install transformers==4.27.4
     fi
     if [[ $precision == "bf16" ]]; then
         prepare_cmd="python optimize_llm.py --pt_file=pt_bf16 --dtype=bf16 --model=/tf_dataset2/models/pytorch/gpt-j-6B --output_model=${working_dir}/bf16_ir"

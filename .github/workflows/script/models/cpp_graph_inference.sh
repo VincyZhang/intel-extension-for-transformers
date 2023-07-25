@@ -23,7 +23,7 @@ function main() {
         quant_script="./build/bin/quant_llama"
         infer_cmd="./build/bin/main_llama"
         input_model="/tf_dataset2/models/nlp_toolkit/llama-7b-hf"
-        precision_list=("q4_j_vnni_b128" "q4_j_vnni_bf16_b32" "q4_j_vnni_b32" "q4_0")
+        precision_list=("q4")
     elif [[ "${model}" == "gpt-neox-20b" ]]; then
         convert_script="${working_dir}/scripts/convert_gptneox.py"
         quant_script="./build/bin/quant_gptneox"
@@ -60,7 +60,7 @@ function main() {
 
 
     # init conda 
-    . $(dirname ${CONDA_EXE})/../etc/profile.d/conda.sh
+    # . $(dirname ${CONDA_EXE})/../etc/profile.d/conda.sh
     conda activate $conda_env
     pip install cmake ninja psutil
     if [["${compiler_version}" != "12.1.0"]]; then
@@ -140,6 +140,8 @@ function main() {
                         ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4 --block_size 32 --compute_type ggml --alg asym
                     elif [[ ${precision} == "q8_0" ]]; then
                         ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 8 --block_size 32 --compute_type ggml --alg sym
+                    else
+                        ${quant_script} --model_file ${working_dir}/${model}-fp32.bin --out_file ${working_dir}/${model}-${precision}.bin --bits 4
                     fi
                     ## run inference
                     export LANG=en_US.UTF-8
