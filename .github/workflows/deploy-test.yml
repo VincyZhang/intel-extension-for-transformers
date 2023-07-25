@@ -25,7 +25,7 @@ env:
   REPO_TAG: "py38"
   DOCKER_FILE_NAME: "devel"
   CONTAINER_NAME: "modelTest"
-  REF_ID: 5506194692
+  #REF_ID: 5506194692
 
 jobs:
   Deploy-Workflow:
@@ -86,7 +86,7 @@ jobs:
         with:
           workflow: deploy-test.yml
           name: ${{ matrix.framework }}-${{ matrix.modelName }}
-          run_id: ${{ env.REF_ID }}
+          run_id: ${{ vars.DEPLOY_REF_ID }}
           path: ${{ github.workspace }}/${{ matrix.framework }}_${{ matrix.modelName }}_refer_log
           name_is_regexp: true
           repo: ${{ github.repository }}
@@ -169,7 +169,7 @@ jobs:
         with:
           workflow: deploy-test.yml
           name: FinalReport
-          run_id: ${{ env.REF_ID }}
+          run_id: ${{ vars.DEPLOY_REF_ID }}
           path: ${{ env.OUT_SCRIPT_PATH }}
           name_is_regexp: true
           repo: ${{ github.repository }}

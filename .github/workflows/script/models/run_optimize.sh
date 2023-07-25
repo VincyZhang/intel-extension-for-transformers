@@ -83,6 +83,7 @@ function prepare() {
         working_dir="/intel-extension-for-transformers/examples/huggingface/pytorch/text-classification/quantization/ptq"
     elif [[ ${model} == "bert_base_mrpc_static" ]] && [[ ${framework} == "tensorflow" ]]; then
         working_dir="/intel-extension-for-transformers/examples/huggingface/tensorflow/text-classification/quantization/ptq"
+        pip install intel-tensorflow==2.12.0
     fi
     cd ${working_dir}
     echo "Working in ${working_dir}"
