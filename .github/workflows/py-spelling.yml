@@ -22,7 +22,7 @@ jobs:
 
       - name: Code scan check
         run: |
-          bash /intel-extension-for-transformers/.github/workflows/script/formatScan/pyspelling.sh
+          bash ${{ github.workspace }}/.github/workflows/script/formatScan/pyspelling.sh
 
       - name: Publish pipeline artifact
         if: ${{ !cancelled() }}
