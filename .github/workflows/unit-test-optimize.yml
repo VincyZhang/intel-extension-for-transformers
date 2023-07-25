@@ -25,7 +25,7 @@ env:
 
 jobs:
   unit-test:
-    runs-on: [self-hosted, Linux, X64, spr]
+    runs-on: [self-hosted, Linux, X64, itrex-node]
     steps:
       - name: Docker Clean Up
         run: |
