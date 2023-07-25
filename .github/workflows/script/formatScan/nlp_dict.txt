@@ -2250,3 +2250,10 @@ itrex
 bibtex
 CompVis
 decapoda
+ChatFALCON
+ChatGPTNEOX
+ChatLLAMA
+ChatMPT
+LLM
+MPT
+mailto

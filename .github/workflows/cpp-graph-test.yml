@@ -5,11 +5,8 @@ on:
     branches: [main]
     paths:
        - '.github/workflows/cpp-graph-test.yml'
-      # - '.github/workflows/script/models/run_llm.sh'
-      # - 'examples/huggingface/pytorch/text-generation/deployment'
-      # - 'intel_extension_for_transformers/backends'
-      # - '!intel_extension_for_transformers/backends/neural_engine/kernels'
-      # - '!intel_extension_for_transformers/backends/neural_engine/test'
+       - '.github/workflows/script/models/cpp_graph_inference.sh'
+       - 'intel_extension_for_transformers/backends/neural_engine/graph'
   workflow_dispatch:
 
 # If there is a new commit, the previous jobs will be canceled

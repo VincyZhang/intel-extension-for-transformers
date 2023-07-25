@@ -604,7 +604,6 @@ function generate_llm_results {
           <th>Beam</th>
           <th>VS</th>
           <th>Avg Latency</th>
-          <th>Throughput</th>
           <th>Memory</th>
         </tr>
 eof
@@ -631,7 +630,6 @@ eof
                         avg_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f15 | awk '!a[$0]++')
                         fst_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f16 | awk '!a[$0]++')
                         p90_latency=$(cat ${llmsummaryLog} | grep "${benchmark_pattern}" | cut -d',' -f17 | awk '!a[$0]++')
-
                         if [ $(cat ${llmsummaryLogLast} | grep -c "${benchmark_pattern}") == 0 ]; then
                             throughput_last=nan
                             link_last=nan
@@ -1109,7 +1107,7 @@ function generate_llm_core {
 
         function compare_new_last(a,b){
             if(a ~/[1-9]/ && b ~/[1-9]/) {
-                target = a / b;
+                target = b / a;
                 if(target >= 0.945) {
                     status_png = "background-color:#90EE90";
                 }else {
@@ -1132,20 +1130,17 @@ function generate_llm_core {
         }{
             // current
             show_benchmark(tl,link)
-            show_benchmark(throughput,link)
             show_benchmark(mem,link)
             
 
             // Last
             printf("</tr>\n<tr><td>Last</td>")
             show_benchmark(tl_l,link_l)
-            show_benchmark(throughput_l,link_l)
             show_benchmark(mem_l,link_l)            
 
             // current vs last
             printf("</tr>\n<tr><td>New/Last</td>");
             compare_new_last(tl,tl_l)
-            compare_new_last(throughput,throughput_l)
             compare_new_last(mem,mem_l)
             
             printf("</tr>\n");
@@ -1212,8 +1207,8 @@ eof
                         total_latency_last=nan
                         fst_latency_last=nan
                         evaltime_last=nan
-                        p90_latency=nan
-                        p99_latency=nan
+                        p90_latency_last=nan
+                        p99_latency_last=nan
                     else
                         link_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f14 |awk '!a[$0]++')
                         memory_last=$(cat ${cppsummaryLogLast} |grep "${benchmark_pattern}" |cut -d',' -f13 |awk '!a[$0]++')

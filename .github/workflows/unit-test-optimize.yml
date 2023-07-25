@@ -4,9 +4,9 @@ on:
   pull_request:
     branches: [main]
     paths:
-      #- intel_extension_for_transformers/evaluation
-      #- intel_extension_for_transformers/optimization
-      #- intel_extension_for_transformers/preprocessing
+      - intel_extension_for_transformers/evaluation
+      - intel_extension_for_transformers/optimization
+      - intel_extension_for_transformers/preprocessing
       - .github/workflows/unit-test-optimize.yml
       - .github/workflows/script/unitTest
   workflow_dispatch:
