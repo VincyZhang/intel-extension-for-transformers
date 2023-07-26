@@ -69,7 +69,7 @@ jobs:
         if: ${{ !cancelled() }}
         with:
           name: llm
-          path: ${{ github.workspace }}/llm_summary.log
+          path: ${{ github.workspace }}/*.log
           if-no-files-found: ignore # 'warn' or 'ignore' are also available, defaults to `warn`
           retention-days: 60 # 1 <= retention-days <= 90
 

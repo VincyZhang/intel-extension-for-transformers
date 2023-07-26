@@ -1,5 +1,6 @@
 import argparse
 import os
+import platform
 import re
 
 parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -14,9 +15,36 @@ parser.add_argument("--model_test_type", type=str, default="optimize")
 args = parser.parse_args()
 print('====== collecting model test log =======')
 OS = 'linux'
-PLATFORM = 'spr'
 URL = '_blank'
 
+
+def get_cpu_name():
+    if platform.system() == 'Windows':
+        return platform.processor()
+    elif platform.system() == 'Linux':
+        try:
+            with open('/proc/cpuinfo', 'r') as f:
+                for line in f.readlines():
+                    if line.strip().startswith('model name'):
+                        return line.strip().split(':')[1].strip()
+        except IOError:
+            pass
+    return 'Unknown'
+
+
+def extract_cpu_number(cpu_name):
+    pattern = r'\d+'
+    match = re.search(pattern, cpu_name)
+    if match:
+        return match.group()
+    else:
+        return None
+
+
+cpu_name = get_cpu_name()
+cpu_number = extract_cpu_number(cpu_name)
+cpu_platform_dict = {'1': 'skx', '2': "clx", '3': "icx", '4': 'spr'}
+PLATFORM = cpu_platform_dict.get(cpu_number[1], 'unknown')
 patterns = {
     "batch_size": re.compile(r"[B,b]atch size\s?[=,:] ([0-9]+)"),
     "accuracy": re.compile(r'[A,a]ccuracy:\D+(\d+\.\d+)'),
@@ -109,8 +137,7 @@ def get_model_benchmark_dict_results():
 
 
 def get_refer_data():
-    refer_log = os.path.join(f"{args.logs_dir}_refer_log",
-                             f"{args.framework}-{args.model}",
+    refer_log = os.path.join(f"{args.logs_dir}_refer_log", f"{args.framework}-{args.model}",
                              f"{args.framework}_{args.model}_summary.log")
     result = {}
     if os.path.exists(refer_log):
@@ -205,7 +232,8 @@ def collect_log():
 
     # write model logs
     f = open(args.output_dir + '/' + args.framework + '_' + args.model + '_summary.log', "a")
-    f.writelines("OS;Platform;Model_test_type;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")
+    f.writelines(
+        "OS;Platform;Model_test_type;Framework;Version;Precision;Model;Mode;Type;BS;Value;Url\n")
     for result in results:
         f.writelines(str(result))
     f2 = open(args.output_dir + '/' + args.framework + '_' + args.model + '_tuning_info.log', "a")
@@ -318,7 +346,7 @@ def check_status(precision, precision_upper, check_accuracy=False):
     print(
         f"current_performance_data = {current_performance:.3f}, refer_performance_data = {refer_performance:.3f}"
     )
-    assert (refer_performance - current_performance) / refer_performance <= args.gap
+    assert abs((refer_performance - current_performance) / refer_performance) <= args.gap
 
     if check_accuracy:
         _, accuracy_result = get_model_tuning_dict_results()

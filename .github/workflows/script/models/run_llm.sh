@@ -60,6 +60,7 @@ function prepare() {
     cp /lib64/libcrypto.so.1.1 ${HOME}/miniconda3/lib/libcrypto.so.1.1
     if [ -f "requirements.txt" ]; then
         # sed -i '/neural-compressor/d' requirements.txt
+        sed -i '/^transformers/d' requirements.txt
         n=0
         until [ "$n" -ge 5 ]
         do
@@ -67,6 +68,7 @@ function prepare() {
             n=$((n+1))
             sleep 5
         done
+        pip install transformers==4.27.4
         pip list
     else
         echo "Not found requirements.txt file."
