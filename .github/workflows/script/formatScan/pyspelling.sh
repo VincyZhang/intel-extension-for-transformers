@@ -1,4 +1,12 @@
 #!/bin/bash
+WORKING_PATH="/intel-extension-for-transformers"
+for var in "$@"
+do
+    case $var in
+        --WORKING_PATH=*)
+            WORKING_PATH=$(echo $var | cut -f2 -d=);;
+    esac
+done
 
 log_dir=${WORKING_PATH}/.github/workflows/script/formatScan
 VAL_REPO=${WORKING_PATH}/.github/workflows/script/formatScan
@@ -9,6 +17,7 @@ sed -i "s|\${SCAN_REPO}|$REPO_DIR|g" ${VAL_REPO}/pyspelling_conf.yaml
 echo "Modified config:"
 cat ${VAL_REPO}/pyspelling_conf.yaml
 
+pip install pyspelling
 pyspelling -c ${VAL_REPO}/pyspelling_conf.yaml >${log_dir}/pyspelling.log
 
 exit_code=$?

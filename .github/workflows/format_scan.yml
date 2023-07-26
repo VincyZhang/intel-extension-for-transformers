@@ -21,7 +21,6 @@ env:
   REPO_TAG: "1.0"
   DOCKER_FILE_NAME: "codeScan"
   CONTAINER_NAME: "codeScan"
-  WORKING_PATH: "/intel-extension-for-transformers"
 
 jobs:
   format-scan:

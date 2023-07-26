@@ -29,7 +29,7 @@ env:
 
 jobs:
   Deploy-Workflow:
-    runs-on: [self-hosted, Linux, X64, spr]
+    runs-on: itrex-node
     strategy:
       matrix:
         include:
@@ -44,11 +44,11 @@ jobs:
     steps:
       - name: Docker Clean Up
         run: |
-          podman ps -a
-          if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
-              podman start $(podman ps -aq)
+          docker ps -a
+          if [[ $(docker ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+              docker start $(docker ps -aq)
               echo "remove left files through container ..."
-              podman exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+              docker exec ${{ env.CONTAINER_NAME }} bash -c "ls -a /intel-extension-for-transformers && rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
           fi
       - name: Checkout out Repo
         uses: actions/checkout@v3
@@ -57,26 +57,26 @@ jobs:
       # We need this because GitHub needs to clone the branch to pipeline
       - name: Docker Build
         run: |
-          podman build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
+          docker build -f ${{ github.workspace }}/.github/workflows/docker/${{ env.DOCKER_FILE_NAME }}.dockerfile -t ${{ env.REPO_NAME }}:${{ env.REPO_TAG }} .
 
       - name: Docker Run
         run: |
-          if [[ $(podman ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
-            podman stop $(podman ps -aq)
-            podman rm -vf ${{ env.CONTAINER_NAME }} || true
+          if [[ $(docker ps -a | grep -i '${{ env.CONTAINER_NAME }}'$) ]]; then
+            docker stop $(docker ps -aq)
+            docker rm -vf ${{ env.CONTAINER_NAME }} || true
           fi
-          podman run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
+          docker run -dit --disable-content-trust --privileged --name=${{ env.CONTAINER_NAME }} --shm-size="2g" \
           -v ${{ github.workspace }}:/intel-extension-for-transformers \
           ${{ env.REPO_NAME }}:${{ env.REPO_TAG }}
 
       - name: Env build
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash /intel-extension-for-transformers/.github/workflows/script/prepare_env.sh
 
       - name: Binary build
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script \
           && bash install_binary.sh"
 
@@ -100,26 +100,26 @@ jobs:
 
       - name: FP32 Benchmark
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
           && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=fp32"
 
       - name: INT8 Benchmark
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
           && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=int8"
 
-      - name: Dynamic INT8 Benchmark
-        if: matrix.framework == 'engine'
-        run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
-          bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
-          && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
+      #- name: Dynamic INT8 Benchmark
+      #  if: matrix.framework == 'engine'
+      #  run: |
+      #    docker exec ${{ env.CONTAINER_NAME }} \
+      #    bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
+      #    && bash run_deploy.sh --model=${{ matrix.modelName }} --framework=${{ matrix.framework }} --mode=${{ matrix.mode }} --precision=dynamic_int8"
 
       - name: Collect Log
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} \
+          docker exec ${{ env.CONTAINER_NAME }} \
           bash -c "cd /intel-extension-for-transformers/.github/workflows/script/models \
           && python collect_model_log.py --model=${{ matrix.modelName }} \
            --framework=${{ matrix.framework }} \
@@ -140,7 +140,7 @@ jobs:
       - name: Docker clean up
         if: ${{ always() }}
         run: |
-          podman exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
+          docker exec ${{ env.CONTAINER_NAME }} bash -c "rm -fr /intel-extension-for-transformers/* && rm -fr /intel-extension-for-transformers/.* || true"
 
   Genreate-Report:
     runs-on: ubuntu-latest
