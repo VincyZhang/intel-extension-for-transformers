@@ -18,7 +18,7 @@ env:
   OUT_SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/script/models
   SCRIPT_PATH: ${{ github.workspace }}/.github/workflows/script
   WORKING_DIR: ${{ github.workspace }}
-  REF_ID: 5307542685
+  #REF_ID: 5307542685
 
 
 jobs:
@@ -84,7 +84,7 @@ jobs:
         with:
           workflow: cpp-graph-test.yml
           name: FinalReport
-          run_id: ${{ env.REF_ID }}
+          run_id: ${{ vars.GRAPH_REF_ID }}
           path: ${{ env.OUT_SCRIPT_PATH }}
           name_is_regexp: true
           repo: ${{ github.repository }}

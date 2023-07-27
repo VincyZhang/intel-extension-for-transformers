@@ -26,7 +26,7 @@ env:
   REPO_TAG: "py38"
   DOCKER_FILE_NAME: "devel"
   CONTAINER_NAME: "modelTest"
-  REF_ID: 5538537655
+  #REF_ID: 5538537655
 
 
 jobs:
@@ -88,7 +88,7 @@ jobs:
         with:
           workflow: optimize-test.yml
           name: ${{ matrix.framework }}-${{ matrix.modelName }}
-          run_id: ${{ env.REF_ID }}
+          run_id: ${{ vars.OPTIMIZE_REF_ID }}
           path: ${{ github.workspace }}/${{ matrix.framework }}_${{ matrix.modelName }}_refer_log
           name_is_regexp: true
           repo: ${{ github.repository }}
@@ -171,7 +171,7 @@ jobs:
         with:
           workflow: optimize-test.yml
           name: FinalReport
-          run_id: ${{ env.REF_ID }}
+          run_id: ${{ vars.OPTIMIZE_REF_ID }}
           path: ${{ env.OUT_SCRIPT_PATH }}
           name_is_regexp: true
           repo: ${{ github.repository }}
