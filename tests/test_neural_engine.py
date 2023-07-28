@@ -30,6 +30,8 @@ class TestNeuralEngine(unittest.TestCase):
                 )
             return
         
+        print(f"{filename=}")
+        
         model = compile(filename)
         input_0 = np.random.randint(0, 384, (1, 32)).reshape(1, 32)
         input_1 = np.random.randint(1, 2, (1, 32)).reshape(1, 32)
