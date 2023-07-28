@@ -48,7 +48,7 @@ jobs:
 
       - name: Code scan check
         run: |
-          bash ${{ github.workspace }}/.github/workflows/script/formatScan/pyspelling.sh --WORKING_PATH=${{ github.workspace }}
+          bash ${{ github.workspace }}/.github/workflows/script/formatScan/pyspelling.sh
 
 
       - name: Publish pipeline artifact
