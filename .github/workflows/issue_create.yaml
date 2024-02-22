@@ -12,9 +12,6 @@ jobs:
     steps:
       - run: |
           echo comment on issue $NUMBER
-          echo issue ${{ github.event.issue.body }}
-          echo assignee ${{ github.event.issue.assignees }}
-          echo issue id ${{ github.event.issue.id }}
           issue_content="${{ github.event.issue.body }}"
           if [[ ! $(echo ${issue_content} | grep "@NeuralChatBot") ]]; then
             curl -L \

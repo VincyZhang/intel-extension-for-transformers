@@ -10,10 +10,6 @@ jobs:
     steps:
       - run: |
           echo comment on issue $NUMBER
-          echo comment ${{ github.event.comment.body }}
-          echo assignee ${{ github.event.issue.assignees }}
-          echo issue id ${{ github.event.issue.id }}
-          echo comment id ${{ github.event.comment.id }}
           comment_content="${{ github.event.comment.body }}"
           issue_content="${{ github.event.issue.body }}"
           echo ${issue_content}
