@@ -16,10 +16,11 @@ jobs:
           echo comment id ${{ github.event.comment.id }}
           comment_content="${{ github.event.comment.body }}"
           issue_content="${{ github.event.issue.body }}"
+          echo ${issue_content}
           if [[ ${comment_content} == "If you need help, please @NeuralChatBot" ]]; then
             echo "ignore instructions"
           elif [[ ${comment_content} == *"@NeuralChatBot"* ]]; then
-            echo ask for neuralchat
+            echo ask for neuralchat ${issue_content}
             response=$(curl -X POST -H "Content-Type: application/json" -d '{"prompt": "${issue_content}"}' http://127.0.0.1:8000/v1/chat/completions)
             echo ${response}
             #curl -L \
