@@ -9,7 +9,8 @@ args = parser.parse_args()
 
 issue_number = os.getenv("NUMBER")
 TOKEN = os.getenv("TOKEN")
-
+os.environ["no_proxy"] = "intel.com,.intel.com,localhost,127.0.0.1"
+os.environ["NO_PROXY"] = "intel.com,.intel.com,localhost,127.0.0.1"
 
 def get_issues_description():
     url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s' % issue_number
