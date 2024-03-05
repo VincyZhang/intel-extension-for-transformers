@@ -65,8 +65,7 @@ def request_neuralchat_bot(user_content: str):
     headers = {'Content-Type': 'application/json'}
     data = {"model": "Intel/neural-chat-7b-v3-1", "messages": [
               {"role": "system", "content": "You are a helpful assistant."},
-              {"role": "user", "content": user_content}]
-           }
+              {"role": "user", "content": user_content}]}
     response_raw = requests.post(url, headers=headers, data=json.dumps(data))
     response = response_raw.json()
     output = response.get("choices")

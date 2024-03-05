@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
+      - name: Load environment variables
+        run:
+          cat ~/actions-runner/.env >> $GITHUB_ENV
       - name: Reply when Issue Created
         run: |
           echo create issue $NUMBER
