@@ -64,9 +64,9 @@ def get_issues_comment():
 def request_neuralchat_bot(user_content: str):
     url = 'http://127.0.0.1:8000/v1/chat/completions'
     headers = {'Content-Type': 'application/json'}
-    data = {"model": "Intel/neural-chat-7b-v3-1", "messages": [
-              {"role": "system", "content": "You are a helpful assistant."},
-              {"role": "user", "content": user_content}]}
+    data = {"model": "Intel/neural-chat-7b-v3-1", 
+            "messages": [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": user_content}]
+            }
     response_raw = requests.post(url, headers=headers, data=json.dumps(data))
     response = response_raw.json()
     output = response.get("choices")
