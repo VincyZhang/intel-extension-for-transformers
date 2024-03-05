@@ -15,7 +15,7 @@ jobs:
             echo "ignore instructions"
           elif [[ ${comment_content} == *"@NeuralChatBot"* ]]; then
             echo ask for neuralchat ${issue_content}
-            python ./script/connect_neuralchat.py --stage "comment"
+            python ${{ github.workspace }}/.github/workflows/script/connect_neuralchat.py --stage "comment"
           fi
         env:
           NUMBER: ${{ github.event.issue.number }}

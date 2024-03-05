@@ -12,7 +12,7 @@ jobs:
     steps:
       - run: |
           echo create issue $NUMBER
-          python ./script/connect_neuralchat.py --stage "create"
+          python ${{ github.workspace }}/.github/workflows/script/connect_neuralchat.py --stage "create"
 
         env:
           NUMBER: ${{ github.event.issue.number }}
