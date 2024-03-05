@@ -10,7 +10,10 @@ jobs:
     if: ${{ !github.event.issue.pull_request }}
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+      - name: Reply when Issue Created
+        run: |
           echo create issue $NUMBER
           python ${{ github.workspace }}/.github/workflows/script/connect_neuralchat.py --stage "create"
 

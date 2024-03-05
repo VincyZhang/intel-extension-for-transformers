@@ -8,7 +8,11 @@ jobs:
     if: ${{ !github.event.issue.pull_request }}
     runs-on: issues-node
     steps:
-      - run: |
+      - name: Checkout out Repo
+        uses: actions/checkout@v3
+      
+      - name: Comment on Issue
+        run: |
           echo comment on issue $NUMBER
           comment_content="${{ github.event.comment.body }}"
           if [[ ${comment_content} == "If you need help, please @NeuralChatBot" ]]; then
