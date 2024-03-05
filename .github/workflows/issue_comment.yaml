@@ -10,9 +10,7 @@ jobs:
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
-      - name: Load environment variables
-        run:
-          cat ~/actions-runner/.env >> $GITHUB_ENV
+
       - name: Comment on Issue
         run: |
           echo comment on issue $NUMBER
@@ -26,3 +24,4 @@ jobs:
         env:
           NUMBER: ${{ github.event.issue.number }}
           TOKEN: ${{ vars.TOKEN }}
+          no_proxy: "intel.com,.intel.com,localhost,127.0.0.1"
