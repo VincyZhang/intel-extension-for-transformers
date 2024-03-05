@@ -110,9 +110,9 @@ if __name__ == '__main__':
         output = request_neuralchat_bot(content)
         output += "\nIf you need help, please @NeuralChatBot"
         print(output)
-        #update_comment(output)
+        update_comment(output)
     elif args.stage == "comment":
         messages = get_issues_comment()
         output = request_neuralchat_bot_with_history(messages)
         print(output)
-        #update_comment(output)
+        update_comment(output)
