@@ -8,7 +8,7 @@ jobs:
     # This job only runs for issue comments
     name: Issue Create
     if: ${{ !github.event.issue.pull_request }}
-    runs-on: ubuntu-latest
+    runs-on: issues-node
     steps:
       - name: Checkout out Repo
         uses: actions/checkout@v3
