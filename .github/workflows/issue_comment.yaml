@@ -18,7 +18,7 @@ jobs:
           comment_content="${{ github.event.comment.body }}"
           if [[ ${comment_content} == *"If you need help, please @NeuralChat" ]] || [[ ${user} == "NeuralChat" ]]; then
             echo "ignore instructions"
-          elif [[ ${comment_content} == *"@NeuralChat"* ]] && [[ ${user} != "NeuralChat" ]]; then
+          elif [[ ${comment_content} == *"@Neu"* ]] && [[ ${user} != "NeuralChat" ]]; then
             echo ask for neuralchat
             python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "comment"
           fi
