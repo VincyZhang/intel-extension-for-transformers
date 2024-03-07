@@ -38,22 +38,22 @@ def get_issues_comment():
     response_raw = requests.get(url, headers=headers)
     response = response_raw.json()
     user_content = get_issues_description()
-    user_content = user_content.replace("If you need help, please @NeuralChatBot", "")
+    user_content = user_content.replace("If you need help, please @NeuralChat", "")
     messages = [{"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": user_content }]
     for item in response:
         body = item.get("body")
-        body = body.replace("If you need help, please @NeuralChatBot", "")
-        if body == "@NeuralChatBot" or body == "" or not body:
+        body = body.replace("If you need help, please @NeuralChat", "")
+        if body == "@NeuralChat" or body == "" or not body:
             continue
         else:
-            body = body.replace("@NeuralChatBot", "")
+            body = body.replace("@NeuralChat", "")
         owner = item.get("user").get("login")
         if owner not in developers_list:
             print(body)
             user_content += body
             messages.append({"role": "user", "content": body })
-        elif owner == "NeuralChatBot":
+        elif owner == "NeuralChat":
             print(body)
             messages.append({"role": "assistant", "content": body })
         else:
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     if args.stage == "create":
         content = get_issues_description()
         output = request_neuralchat_bot(content)
-        output += "\nIf you need help, please @NeuralChatBot"
+        output += "\nIf you need help, please @NeuralChat"
         print(output)
         update_comment(output)
     elif args.stage == "comment":
