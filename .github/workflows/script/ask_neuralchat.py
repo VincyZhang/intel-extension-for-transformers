@@ -20,7 +20,7 @@ def get_issues_description():
     headers = {"Accept": "application/vnd.github+json",
                "Authorization": "Bearer %s" % TOKEN,
                "X-GitHub-Api-Version": "2022-11-28"}
-    response_raw = requests.post(url, headers=headers)
+    response_raw = requests.get(url, headers=headers)
     response = response_raw.json()
     body = response.get("body")
     title = response.get("title")
