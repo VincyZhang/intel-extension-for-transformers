@@ -24,10 +24,10 @@ def get_issues_description():
     response = response_raw.json()
     body = response.get("body")
     title = response.get("title")
-    creator = response.get("user").get("login")
+    #creator = response.get("user").get("login")
     print(body)
     print(title)
-    print(creator)
+    #print(creator)
     return body
 
 def get_issues_comment():
