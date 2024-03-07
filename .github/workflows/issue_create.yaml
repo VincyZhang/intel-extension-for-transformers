@@ -23,3 +23,4 @@ jobs:
           TOKEN: ${{ vars.TOKEN }}
           no_proxy: "intel.com,.intel.com,localhost,127.0.0.1"
           NEURALCHAT_SERVER: ${{ vars.NEURALCHAT_SERVER }}
+          maintain_list: ${{ vars.developer_list }}
