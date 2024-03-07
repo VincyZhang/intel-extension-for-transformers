@@ -9,8 +9,11 @@ args = parser.parse_args()
 
 issue_number = os.getenv("NUMBER")
 TOKEN = os.getenv("TOKEN")
+developers = os.getenv("maintain_list")
+developers_list = developers.split(",")
 os.environ["no_proxy"] = "intel.com,.intel.com,localhost,127.0.0.1"
 os.environ["NO_PROXY"] = "intel.com,.intel.com,localhost,127.0.0.1"
+NEURALCHAT_SERVER = os.getenv("NEURALCHAT_SERVER")
 
 def get_issues_description():
     url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s' % issue_number
@@ -46,11 +49,11 @@ def get_issues_comment():
         else:
             body = body.replace("@NeuralChatBot", "")
         owner = item.get("user").get("login")
-        if owner in ["VincyZhang"] and ("NeuralChatBot" in body):
+        if owner not in developers_list:
             print(body)
             user_content += body
             messages.append({"role": "user", "content": body })
-        elif owner in ["NeuralChatBot", "VincyZhang"]:
+        elif owner == "NeuralChatBot":
             print(body)
             messages.append({"role": "assistant", "content": body })
         else:
@@ -62,7 +65,7 @@ def get_issues_comment():
 
 
 def request_neuralchat_bot(user_content: str):
-    url = 'http://127.0.0.1:8000/v1/chat/completions'
+    url = 'http://%s:8000/v1/chat/completions' % NEURALCHAT_SERVER
     headers = {'Content-Type': 'application/json'}
     messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": user_content}]
     data = {"model": "Intel/neural-chat-7b-v3-1", 
@@ -81,7 +84,7 @@ def request_neuralchat_bot(user_content: str):
 
 
 def request_neuralchat_bot_with_history(messages: list):
-    url = 'http://127.0.0.1:8000/v1/chat/completions'
+    url = 'http://%s:8000/v1/chat/completions' % NEURALCHAT_SERVER
     headers = {'Content-Type': 'application/json'}
     data = {"model": "Intel/neural-chat-7b-v3-1",
             "messages": messages
