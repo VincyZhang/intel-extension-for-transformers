@@ -4,7 +4,7 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--content", type=str, required=True)
+parser.add_argument("--labels", type=str)
 args = parser.parse_args()
 
 issue_number = os.getenv("NUMBER")

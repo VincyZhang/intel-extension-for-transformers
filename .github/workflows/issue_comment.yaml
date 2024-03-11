@@ -16,11 +16,11 @@ jobs:
           echo comment on issue $NUMBER
           user=${{ github.event.comment.user.login }}
           comment_content="${{ github.event.comment.body }}"
-          if [[ ${comment_content} == *"If you need help, please @NeuralChat" ]] || [[ ${user} == "NeuralChat" ]]; then
-            echo "ignore instructions"
-          elif [[ ${comment_content} == *"@Neu"* ]] && [[ ${user} != "NeuralChat" ]]; then
-            echo ask for neuralchat
-            python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "comment"
+          if [[ ${user} == "NeuralChatBot" ]] || [[ ${comment_content} == *"If you need help, please @NeuralChat" ]]; then
+            echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
+          elif [[ ${user} != "NeuralChatBot" ]] && [[ ${comment_content} == *"@NeuralChatBot"* ]]; then
+            echo "Reqeust NeuralChatBot for issue $NUMBER from $user"
+            python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "update"
           fi
         env:
           NUMBER: ${{ github.event.issue.number }}

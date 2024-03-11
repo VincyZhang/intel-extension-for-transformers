@@ -15,7 +15,7 @@ jobs:
 
       - name: Reply when Issue Created
         run: |
-          echo create issue $NUMBER
+          echo "Issue $NUMBER Created, Request NeuralChatBot for ${{ github.event.issue.user.login }}"
           python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "create"
 
         env:

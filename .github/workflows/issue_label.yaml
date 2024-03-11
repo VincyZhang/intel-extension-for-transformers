@@ -17,11 +17,15 @@ jobs:
           user=${{ github.event.comment.user.login }}
           comment_content="${{ github.event.comment.body }}"
           if [[ ${comment_content} == *"If you need help, please @NeuralChatBot" ]] || [[ ${user} == "NeuralChatBot" ]]; then
-            echo "ignore instructions"
+          echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
           elif [[ ${comment_content} == *"@NeuralChatBot label"* ]] && [[ ${user} != "NeuralChatBot" ]]; then
             labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "labels" '{print $2}')
             [[ -z ${labels} ]] && labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "label" '{print $2}')
-            python ${{ github.workspace }}/.github/workflows/script/auto_label.py --content "${labels}"
+            echo "Label Issue $NUMBER with ${labels} As User Requied"
+            python ${{ github.workspace }}/.github/workflows/script/auto_label.py --labels "${labels}"
+          else
+            echo "Request NeuralChatBot for Labels"
+            #python ${{ github.workspace }}/.github/workflows/script/auto_label.py
           fi
         env:
           NUMBER: ${{ github.event.issue.number }}
