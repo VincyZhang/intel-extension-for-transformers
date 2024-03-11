@@ -34,10 +34,10 @@ def get_issues_description():
             print("Get Issue %s Description: %s. END" % (issue_number, title))
         if creator:
             print("Get Issue %s Description: %s. END" % (issue_number, creator))
+        return body
     except:
         logging.error("Get Issues Descriptions Failed")
     
-    return body
 
 def get_issues_comment():
     url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/comments' % issue_number
@@ -70,7 +70,7 @@ def get_issues_comment():
             else:
                 print("This Comment is From Developer %s : %s END" % (owner, body))
                 messages.append({"role": "assistant", "content": body })
-            print("Final Messages is: %s " % str(messages))
+        print("Final Messages is: %s " % str(messages))
         return messages
     except:
         logging.error("Get Issues Comment Failed")
@@ -125,6 +125,7 @@ def request_neuralchat_bot_with_history(messages: list):
         output = output[0].get("message", "").get("content", "")
         if not output:
             logging.error("Get Empty NeuralChatBot Response")
+            return
         else:
             print("Get NeuralChatBot Response with Context History: %s" % output)
         return output
@@ -148,10 +149,22 @@ def update_comment(resp: str):
 if __name__ == '__main__':
     if args.stage == "create":
         content = get_issues_description()
+        if not content:
+            logging.error("Get Issues Descriptions Failed")
+            exit(1)
         output = request_neuralchat_bot(content)
+        if not output:
+            logging.error("Request NeuralChatBot Failed")
+            exit(1)
         output += "\nIf you need help, please @NeuralChat"
         update_comment(output)
     elif args.stage == "update":
         messages = get_issues_comment()
+        if not messages:
+            logging.error("Get Issues Comments Failed")
+            exit(1)
         output = request_neuralchat_bot_with_history(messages)
+        if not output:
+            logging.error("Request NeuralChatBot with Context History Failed")
+            exit(1)
         update_comment(output)
