@@ -56,7 +56,7 @@ def get_issues_comment():
                     {"role": "user", "content": user_content }]
         for item in response:
             body = item.get("body", "")
-            if body == "@NeuralChat" or body == "" or not body:
+            if body == "@NeuralChatBot" or body == "" or not body:
                 continue
             else:
                 body = filter_comment(body)
@@ -77,8 +77,8 @@ def get_issues_comment():
     
 
 def filter_comment(user_content: str):
-    comment_list = ["If you need help, please @NeuralChat",
-                    "@NeuralChat"]
+    comment_list = ["If you need help, please @NeuralChatBot",
+                    "@NeuralChatBot"]
     for comment in comment_list:
         user_content = user_content.replace(comment, "")
     return user_content
@@ -156,7 +156,7 @@ if __name__ == '__main__':
         if not output:
             logging.error("Request NeuralChatBot Failed")
             exit(1)
-        output += "\nIf you need help, please @NeuralChat"
+        output += "\nIf you need help, please @NeuralChatBot"
         update_comment(output)
     elif args.stage == "update":
         messages = get_issues_comment()
