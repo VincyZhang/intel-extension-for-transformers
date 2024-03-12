@@ -11,11 +11,27 @@ args = parser.parse_args()
 TOKEN = os.getenv("TOKEN")
 NEURALCHAT_SERVER = os.getenv("NEURALCHAT_SERVER")
 issue_number = os.getenv("NUMBER")
+comment_id = os.getenv("COMMEND_ID")
 developers = os.getenv("maintain_list")
 developers_list = developers.split(",")
 os.environ["no_proxy"] = "intel.com,.intel.com,localhost,127.0.0.1"
 os.environ["NO_PROXY"] = "intel.com,.intel.com,localhost,127.0.0.1"
 
+
+def get_comment_content():
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/comments/%s' % comment_id
+    headers = {"Accept": "application/vnd.github+json",
+               "Authorization": "Bearer %s" % TOKEN,
+               "X-GitHub-Api-Version": "2022-11-28"}
+    response_raw = requests.get(url, headers=headers)
+    try:
+        response = response_raw.json()
+        body = response.get("body", "")
+        if body:
+            print("Get Issue %s Description: %s. END" % (issue_number, body))
+        return body
+    except:
+        logging.error("Get Comment Content Failed")
 
 def get_issues_description():
     url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s' % issue_number
@@ -144,7 +160,48 @@ def update_comment(resp: str):
         print(response_raw.json())
     except:
         logging.error("Update Comment for Issue %s Failed" % issue_number)
+
+def get_label_list():
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/labels'
+    headers = {"Accept": "application/vnd.github+json",
+               "Authorization": "Bearer %s" % TOKEN,
+               "X-GitHub-Api-Version": "2022-11-28"}
+    response_raw = requests.get(url, headers=headers)
+    response = response_raw.json()
+    label_list = []
+    for label_content in response:
+        try:
+            label_name = label_content.get("name")
+            label_list.append(label_name)
+        except:
+            logging.error("Get Label Lists Failed")
+    return label_list
     
+def add_label():
+    content_list = args.content.split(",")
+    
+    add_label_list = []
+    for content in content_list:
+        if content in label_list:
+            add_label_list.append(content)
+    if add_label_list:
+        add_label_for_issue(add_label_list)
+
+
+def add_label_for_issue(label_list: list):
+    repo_label_list = get_label_list()
+    add_label_list = []
+    for label in label_list:
+        if label in repo_label_list:
+            add_label_list.append(label)
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/labels' % issue_number
+    headers = {"Accept": "application/vnd.github+json",
+               "Authorization": "Bearer %s" % TOKEN,
+               "X-GitHub-Api-Version": "2022-11-28"}
+    data = {"labels":add_label_list}
+    response_raw = requests.post(url, headers=headers, data=json.dumps(data))
+    
+    print(response_raw.json())
 
 if __name__ == '__main__':
     if args.stage == "create":
@@ -159,6 +216,10 @@ if __name__ == '__main__':
         output += "\nIf you need help, please @NeuralChatBot"
         update_comment(output)
     elif args.stage == "update":
+        content = get_comment_content()
+        if "@NeuralChatBot" not in content:
+            logging.info("User Not Asking Help from NeuralChatBot, Skip")
+            exit(0)
         messages = get_issues_comment()
         if not messages:
             logging.error("Get Issues Comments Failed")
@@ -168,3 +229,19 @@ if __name__ == '__main__':
             logging.error("Request NeuralChatBot with Context History Failed")
             exit(1)
         update_comment(output)
+    elif args.stage == "label":
+        content = get_comment_content()
+        if "@NeuralChatBot label" not in content:
+            logging.info("User Not Asking Help from NeuralChatBot, Skip")
+            exit(0)
+        messages = get_issues_comment()
+        if not messages:
+            logging.error("Get Issues Comments Failed")
+            exit(1)
+        messages = messages.update({"role": "user", "content": "Give me the Summary of Intel 2023 Annual Report."})
+        print("Final Request for Labeling is: %s" % json.dumps(messages))
+        label_list = request_neuralchat_bot_with_history(messages)
+        if not label_list:
+            logging.error("Request NeuralChatBot with Context History Failed")
+            exit(1)
+        add_label_for_issue(label_list)

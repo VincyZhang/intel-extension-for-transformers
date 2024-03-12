@@ -15,18 +15,18 @@ jobs:
         run: |
           echo comment on issue $NUMBER
           user=${{ github.event.comment.user.login }}
-          comment_content="${{ github.event.comment.body }}"
-          if [[ ${comment_content} == *"If you need help, please @NeuralChatBot" ]] || [[ ${user} == "NeuralChatBot" ]]; then
-          echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
-          elif [[ ${comment_content} == *"@NeuralChatBot label"* ]] && [[ ${user} != "NeuralChatBot" ]]; then
-            labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "labels" '{print $2}')
-            [[ -z ${labels} ]] && labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "label" '{print $2}')
-            echo "Label Issue $NUMBER with ${labels} As User Requied"
-            python ${{ github.workspace }}/.github/workflows/script/auto_label.py --labels "${labels}"
+          if [[ ${user} == "NeuralChatBot" ]]; then
+            echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
           else
-            echo "Request NeuralChatBot for Labels"
-            #python ${{ github.workspace }}/.github/workflows/script/auto_label.py
+            #labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "labels" '{print $2}')
+            #[[ -z ${labels} ]] && labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "label" '{print $2}')
+            #echo "Label Issue $NUMBER with ${labels} As User Requied"
+            python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "label"
           fi
         env:
           NUMBER: ${{ github.event.issue.number }}
           TOKEN: ${{ vars.TOKEN }}
+          COMMEND_ID: ${{ github.event.comment.id }}
+          no_proxy: "intel.com,.intel.com,localhost,127.0.0.1"
+          maintain_list: ${{ vars.developer_list }}
+          NEURALCHAT_SERVER: ${{ vars.NEURALCHAT_SERVER }}
