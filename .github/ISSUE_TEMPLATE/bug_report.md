@@ -1,24 +1,14 @@
 ---
-name: Environment Setup Issues
-about: Environmental failures you're facing
+name: Bug report
+about: Create a report to help us improve
 title: ''
-labels: environmental error
+labels: bug
 assignees: ''
 
 ---
 
-**Describe the issue**
-A clear and concise description of what the error is.
-
-**Hardware  (please complete the following information):**
- - CPU: [e.g. Intel Xeon 8380]
- - OS: [e.g. ubuntu]
- - Version [e.g. 22.04]
-
-**Software Version (please complete the following information):**
- - Intel Extension for Transformers: [e.g. 1.3.1]
- - Transformers: [e.g. 4.36]
- - GCC [e.g. 13.1]
+**Describe the bug**
+A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
@@ -32,6 +22,11 @@ A clear and concise description of what you expected to happen.
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
+
+**Desktop (please complete the following information):**
+ - OS: [e.g. iOS]
+ - Browser [e.g. chrome, safari]
+ - Version [e.g. 22]
 
 **Smartphone (please complete the following information):**
  - Device: [e.g. iPhone6]
