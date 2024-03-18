@@ -1,14 +1,14 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: Environment Setup Issues
+about: Environmental failures you're facing
 title: ''
-labels: bug
+labels: environmental error
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Describe the error**
+A clear and concise description of what the problem is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
