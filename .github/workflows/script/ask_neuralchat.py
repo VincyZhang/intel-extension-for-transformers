@@ -3,9 +3,12 @@ import json
 import os
 import argparse
 import logging
+import pandas as pd
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--stage", type=str, required=True)
+parser.add_argument("--codeowner", type=str, default="./owner.xlsx")
+parser.add_argument("--label", type=str)
 args = parser.parse_args()
 
 TOKEN = os.getenv("TOKEN")
@@ -161,7 +164,7 @@ def update_comment(resp: str):
     except:
         logging.error("Update Comment for Issue %s Failed" % issue_number)
 
-def get_label_list():
+def get_repo_label():
     url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/labels'
     headers = {"Accept": "application/vnd.github+json",
                "Authorization": "Bearer %s" % TOKEN,
@@ -176,72 +179,104 @@ def get_label_list():
         except:
             logging.error("Get Label Lists Failed")
     return label_list
-    
-def add_label():
-    content_list = args.content.split(",")
-    
-    add_label_list = []
-    for content in content_list:
-        if content in label_list:
-            add_label_list.append(content)
-    if add_label_list:
-        add_label_for_issue(add_label_list)
 
-
-def add_label_for_issue(label_list: list):
-    repo_label_list = get_label_list()
-    add_label_list = []
-    for label in label_list:
-        if label in repo_label_list:
-            add_label_list.append(label)
-    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/labels' % issue_number
+def get_issue_label():
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/%s/labels' % issue_number
     headers = {"Accept": "application/vnd.github+json",
                "Authorization": "Bearer %s" % TOKEN,
                "X-GitHub-Api-Version": "2022-11-28"}
-    data = {"labels":add_label_list}
-    response_raw = requests.post(url, headers=headers, data=json.dumps(data))
+    response_raw = requests.get(url, headers=headers)
+    response = response_raw.json()
+    label_list = []
+    for label_content in response:
+        try:
+            label_name = label_content.get("name")
+            label_list.append(label_name)
+        except:
+            logging.error("Get Label Lists Failed")
+    return label_list
+
+def check_if_owner_assinable(owner: str):
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/assignees/%s' % owner
+    headers = {"Accept": "application/vnd.github+json",
+               "Authorization": "Bearer %s" % TOKEN,
+               "X-GitHub-Api-Version": "2022-11-28"}
+    response_raw = requests.get(url, headers=headers)
+    if response_raw == "204":
+        return True
+    return False
+
+def assign_owner(owner: str):
+    if check_if_owner_assinable(owner):
+        url = 'https://api.github.com/repos/OWNER/REPO/issues/ISSUE_NUMBER/assignees' % issue_number
+        headers = {"Accept": "application/vnd.github+json",
+                    "Authorization": "Bearer %s" % TOKEN,
+                    "X-GitHub-Api-Version": "2022-11-28"}
+        data = {"assignees": [owner]}
+        try:
+            response_raw = requests.post(url, headers=headers, data=json.dumps(data))
+            print(response_raw.json())
+        except:
+            logging.error("Assign %s for Issue %s Failed" % (owner, issue_number))
     
-    print(response_raw.json())
+def request_for_auto_reply():
+    content = get_issues_description()
+    if not content:
+        logging.error("Get Issues Descriptions Failed")
+        exit(1)
+    output = request_neuralchat_bot(content)
+    if not output:
+        logging.error("Request NeuralChatBot Failed")
+        exit(1)
+    output += "\nIf you need help, please @NeuralChatBot"
+    update_comment(output)
+
+def request_for_auto_assign():
+    content = get_issues_description()
+    if not content:
+        logging.error("Get Issues Descriptions Failed")
+        exit(1)
+    df = pd.read_excel(args.codeowner)
+    print("read from owner list: ")
+    print(df)
+    print(type(df))
+    content += "Owner file is located in %s" % args.codeowner
+    output = request_neuralchat_bot(content)
+    if not output:
+        logging.error("Request NeuralChatBot Failed")
+        exit(1)
+    assign_owner(output)
+
+def request_for_auto_reply_with_history():
+    messages = get_issues_comment()
+    if not messages:
+        logging.error("Get Issues Comments Failed")
+        exit(1)
+    output = request_neuralchat_bot_with_history(messages)
+    if not output:
+        logging.error("Request NeuralChatBot with Context History Failed")
+        exit(1)
+    update_comment(output)
 
 if __name__ == '__main__':
     if args.stage == "create":
-        content = get_issues_description()
-        if not content:
-            logging.error("Get Issues Descriptions Failed")
-            exit(1)
-        output = request_neuralchat_bot(content)
-        if not output:
-            logging.error("Request NeuralChatBot Failed")
-            exit(1)
-        output += "\nIf you need help, please @NeuralChatBot"
-        update_comment(output)
+        labels = get_issue_label()
+        if "bug" in labels or "feature" in labels:
+            request_for_auto_assign()
+        elif "questions" in labels or "environmental error" in labels:
+            request_for_auto_reply()
+        
     elif args.stage == "update":
         content = get_comment_content()
         if "@NeuralChatBot" not in content:
             logging.info("User Not Asking Help from NeuralChatBot, Skip")
             exit(0)
-        messages = get_issues_comment()
-        if not messages:
-            logging.error("Get Issues Comments Failed")
-            exit(1)
-        output = request_neuralchat_bot_with_history(messages)
-        if not output:
-            logging.error("Request NeuralChatBot with Context History Failed")
-            exit(1)
-        update_comment(output)
+        request_for_auto_reply_with_history()
+
     elif args.stage == "label":
-        content = get_comment_content()
-        if "@NeuralChatBot label" not in content:
-            logging.info("User Not Asking Help from NeuralChatBot, Skip")
-            exit(0)
-        messages = get_issues_comment()
-        if not messages:
-            logging.error("Get Issues Comments Failed")
-            exit(1)
-        messages = messages.update({"role": "user", "content": "Give me the Summary of Intel 2023 Annual Report."})
-        print("Final Request for Labeling is: %s" % json.dumps(messages))
-        label_list = request_neuralchat_bot_with_history(messages)
-        if not label_list:
-            logging.error("Request NeuralChatBot with Context History Failed")
-            exit(1)
-        add_label_for_issue(label_list)
+        new_label = args.label
+        if new_label == "bug" or new_label == "feature":
+            request_for_auto_assign()
+        elif new_label == "questions" or new_label == "environmental error":
+            request_for_auto_reply()
+        

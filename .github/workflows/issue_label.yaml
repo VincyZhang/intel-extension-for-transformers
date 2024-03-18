@@ -1,5 +1,7 @@
 name: Auto Label
-on: issue_comment
+on:
+  issues:
+    types: labeled
 
 jobs:
   issue_commented:
@@ -13,16 +15,9 @@ jobs:
 
       - name: Comment on Issue
         run: |
-          echo comment on issue $NUMBER
-          user=${{ github.event.comment.user.login }}
-          if [[ ${user} == "NeuralChatBot" ]]; then
-            echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
-          else
-            #labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "labels" '{print $2}')
-            #[[ -z ${labels} ]] && labels=$(echo -e ${comment_content} | grep -o "@NeuralChatBot label.*" | awk -F "label" '{print $2}')
-            #echo "Label Issue $NUMBER with ${labels} As User Requied"
-            python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "label"
-          fi
+          echo label on issue $NUMBER
+          python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "label" --lable "${{ github.event.label.name }}"
+
         env:
           NUMBER: ${{ github.event.issue.number }}
           TOKEN: ${{ vars.TOKEN }}
