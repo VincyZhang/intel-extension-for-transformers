@@ -15,7 +15,7 @@ jobs:
         run: |
           echo comment on issue $NUMBER
           user=${{ github.event.comment.user.login }}
-          label_list=${{ github.event.issue.labels.name }}
+          label_list=${{ github.event.issue.labels }}
           echo $label_list
           #if [[ ${user} == "NeuralChatBot" ]]; then
           #  echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
