@@ -31,7 +31,7 @@ def get_comment_content():
         response = response_raw.json()
         body = response.get("body", "")
         if body:
-            print("Get Issue %s Description: %s. END" % (issue_number, body))
+            logging.info("Get Issue %s Description: %s. END" % (issue_number, body))
         return body
     except:
         logging.error("Get Comment Content Failed")
@@ -48,11 +48,11 @@ def get_issues_description():
         title = response.get("title", "")
         creator = response.get("user", "").get("login", "")
         if body:
-            print("Get Issue %s Description: %s. END" % (issue_number, body))
+            logging.info("Get Issue %s Description: %s. END" % (issue_number, body))
         if title:
-            print("Get Issue %s Description: %s. END" % (issue_number, title))
+            logging.info("Get Issue %s Title: %s. END" % (issue_number, title))
         if creator:
-            print("Get Issue %s Description: %s. END" % (issue_number, creator))
+            logging.info("Get Issue %s Creator: %s. END" % (issue_number, creator))
         return body
     except:
         logging.error("Get Issues Descriptions Failed")
@@ -81,15 +81,15 @@ def get_issues_comment():
                 body = filter_comment(body)
             owner = item.get("user", "").get("login", "")
             if owner not in developers_list:
-                print("This Comment is From User %s : %s END" % (owner, body))
+                logging.info("This Comment is From User %s : %s END" % (owner, body))
                 messages.append({"role": "user", "content": body })
             elif owner == "NeuralChat":
-                print("This Comment is From NeuralChat: %s END" % body)
+                logging.info("This Comment is From NeuralChat: %s END" % body)
                 messages.append({"role": "assistant", "content": body })
             else:
-                print("This Comment is From Developer %s : %s END" % (owner, body))
+                logging.info("This Comment is From Developer %s : %s END" % (owner, body))
                 messages.append({"role": "assistant", "content": body })
-        print("Final Messages is: %s " % str(messages))
+        logging.info("Final Messages is: %s " % str(messages))
         return messages
     except:
         logging.error("Get Issues Comment Failed")
@@ -102,14 +102,14 @@ def filter_comment(user_content: str):
         user_content = user_content.replace(comment, "")
     return user_content
 
-def request_neuralchat_bot(user_content: str):
+def request_neuralchat_bot(user_content: str, content="You are a helpful assistant."):
     url = 'http://%s:8000/v1/chat/completions' % NEURALCHAT_SERVER
     headers = {'Content-Type': 'application/json'}
-    messages = [{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": user_content}]
+    messages = [{"role": "system", "content": content}, {"role": "user", "content": user_content}]
     data = {"model": "Intel/neural-chat-7b-v3-1", 
             "messages": messages
             }
-    print("Request NeuralChat Bot The First Time: %s" % json.dumps(data))
+    logging.info("Request NeuralChat Bot The First Time: %s" % json.dumps(data))
     try:
         response_raw = requests.post(url, headers=headers, data=json.dumps(data))
         response = response_raw.json()
@@ -121,7 +121,7 @@ def request_neuralchat_bot(user_content: str):
         if not output:
             logging.error("Get Empty NeuralChatBot Response")
         else:
-            print("Get NeuralChatBot Response: %s" % output)
+            logging.info("Get NeuralChatBot Response: %s" % output)
             return output
     except:
         logging.error("Request NeuralChatBot Failed")
@@ -133,7 +133,7 @@ def request_neuralchat_bot_with_history(messages: list):
     data = {"model": "Intel/neural-chat-7b-v3-1",
             "messages": messages
             }
-    print("Request NeuralChat Bot with Context History: %s" % json.dumps(data))
+    logging.info("Request NeuralChat Bot with Context History: %s" % json.dumps(data))
     try:
         response_raw = requests.post(url, headers=headers, data=json.dumps(data))
         response = response_raw.json()
@@ -146,7 +146,7 @@ def request_neuralchat_bot_with_history(messages: list):
             logging.error("Get Empty NeuralChatBot Response")
             return
         else:
-            print("Get NeuralChatBot Response with Context History: %s" % output)
+            logging.info("Get NeuralChatBot Response with Context History: %s" % output)
         return output
     except:
         logging.error("Request NeuralChatBot with Context History Failed")
@@ -157,10 +157,10 @@ def update_comment(resp: str):
                "Authorization": "Bearer %s" % TOKEN,
                "X-GitHub-Api-Version": "2022-11-28"}
     data = {"body": resp}
-    print("Update Comment for Issue %s with %s" % (issue_number, json.dumps(data)))
+    logging.info("Update Comment for Issue %s with %s" % (issue_number, json.dumps(data)))
     try:
         response_raw = requests.post(url, headers=headers, data=json.dumps(data))
-        print(response_raw.json())
+        logging.info(response_raw.json())
     except:
         logging.error("Update Comment for Issue %s Failed" % issue_number)
 
@@ -215,7 +215,7 @@ def assign_owner(owner: str):
         data = {"assignees": [owner]}
         try:
             response_raw = requests.post(url, headers=headers, data=json.dumps(data))
-            print(response_raw.json())
+            logging.info(response_raw.json())
         except:
             logging.error("Assign %s for Issue %s Failed" % (owner, issue_number))
     
@@ -236,12 +236,14 @@ def request_for_auto_assign():
     if not content:
         logging.error("Get Issues Descriptions Failed")
         exit(1)
+    if not os.path.exists(args.codeowner):
+        logging.error("code owner list not exiest, please provide the correct file path. Current input is %s" % args.codeowner)
     df = pd.read_excel(args.codeowner)
-    print("read from owner list: ")
-    print(df)
-    print(type(df))
+    logging.info("read from owner list: ")
+    logging.info(df)
+    logging.info(type(df))
     content += "Owner file is located in %s" % args.codeowner
-    output = request_neuralchat_bot(content)
+    output = request_neuralchat_bot(content, "give me the owner of the issue")
     if not output:
         logging.error("Request NeuralChatBot Failed")
         exit(1)
