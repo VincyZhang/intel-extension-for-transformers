@@ -19,7 +19,7 @@ developers = os.getenv("maintain_list")
 developers_list = developers.split(",")
 os.environ["no_proxy"] = "intel.com,.intel.com,localhost,127.0.0.1"
 os.environ["NO_PROXY"] = "intel.com,.intel.com,localhost,127.0.0.1"
-
+logging.getLogger().setLevel(logging.INFO)
 
 def get_comment_content():
     url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/comments/%s' % comment_id
@@ -181,7 +181,7 @@ def get_repo_label():
     return label_list
 
 def get_issue_label():
-    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/%s/labels' % issue_number
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/labels' % issue_number
     headers = {"Accept": "application/vnd.github+json",
                "Authorization": "Bearer %s" % TOKEN,
                "X-GitHub-Api-Version": "2022-11-28"}
@@ -262,8 +262,10 @@ if __name__ == '__main__':
     if args.stage == "create":
         labels = get_issue_label()
         if "bug" in labels or "feature" in labels:
+            logging.info("request_for_auto_assign")
             request_for_auto_assign()
         elif "questions" in labels or "environmental error" in labels:
+            logging.info("request_for_auto_reply")
             request_for_auto_reply()
         
     elif args.stage == "update":
@@ -271,12 +273,15 @@ if __name__ == '__main__':
         if "@NeuralChatBot" not in content:
             logging.info("User Not Asking Help from NeuralChatBot, Skip")
             exit(0)
+        logging.info("request_for_auto_reply_with_history")
         request_for_auto_reply_with_history()
 
     elif args.stage == "label":
         new_label = args.label
         if new_label == "bug" or new_label == "feature":
+            logging.info("request_for_auto_assign")
             request_for_auto_assign()
         elif new_label == "questions" or new_label == "environmental error":
+            logging.info("request_for_auto_reply")
             request_for_auto_reply()
         
