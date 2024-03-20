@@ -5,14 +5,16 @@ import argparse
 import logging
 import pandas as pd
 
+TOKEN = os.getenv("TOKEN")
+NEURALCHAT_SERVER = os.getenv("NEURALCHAT_SERVER")
+GITHUB_WORKSPACE = os.getenv("GITHUB_WORKSPACE")
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--stage", type=str, required=True)
-parser.add_argument("--codeowner", type=str, default="./owner.xlsx")
+parser.add_argument("--codeowner", type=str, default=GITHUB_WORKSPACE + "/.github/workflows/script/owner.xlsx")
 parser.add_argument("--label", type=str)
 args = parser.parse_args()
 
-TOKEN = os.getenv("TOKEN")
-NEURALCHAT_SERVER = os.getenv("NEURALCHAT_SERVER")
 issue_number = os.getenv("NUMBER")
 comment_id = os.getenv("COMMEND_ID")
 developers = os.getenv("maintain_list")
