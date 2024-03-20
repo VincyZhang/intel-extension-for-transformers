@@ -15,12 +15,14 @@ jobs:
         run: |
           echo comment on issue $NUMBER
           user=${{ github.event.comment.user.login }}
-          if [[ ${user} == "NeuralChatBot" ]]; then
-            echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
-          else
-            echo "Reqeust NeuralChatBot for issue $NUMBER from $user"
-            python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "update"
-          fi
+          label_list=${{ github.event.issue.labels.name }}
+          echo $label_list
+          #if [[ ${user} == "NeuralChatBot" ]]; then
+          #  echo "This is a message from NeuralChatBot or Our Developers, IGNORE!"
+          #else
+          #  echo "Reqeust NeuralChatBot for issue $NUMBER from $user"
+          #  python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "update"
+          #fi
         env:
           NUMBER: ${{ github.event.issue.number }}
           COMMEND_ID: ${{ github.event.comment.id }}

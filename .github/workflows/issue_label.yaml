@@ -1,27 +1,22 @@
-name: Auto Label
-on:
-  issues:
-    types: labeled
-
-jobs:
-  issue_commented:
-    # This job only runs for issue comments
-    name: Issue comment
-    if: ${{ !github.event.issue.pull_request }}
-    runs-on: issues-node
-    steps:
-      - name: Checkout out Repo
-        uses: actions/checkout@v3
-
-      - name: Comment on Issue
-        run: |
-          echo label on issue $NUMBER
-          python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "label" --lable "${{ github.event.label.name }}"
-
-        env:
-          NUMBER: ${{ github.event.issue.number }}
-          TOKEN: ${{ vars.TOKEN }}
-          COMMEND_ID: ${{ github.event.comment.id }}
-          no_proxy: "intel.com,.intel.com,localhost,127.0.0.1"
-          maintain_list: ${{ vars.developer_list }}
-          NEURALCHAT_SERVER: ${{ vars.NEURALCHAT_SERVER }}
+#name: Auto Label
+#on:
+#  issues:
+#    types: labeled
+#
+#jobs:
+#  name: Issue label
+#  runs-on: issues-node
+#  steps:
+#    - name: Checkout out Repo
+#      uses: actions/checkout@v3
+#    - name: Comment on Issue
+#      run: |
+#        echo label on issue $NUMBER
+#        python ${{ github.workspace }}/.github/workflows/script/ask_neuralchat.py --stage "label" --label "${{ github.event.label.name }}"
+#      env:
+#        NUMBER: ${{ github.event.issue.number }}
+#        TOKEN: ${{ vars.TOKEN }}
+#        COMMEND_ID: ${{ github.event.comment.id }}
+#        no_proxy: "intel.com,.intel.com,localhost,127.0.0.1"
+#        maintain_list: ${{ vars.developer_list }}
+#        NEURALCHAT_SERVER: ${{ vars.NEURALCHAT_SERVER }}
