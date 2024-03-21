@@ -104,8 +104,8 @@ def filter_comment(user_content: str):
         user_content = user_content.replace(comment, "")
     return user_content
 
-def request_neuralchat_bot(user_content: str, url: str):
-    url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url)
+def request_neuralchat_bot(user_content: str, url_post: str):
+    url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url_post)
     headers = {'Content-Type': 'application/json'}
     messages = [{"role": "system", "content": "You are a code assistant. Please answer the user's issue accurately. If you cannot answer, please explain politely."}, 
                 {"role": "user", "content": user_content}]
@@ -116,7 +116,7 @@ def request_neuralchat_bot(user_content: str, url: str):
     try:
         response_raw = requests.post(url, headers=headers, data=json.dumps(data))
         response = response_raw.json()
-        if url == "auto-reply":
+        if url_post == "auto-reply":
             output = response.get("choices", "")
             if len(output) <= 0:
                 logging.error("Get NeuralChatBot Response Failed with Empty Choice")
@@ -127,7 +127,7 @@ def request_neuralchat_bot(user_content: str, url: str):
             else:
                 logging.info("Get NeuralChatBot Response: %s" % output)
                 return output
-        elif url == "auto-assign":
+        elif url_post == "auto-assign":
             output = response.get("owner", "")
             if not output:
                 logging.error("Get NeuralChatBot Response Failed with Empty Choice")
@@ -137,8 +137,8 @@ def request_neuralchat_bot(user_content: str, url: str):
         logging.error("Request NeuralChatBot Failed")
 
 
-def request_neuralchat_bot_with_history(messages: list, url: str):
-    url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url)
+def request_neuralchat_bot_with_history(messages: list, url_post: str):
+    url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url_post)
     headers = {'Content-Type': 'application/json'}
     data = {"model": "Intel/neural-chat-7b-v3-1",
             "messages": messages
