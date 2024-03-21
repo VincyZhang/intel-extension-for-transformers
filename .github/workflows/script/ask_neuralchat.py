@@ -131,7 +131,7 @@ def request_neuralchat_bot(user_content: str, url: str):
             output = response.get("owner", "")
             if not output:
                 logging.error("Get NeuralChatBot Response Failed with Empty Choice")
-                return
+                return "VincyZhang"
             return output
     except:
         logging.error("Request NeuralChatBot Failed")
