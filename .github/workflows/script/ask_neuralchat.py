@@ -131,7 +131,8 @@ def request_neuralchat_bot(user_content: str, url_post: str):
             output = response.get("owner", "")
             if not output:
                 logging.error("Get NeuralChatBot Response Failed with Empty Choice")
-                return "VincyZhang"
+                return
+            logging.info("Get NeuralChatBot Assignee: %s" % output)
             return output
     except:
         logging.error("Request NeuralChatBot Failed")
@@ -212,22 +213,24 @@ def check_if_owner_assinable(owner: str):
                "Authorization": "Bearer %s" % TOKEN,
                "X-GitHub-Api-Version": "2022-11-28"}
     response_raw = requests.get(url, headers=headers)
+    logging.info(response_raw)
     if response_raw == "204":
         return True
     return False
 
 def assign_owner(owner: str):
-    if check_if_owner_assinable(owner):
-        url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/assignees' % issue_number
-        headers = {"Accept": "application/vnd.github+json",
-                    "Authorization": "Bearer %s" % TOKEN,
-                    "X-GitHub-Api-Version": "2022-11-28"}
-        data = {"assignees": [owner]}
-        try:
-            response_raw = requests.post(url, headers=headers, data=json.dumps(data))
-            logging.info(response_raw.json())
-        except:
-            logging.error("Assign %s for Issue %s Failed" % (owner, issue_number))
+    if not check_if_owner_assinable(owner):
+        owner = "VincyZhang"
+    url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/assignees' % issue_number
+    headers = {"Accept": "application/vnd.github+json",
+                "Authorization": "Bearer %s" % TOKEN,
+                "X-GitHub-Api-Version": "2022-11-28"}
+    data = {"assignees": [owner]}
+    try:
+        response_raw = requests.post(url, headers=headers, data=json.dumps(data))
+        logging.info(response_raw.json())
+    except:
+        logging.error("Assign %s for Issue %s Failed" % (owner, issue_number))
     
 def request_for_auto_reply():
     content = get_issues_description()
@@ -253,6 +256,7 @@ def request_for_auto_assign():
     #logging.info(df)
     #logging.info(type(df))
     output = request_neuralchat_bot(content, "auto-assign")
+    logging.info("assign to %s" % output)
     if not output:
         logging.error("Request NeuralChatBot Failed")
         exit(1)
