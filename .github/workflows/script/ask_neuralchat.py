@@ -214,7 +214,7 @@ def check_if_owner_assinable(owner: str):
                "X-GitHub-Api-Version": "2022-11-28"}
     response_raw = requests.get(url, headers=headers)
     logging.info(response_raw)
-    if response_raw == "204":
+    if response_raw.status_code == 204:
         return True
     return False
 
