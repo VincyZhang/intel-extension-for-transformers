@@ -73,7 +73,7 @@ def get_issues_comment():
             logging.warning("Issues Descriptions Is Empty")
         else:
             user_content = filter_comment(user_content)
-        messages = [{"role": "system", "content": "You are a helpful assistant."},
+        messages = [{"role": "system", "content": "You are a code assistant. Please answer the user's issue accurately. If you cannot answer, please explain politely."},
                     {"role": "user", "content": user_content }]
         for item in response:
             body = item.get("body", "")
@@ -109,7 +109,7 @@ def request_neuralchat_bot(user_content: str, url_post: str):
     headers = {'Content-Type': 'application/json'}
     messages = [{"role": "system", "content": "You are a code assistant. Please answer the user's issue accurately. If you cannot answer, please explain politely."}, 
                 {"role": "user", "content": user_content}]
-    data = {"model": "Intel/neural-chat-7b-v3-1", 
+    data = {"model": "deepseek-ai/deepseek-coder-6.7b-instruct", 
             "messages": messages
             }
     logging.info("Request NeuralChat Bot The First Time: %s" % json.dumps(data))
@@ -141,7 +141,7 @@ def request_neuralchat_bot(user_content: str, url_post: str):
 def request_neuralchat_bot_with_history(messages: list, url_post: str):
     url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url_post)
     headers = {'Content-Type': 'application/json'}
-    data = {"model": "Intel/neural-chat-7b-v3-1",
+    data = {"model": "deepseek-ai/deepseek-coder-6.7b-instruct",
             "messages": messages
             }
     logging.info("Request NeuralChat Bot with Context History: %s" % json.dumps(data))
