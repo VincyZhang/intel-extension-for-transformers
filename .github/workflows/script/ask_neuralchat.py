@@ -104,10 +104,11 @@ def filter_comment(user_content: str):
         user_content = user_content.replace(comment, "")
     return user_content
 
-def request_neuralchat_bot(user_content: str, content="You are a helpful assistant."):
-    url = 'http://%s:8000/v1/chat/completions' % NEURALCHAT_SERVER
+def request_neuralchat_bot(user_content: str, url: str):
+    url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url)
     headers = {'Content-Type': 'application/json'}
-    messages = [{"role": "system", "content": content}, {"role": "user", "content": user_content}]
+    messages = [{"role": "system", "content": "You are a code assistant. Please answer the user's issue accurately. If you cannot answer, please explain politely."}, 
+                {"role": "user", "content": user_content}]
     data = {"model": "Intel/neural-chat-7b-v3-1", 
             "messages": messages
             }
@@ -115,22 +116,29 @@ def request_neuralchat_bot(user_content: str, content="You are a helpful assista
     try:
         response_raw = requests.post(url, headers=headers, data=json.dumps(data))
         response = response_raw.json()
-        output = response.get("choices", "")
-        if len(output) <= 0:
-            logging.error("Get NeuralChatBot Response Failed with Empty Choice")
-            return
-        output = output[0].get("message", "").get("content", "")
-        if not output:
-            logging.error("Get Empty NeuralChatBot Response")
-        else:
-            logging.info("Get NeuralChatBot Response: %s" % output)
+        if url == "auto-reply":
+            output = response.get("choices", "")
+            if len(output) <= 0:
+                logging.error("Get NeuralChatBot Response Failed with Empty Choice")
+                return
+            output = output[0].get("message", "").get("content", "")
+            if not output:
+                logging.error("Get Empty NeuralChatBot Response")
+            else:
+                logging.info("Get NeuralChatBot Response: %s" % output)
+                return output
+        elif url == "auto-assign":
+            output = response.get("owner", "")
+            if not output:
+                logging.error("Get NeuralChatBot Response Failed with Empty Choice")
+                return
             return output
     except:
         logging.error("Request NeuralChatBot Failed")
 
 
-def request_neuralchat_bot_with_history(messages: list):
-    url = 'http://%s:8000/v1/chat/completions' % NEURALCHAT_SERVER
+def request_neuralchat_bot_with_history(messages: list, url: str):
+    url = 'http://%s:8000/v1/chat/%s' % (NEURALCHAT_SERVER, url)
     headers = {'Content-Type': 'application/json'}
     data = {"model": "Intel/neural-chat-7b-v3-1",
             "messages": messages
@@ -210,7 +218,7 @@ def check_if_owner_assinable(owner: str):
 
 def assign_owner(owner: str):
     if check_if_owner_assinable(owner):
-        url = 'https://api.github.com/repos/OWNER/REPO/issues/ISSUE_NUMBER/assignees' % issue_number
+        url = 'https://api.github.com/repos/VincyZhang/intel-extension-for-transformers/issues/%s/assignees' % issue_number
         headers = {"Accept": "application/vnd.github+json",
                     "Authorization": "Bearer %s" % TOKEN,
                     "X-GitHub-Api-Version": "2022-11-28"}
@@ -226,7 +234,7 @@ def request_for_auto_reply():
     if not content:
         logging.error("Get Issues Descriptions Failed")
         exit(1)
-    output = request_neuralchat_bot(content)
+    output = request_neuralchat_bot(content, "auto-reply")
     if not output:
         logging.error("Request NeuralChatBot Failed")
         exit(1)
@@ -238,14 +246,13 @@ def request_for_auto_assign():
     if not content:
         logging.error("Get Issues Descriptions Failed")
         exit(1)
-    if not os.path.exists(args.codeowner):
-        logging.error("code owner list not exiest, please provide the correct file path. Current input is %s" % args.codeowner)
-    df = pd.read_excel(args.codeowner)
-    logging.info("read from owner list: ")
-    logging.info(df)
-    logging.info(type(df))
-    content += "Owner file is located in %s" % args.codeowner
-    output = request_neuralchat_bot(content, "give me the owner of the issue")
+    #if not os.path.exists(args.codeowner):
+    #    logging.error("code owner list not exiest, please provide the correct file path. Current input is %s" % args.codeowner)
+    #df = pd.read_excel(args.codeowner)
+    #logging.info("read from owner list: ")
+    #logging.info(df)
+    #logging.info(type(df))
+    output = request_neuralchat_bot(content, "auto-assign")
     if not output:
         logging.error("Request NeuralChatBot Failed")
         exit(1)
@@ -256,7 +263,7 @@ def request_for_auto_reply_with_history():
     if not messages:
         logging.error("Get Issues Comments Failed")
         exit(1)
-    output = request_neuralchat_bot_with_history(messages)
+    output = request_neuralchat_bot_with_history(messages, "auto-reply")
     if not output:
         logging.error("Request NeuralChatBot with Context History Failed")
         exit(1)
