@@ -77,10 +77,9 @@ def get_issues_comment():
                     {"role": "user", "content": user_content }]
         for item in response:
             body = item.get("body", "")
+            body = filter_comment(body)
             if body == "@NeuralChatBot" or body == "" or not body:
                 continue
-            else:
-                body = filter_comment(body)
             owner = item.get("user", "").get("login", "")
             if owner not in developers_list:
                 logging.info("This Comment is From User %s : %s END" % (owner, body))
