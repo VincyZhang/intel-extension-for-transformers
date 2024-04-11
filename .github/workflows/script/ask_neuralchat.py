@@ -78,13 +78,13 @@ def get_issues_comment():
         for item in response:
             body = item.get("body", "")
             body = filter_comment(body)
-            if body == "@NeuralChatBot" or body == "" or not body:
+            if body == "" or body == " " or body == "\n" or not body:
                 continue
             owner = item.get("user", "").get("login", "")
             if owner not in developers_list:
                 logging.info("This Comment is From User %s : %s END" % (owner, body))
                 messages.append({"role": "user", "content": body })
-            elif owner == "NeuralChat":
+            elif owner == "NeuralChatBot":
                 logging.info("This Comment is From NeuralChat: %s END" % body)
                 messages.append({"role": "assistant", "content": body })
             else:
